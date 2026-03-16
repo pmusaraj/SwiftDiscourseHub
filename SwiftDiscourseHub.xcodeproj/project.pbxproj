@@ -36,13 +36,12 @@
 		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027; };
 		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028; };
 		A10029 /* TopicDetailResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029; };
-		A10030 /* DiscourseHTMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
 		A10031 /* PostContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
-		A10032 /* MediaBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
+		A10033 /* RawTopicParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
+		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001; };
-		A20002 /* HTMLParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002; };
+		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002; };
 		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001; };
-		A30002 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = R10002; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,11 +84,11 @@
 		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
 		B10029 /* TopicDetailResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailResponse.swift; sourceTree = "<group>"; };
-		B10030 /* DiscourseHTMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseHTMLParser.swift; sourceTree = "<group>"; };
 		B10031 /* PostContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentView.swift; sourceTree = "<group>"; };
-		B10032 /* MediaBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaBlockView.swift; sourceTree = "<group>"; };
+		B10033 /* RawTopicParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParser.swift; sourceTree = "<group>"; };
+		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
-		B20002 /* HTMLParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLParserTests.swift; sourceTree = "<group>"; };
+		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -100,7 +99,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A30001 /* Textual in Frameworks */,
-				A30002 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,7 +170,8 @@
 			children = (
 				B10007 /* DiscourseAPIClient.swift */,
 				B10008 /* SiteDiscoveryService.swift */,
-				B10030 /* DiscourseHTMLParser.swift */,
+				B10033 /* RawTopicParser.swift */,
+				B10034 /* DiscourseMarkdownPreprocessor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -254,7 +253,6 @@
 				B10023 /* RelativeTimeText.swift */,
 				B10024 /* ErrorStateView.swift */,
 				B10031 /* PostContentView.swift */,
-				B10032 /* MediaBlockView.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -263,7 +261,7 @@
 			isa = PBXGroup;
 			children = (
 				B20001 /* DiscoverTests.swift */,
-				B20002 /* HTMLParserTests.swift */,
+				B20002 /* RawTopicParserTests.swift */,
 			);
 			path = SwiftDiscourseHubTests;
 			sourceTree = "<group>";
@@ -286,7 +284,6 @@
 			name = SwiftDiscourseHub;
 			packageProductDependencies = (
 				R10001 /* Textual */,
-				R10002 /* SwiftSoup */,
 			);
 			productName = SwiftDiscourseHub;
 			productReference = C10001 /* SwiftDiscourseHub.app */;
@@ -330,7 +327,6 @@
 			mainGroup = E10001;
 			packageReferences = (
 				S10001 /* XCRemoteSwiftPackageReference "textual" */,
-				S10002 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 			);
 			productRefGroup = E10003 /* Products */;
 			projectDirPath = "";
@@ -386,9 +382,9 @@
 				A10026 /* Color+Hex.swift in Sources */,
 				A10028 /* TopicDetailView.swift in Sources */,
 				A10029 /* TopicDetailResponse.swift in Sources */,
-				A10030 /* DiscourseHTMLParser.swift in Sources */,
 				A10031 /* PostContentView.swift in Sources */,
-				A10032 /* MediaBlockView.swift in Sources */,
+				A10033 /* RawTopicParser.swift in Sources */,
+				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -397,7 +393,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A20001 /* DiscoverTests.swift in Sources */,
-				A20002 /* HTMLParserTests.swift in Sources */,
+				A20002 /* RawTopicParserTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,14 +602,6 @@
 				minimumVersion = 0.1.0;
 			};
 		};
-		S10002 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.7.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -621,11 +609,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = S10001 /* XCRemoteSwiftPackageReference "textual" */;
 			productName = Textual;
-		};
-		R10002 /* SwiftSoup */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = S10002 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
-			productName = SwiftSoup;
 		};
 /* End XCSwiftPackageProductDependency section */
 

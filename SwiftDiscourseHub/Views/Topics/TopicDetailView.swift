@@ -5,6 +5,7 @@ struct TopicDetailView: View {
     let baseURL: String
 
     @State private var topicDetail: TopicDetailResponse?
+    @State private var postMarkdown: [Int: String] = [:]
     @State private var isLoading = true
     @State private var error: String?
 
@@ -27,7 +28,11 @@ struct TopicDetailView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(posts) { post in
-                            PostView(post: post, baseURL: baseURL)
+                            PostView(
+                                post: post,
+                                baseURL: baseURL,
+                                markdown: postMarkdown[post.postNumber ?? 0]
+                            )
                             Divider()
                         }
                     }
@@ -68,7 +73,39 @@ struct TopicDetailView: View {
         isLoading = true
         error = nil
         do {
-            topicDetail = try await apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
+            async let jsonResponse = apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
+            async let rawResponse = apiClient.fetchTopicRaw(baseURL: baseURL, topicId: topicId)
+
+            let detail = try await jsonResponse
+            topicDetail = detail
+
+            // Parse raw markdown and resolve uploads
+            let rawText = try await rawResponse
+            let rawPosts = RawTopicParser.parse(rawText)
+
+            let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
+
+            // Collect all upload:// URLs across all posts
+            var allUploadURLs: [String] = []
+            for rawPost in rawPosts {
+                allUploadURLs.append(contentsOf: DiscourseMarkdownPreprocessor.extractUploadShortURLs(from: rawPost.markdown))
+            }
+            let uniqueUploadURLs = Array(Set(allUploadURLs))
+
+            // Batch-resolve uploads
+            let uploadMapping = try? await apiClient.lookupUploadURLs(baseURL: baseURL, shortURLs: uniqueUploadURLs)
+
+            // Build post number -> processed markdown mapping
+            var markdownMap: [Int: String] = [:]
+            for rawPost in rawPosts {
+                var md = rawPost.markdown
+                if let mapping = uploadMapping, !mapping.isEmpty {
+                    md = DiscourseMarkdownPreprocessor.replaceUploadURLs(in: md, mapping: mapping)
+                }
+                md = preprocessor.process(md)
+                markdownMap[rawPost.postNumber] = md
+            }
+            postMarkdown = markdownMap
         } catch {
             self.error = error.localizedDescription
         }
@@ -79,6 +116,7 @@ struct TopicDetailView: View {
 struct PostView: View {
     let post: Post
     let baseURL: String
+    let markdown: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -127,8 +165,13 @@ struct PostView: View {
                 }
             }
 
-            // Content — rendered with Textual
-            PostContentView(html: post.cooked ?? "", baseURL: baseURL)
+            // Content — rendered from raw markdown, fallback to cooked HTML
+            if let md = markdown {
+                PostContentView(markdown: md, baseURL: baseURL)
+            } else if let cooked = post.cooked, !cooked.isEmpty {
+                Text(cooked)
+                    .font(.body)
+            }
 
             // Footer: likes + replies
             HStack(spacing: 16) {
