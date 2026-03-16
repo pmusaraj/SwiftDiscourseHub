@@ -1,0 +1,634 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10001 /* SwiftDiscourseHubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001; };
+		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
+		A10003 /* DiscourseSite.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003; };
+		A10004 /* TopicListResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004; };
+		A10005 /* CategoryListResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005; };
+		A10006 /* SiteBasicInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006; };
+		A10007 /* DiscourseAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007; };
+		A10008 /* SiteDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008; };
+		A10009 /* SiteListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009; };
+		A10010 /* TopicListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010; };
+		A10011 /* CategoryListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011; };
+		A10012 /* AddSiteViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
+		A10013 /* SiteSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10013; };
+		A10014 /* SiteIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10014; };
+		A10015 /* TopicListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10015; };
+		A10016 /* TopicRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10016; };
+		A10017 /* TopicFilterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10017; };
+		A10018 /* CategoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10018; };
+		A10019 /* CategoryBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10019; };
+		A10020 /* AddSiteSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
+		A10021 /* DiscoverSitesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
+		A10022 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
+		A10023 /* RelativeTimeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023; };
+		A10024 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024; };
+		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025; };
+		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026; };
+		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027; };
+		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028; };
+		A10029 /* TopicDetailResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029; };
+		A10030 /* DiscourseHTMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
+		A10031 /* PostContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
+		A10032 /* MediaBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
+		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001; };
+		A20002 /* HTMLParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002; };
+		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001; };
+		A30002 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = R10002; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		P10001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F10002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F10001;
+			remoteInfo = SwiftDiscourseHub;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B10001 /* SwiftDiscourseHubApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDiscourseHubApp.swift; sourceTree = "<group>"; };
+		B10002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B10003 /* DiscourseSite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseSite.swift; sourceTree = "<group>"; };
+		B10004 /* TopicListResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicListResponse.swift; sourceTree = "<group>"; };
+		B10005 /* CategoryListResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryListResponse.swift; sourceTree = "<group>"; };
+		B10006 /* SiteBasicInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteBasicInfo.swift; sourceTree = "<group>"; };
+		B10007 /* DiscourseAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseAPIClient.swift; sourceTree = "<group>"; };
+		B10008 /* SiteDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteDiscoveryService.swift; sourceTree = "<group>"; };
+		B10009 /* SiteListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteListViewModel.swift; sourceTree = "<group>"; };
+		B10010 /* TopicListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicListViewModel.swift; sourceTree = "<group>"; };
+		B10011 /* CategoryListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryListViewModel.swift; sourceTree = "<group>"; };
+		B10012 /* AddSiteViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSiteViewModel.swift; sourceTree = "<group>"; };
+		B10013 /* SiteSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteSidebarView.swift; sourceTree = "<group>"; };
+		B10014 /* SiteIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteIconView.swift; sourceTree = "<group>"; };
+		B10015 /* TopicListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicListView.swift; sourceTree = "<group>"; };
+		B10016 /* TopicRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicRowView.swift; sourceTree = "<group>"; };
+		B10017 /* TopicFilterBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicFilterBar.swift; sourceTree = "<group>"; };
+		B10018 /* CategoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryListView.swift; sourceTree = "<group>"; };
+		B10019 /* CategoryBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBadgeView.swift; sourceTree = "<group>"; };
+		B10020 /* AddSiteSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSiteSheet.swift; sourceTree = "<group>"; };
+		B10021 /* DiscoverSitesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSitesView.swift; sourceTree = "<group>"; };
+		B10022 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
+		B10023 /* RelativeTimeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelativeTimeText.swift; sourceTree = "<group>"; };
+		B10024 /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
+		B10025 /* URLHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHelpers.swift; sourceTree = "<group>"; };
+		B10026 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
+		B10029 /* TopicDetailResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailResponse.swift; sourceTree = "<group>"; };
+		B10030 /* DiscourseHTMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseHTMLParser.swift; sourceTree = "<group>"; };
+		B10031 /* PostContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentView.swift; sourceTree = "<group>"; };
+		B10032 /* MediaBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaBlockView.swift; sourceTree = "<group>"; };
+		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
+		B20002 /* HTMLParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLParserTests.swift; sourceTree = "<group>"; };
+		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A30001 /* Textual in Frameworks */,
+				A30002 /* SwiftSoup in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D20001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E10001 = {
+			isa = PBXGroup;
+			children = (
+				E10002 /* SwiftDiscourseHub */,
+				E20001 /* SwiftDiscourseHubTests */,
+				E10003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E10002 /* SwiftDiscourseHub */ = {
+			isa = PBXGroup;
+			children = (
+				B10001 /* SwiftDiscourseHubApp.swift */,
+				B10002 /* ContentView.swift */,
+				B10027 /* Assets.xcassets */,
+				E10004 /* Models */,
+				E10007 /* Services */,
+				E10008 /* ViewModels */,
+				E10009 /* Views */,
+				E10014 /* Utilities */,
+			);
+			path = SwiftDiscourseHub;
+			sourceTree = "<group>";
+		};
+		E10003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C10001 /* SwiftDiscourseHub.app */,
+				C20001 /* SwiftDiscourseHubTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E10004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B10003 /* DiscourseSite.swift */,
+				E10005 /* APIModels */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E10005 /* APIModels */ = {
+			isa = PBXGroup;
+			children = (
+				B10004 /* TopicListResponse.swift */,
+				B10005 /* CategoryListResponse.swift */,
+				B10006 /* SiteBasicInfo.swift */,
+				B10029 /* TopicDetailResponse.swift */,
+			);
+			path = APIModels;
+			sourceTree = "<group>";
+		};
+		E10007 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B10007 /* DiscourseAPIClient.swift */,
+				B10008 /* SiteDiscoveryService.swift */,
+				B10030 /* DiscourseHTMLParser.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E10008 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B10009 /* SiteListViewModel.swift */,
+				B10010 /* TopicListViewModel.swift */,
+				B10011 /* CategoryListViewModel.swift */,
+				B10012 /* AddSiteViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		E10009 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E10010 /* Sidebar */,
+				E10011 /* Topics */,
+				E10012 /* Categories */,
+				E10013 /* AddSite */,
+				E10015 /* Common */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E10010 /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				B10013 /* SiteSidebarView.swift */,
+				B10014 /* SiteIconView.swift */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		E10011 /* Topics */ = {
+			isa = PBXGroup;
+			children = (
+				B10015 /* TopicListView.swift */,
+				B10016 /* TopicRowView.swift */,
+				B10017 /* TopicFilterBar.swift */,
+				B10028 /* TopicDetailView.swift */,
+			);
+			path = Topics;
+			sourceTree = "<group>";
+		};
+		E10012 /* Categories */ = {
+			isa = PBXGroup;
+			children = (
+				B10018 /* CategoryListView.swift */,
+				B10019 /* CategoryBadgeView.swift */,
+			);
+			path = Categories;
+			sourceTree = "<group>";
+		};
+		E10013 /* AddSite */ = {
+			isa = PBXGroup;
+			children = (
+				B10020 /* AddSiteSheet.swift */,
+				B10021 /* DiscoverSitesView.swift */,
+			);
+			path = AddSite;
+			sourceTree = "<group>";
+		};
+		E10014 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				B10025 /* URLHelpers.swift */,
+				B10026 /* Color+Hex.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		E10015 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				B10022 /* CachedAsyncImage.swift */,
+				B10023 /* RelativeTimeText.swift */,
+				B10024 /* ErrorStateView.swift */,
+				B10031 /* PostContentView.swift */,
+				B10032 /* MediaBlockView.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		E20001 /* SwiftDiscourseHubTests */ = {
+			isa = PBXGroup;
+			children = (
+				B20001 /* DiscoverTests.swift */,
+				B20002 /* HTMLParserTests.swift */,
+			);
+			path = SwiftDiscourseHubTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F10001 /* SwiftDiscourseHub */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = G10002 /* Build configuration list for PBXNativeTarget "SwiftDiscourseHub" */;
+			buildPhases = (
+				D10002 /* Sources */,
+				D10001 /* Frameworks */,
+				D10003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SwiftDiscourseHub;
+			packageProductDependencies = (
+				R10001 /* Textual */,
+				R10002 /* SwiftSoup */,
+			);
+			productName = SwiftDiscourseHub;
+			productReference = C10001 /* SwiftDiscourseHub.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F20001 /* SwiftDiscourseHubTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = G20001 /* Build configuration list for PBXNativeTarget "SwiftDiscourseHubTests" */;
+			buildPhases = (
+				D20002 /* Sources */,
+				D20001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				Q10001 /* PBXTargetDependency */,
+			);
+			name = SwiftDiscourseHubTests;
+			productName = SwiftDiscourseHubTests;
+			productReference = C20001 /* SwiftDiscourseHubTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F10002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = G10001 /* Build configuration list for PBXProject "SwiftDiscourseHub" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E10001;
+			packageReferences = (
+				S10001 /* XCRemoteSwiftPackageReference "textual" */,
+				S10002 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
+			productRefGroup = E10003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F10001 /* SwiftDiscourseHub */,
+				F20001 /* SwiftDiscourseHubTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D10003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10027 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D10002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001 /* SwiftDiscourseHubApp.swift in Sources */,
+				A10002 /* ContentView.swift in Sources */,
+				A10003 /* DiscourseSite.swift in Sources */,
+				A10004 /* TopicListResponse.swift in Sources */,
+				A10005 /* CategoryListResponse.swift in Sources */,
+				A10006 /* SiteBasicInfo.swift in Sources */,
+				A10007 /* DiscourseAPIClient.swift in Sources */,
+				A10008 /* SiteDiscoveryService.swift in Sources */,
+				A10009 /* SiteListViewModel.swift in Sources */,
+				A10010 /* TopicListViewModel.swift in Sources */,
+				A10011 /* CategoryListViewModel.swift in Sources */,
+				A10012 /* AddSiteViewModel.swift in Sources */,
+				A10013 /* SiteSidebarView.swift in Sources */,
+				A10014 /* SiteIconView.swift in Sources */,
+				A10015 /* TopicListView.swift in Sources */,
+				A10016 /* TopicRowView.swift in Sources */,
+				A10017 /* TopicFilterBar.swift in Sources */,
+				A10018 /* CategoryListView.swift in Sources */,
+				A10019 /* CategoryBadgeView.swift in Sources */,
+				A10020 /* AddSiteSheet.swift in Sources */,
+				A10021 /* DiscoverSitesView.swift in Sources */,
+				A10022 /* CachedAsyncImage.swift in Sources */,
+				A10023 /* RelativeTimeText.swift in Sources */,
+				A10024 /* ErrorStateView.swift in Sources */,
+				A10025 /* URLHelpers.swift in Sources */,
+				A10026 /* Color+Hex.swift in Sources */,
+				A10028 /* TopicDetailView.swift in Sources */,
+				A10029 /* TopicDetailResponse.swift in Sources */,
+				A10030 /* DiscourseHTMLParser.swift in Sources */,
+				A10031 /* PostContentView.swift in Sources */,
+				A10032 /* MediaBlockView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D20002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20001 /* DiscoverTests.swift in Sources */,
+				A20002 /* HTMLParserTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		Q10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F10001 /* SwiftDiscourseHub */;
+			targetProxy = P10001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		H10001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+			};
+			name = Debug;
+		};
+		H10002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+			};
+			name = Release;
+		};
+		H10003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SwiftDiscourseHub/SwiftDiscourseHub.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHub;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		H10004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SwiftDiscourseHub/SwiftDiscourseHub.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHub;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		H20001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHubTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftDiscourseHub.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SwiftDiscourseHub";
+			};
+			name = Debug;
+		};
+		H20002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHubTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftDiscourseHub.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SwiftDiscourseHub";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		G10001 /* Build configuration list for PBXProject "SwiftDiscourseHub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H10001 /* Debug */,
+				H10002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		G10002 /* Build configuration list for PBXNativeTarget "SwiftDiscourseHub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H10003 /* Debug */,
+				H10004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		G20001 /* Build configuration list for PBXNativeTarget "SwiftDiscourseHubTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H20001 /* Debug */,
+				H20002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		S10001 /* XCRemoteSwiftPackageReference "textual" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/textual.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
+		S10002 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		R10001 /* Textual */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10001 /* XCRemoteSwiftPackageReference "textual" */;
+			productName = Textual;
+		};
+		R10002 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10002 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+	};
+	rootObject = F10002 /* Project object */;
+}
