@@ -118,51 +118,6 @@ actor DiscourseAPIClient {
         return try await fetchText(from: url)
     }
 
-    func lookupUploadURLs(baseURL: String, shortURLs: [String]) async throws -> [String: String] {
-        guard !shortURLs.isEmpty else { return [:] }
-        let url = try buildURL(base: baseURL, path: "/uploads/lookup-urls.json")
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
-
-        let body = shortURLs.map { "short_urls[]=\($0)" }.joined(separator: "&")
-        request.httpBody = body.data(using: .utf8)
-
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw DiscourseAPIError.networkError(error)
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            return [:]
-        }
-
-        struct UploadLookupResult: Decodable {
-            let shortUrl: String
-            let url: String
-
-            enum CodingKeys: String, CodingKey {
-                case shortUrl = "short_url"
-                case url
-            }
-        }
-
-        let results = try JSONDecoder().decode([UploadLookupResult].self, from: data)
-        var mapping: [String: String] = [:]
-        for result in results {
-            // Map "upload://hash.ext" -> full URL
-            let shortURL = result.shortUrl.replacingOccurrences(of: "short-url://", with: "upload://")
-            mapping[shortURL] = result.url
-        }
-        return mapping
-    }
-
     // MARK: - Private
 
     private func fetchText(from url: URL) async throws -> String {

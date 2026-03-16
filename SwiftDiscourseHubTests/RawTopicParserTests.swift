@@ -76,8 +76,6 @@ import Foundation
     }
 
     @Test func parseSeparatorInContent() {
-        // If a post contains 25 dashes, the next chunk won't have a valid header
-        // so it should be re-joined with the previous post
         let raw = """
         First post with a horizontal rule:
 
@@ -141,29 +139,7 @@ import Foundation
         #expect(result.contains("**@bob-smith**"))
     }
 
-    @Test func extractUploadShortURLs() {
-        let markdown = """
-        ![photo|640x480](upload://qUm0DGR49PAZshIi7HxMd3cAlzn.jpeg)
-        Some text here.
-        ![video|video](upload://abc123DEF456.mp4)
-        """
-        let urls = DiscourseMarkdownPreprocessor.extractUploadShortURLs(from: markdown)
-        #expect(urls.count == 2)
-        #expect(urls.contains("upload://qUm0DGR49PAZshIi7HxMd3cAlzn.jpeg"))
-        #expect(urls.contains("upload://abc123DEF456.mp4"))
-    }
-
-    @Test func replaceUploadURLs() {
-        let markdown = "![photo|640x480](upload://abc123.jpeg)"
-        let mapping = ["upload://abc123.jpeg": "https://cdn.example.com/uploads/original/1X/abc123.jpeg"]
-        let result = DiscourseMarkdownPreprocessor.replaceUploadURLs(in: markdown, mapping: mapping)
-        #expect(result.contains("https://cdn.example.com/uploads/original/1X/abc123.jpeg"))
-        #expect(!result.contains("upload://"))
-    }
-
     @Test func mentionsInsideCodeNotConverted() {
-        // Mentions inside inline code should ideally not be converted,
-        // but our simple regex will convert them. This test documents the behavior.
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
         let input = "Use `@username` for mentions"
         let result = preprocessor.process(input)
@@ -176,5 +152,85 @@ import Foundation
         let input = "![photo](https://cdn.example.com/image.png)"
         let result = preprocessor.process(input)
         #expect(result.contains("https://cdn.example.com/image.png"))
+    }
+
+    // MARK: - Upload URL resolution tests
+
+    @Test func uploadURLsResolvedToShortURLPath() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://community.openai.com")
+        let input = "![1000021541|690x460](upload://qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg)"
+        let result = preprocessor.process(input)
+        #expect(result.contains("https://community.openai.com/uploads/short-url/qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg"),
+                "upload:// should be replaced with /uploads/short-url/ path: \(result)")
+        #expect(!result.contains("upload://"), "No upload:// URLs should remain: \(result)")
+    }
+
+    @Test func discourseImageDimensionsSyntaxCleaned() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://community.openai.com")
+        let input = "![1000021541|690x460](https://example.com/image.jpeg)"
+        let result = preprocessor.process(input)
+        #expect(result.contains("![1000021541](https://example.com/image.jpeg)"),
+                "Pipe and dimensions should be removed from alt text: \(result)")
+        #expect(!result.contains("|690x460"), "Dimension suffix should be gone: \(result)")
+    }
+
+    @Test func openAIImageGenFirstPostUploads() {
+        // Real markdown from https://community.openai.com/raw/1230134 first post
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://community.openai.com")
+        let input = """
+        Welcome to our Community Mega Thread, showcasing your ImageGen, GPT-4o and DALL-E 3 creations!
+
+        ![1000021541|690x460](upload://qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg)
+        ![1000021542|500x500](upload://vPHDVTwvE2kzkggJG15pm7VrupO.webp)
+
+        For more DALL-E 3 content and support, follow the gallery tag.
+        """
+        let result = preprocessor.process(input)
+
+        // Upload URLs should be resolved
+        #expect(result.contains("https://community.openai.com/uploads/short-url/qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg"),
+                "First image upload should be resolved: \(result)")
+        #expect(result.contains("https://community.openai.com/uploads/short-url/vPHDVTwvE2kzkggJG15pm7VrupO.webp"),
+                "Second image upload should be resolved: \(result)")
+
+        // Dimension syntax should be cleaned
+        #expect(!result.contains("|690x460"), "First image dimensions should be cleaned")
+        #expect(!result.contains("|500x500"), "Second image dimensions should be cleaned")
+
+        // Result should be valid standard markdown images
+        #expect(result.contains("![1000021541](https://community.openai.com/uploads/short-url/qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg)"),
+                "Should produce clean markdown image syntax: \(result)")
+        #expect(result.contains("![1000021542](https://community.openai.com/uploads/short-url/vPHDVTwvE2kzkggJG15pm7VrupO.webp)"),
+                "Should produce clean markdown image syntax: \(result)")
+
+        // No upload:// references should remain
+        #expect(!result.contains("upload://"), "No upload:// URLs should remain")
+
+        // Regular text should be preserved
+        #expect(result.contains("Welcome to our Community Mega Thread"))
+        #expect(result.contains("follow the gallery tag"))
+    }
+
+    @Test func multipleUploadTypesResolved() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        ![photo|640x480](upload://abc123.jpeg)
+        ![clip|video](upload://def456.mp4)
+        [document|attachment](upload://ghi789.pdf) (2.5 MB)
+        """
+        let result = preprocessor.process(input)
+
+        #expect(result.contains("https://example.com/uploads/short-url/abc123.jpeg"))
+        #expect(result.contains("https://example.com/uploads/short-url/def456.mp4"))
+        #expect(result.contains("https://example.com/uploads/short-url/ghi789.pdf"))
+        #expect(!result.contains("upload://"))
+    }
+
+    @Test func videoSuffixCleaned() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "![clip|video](https://example.com/video.mp4)"
+        let result = preprocessor.process(input)
+        #expect(result.contains("![clip](https://example.com/video.mp4)"),
+                "Video pipe suffix should be cleaned: \(result)")
     }
 }

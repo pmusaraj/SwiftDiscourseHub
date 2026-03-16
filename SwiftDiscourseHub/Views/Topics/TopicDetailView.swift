@@ -79,31 +79,14 @@ struct TopicDetailView: View {
             let detail = try await jsonResponse
             topicDetail = detail
 
-            // Parse raw markdown and resolve uploads
+            // Parse raw markdown and preprocess
             let rawText = try await rawResponse
             let rawPosts = RawTopicParser.parse(rawText)
-
             let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
 
-            // Collect all upload:// URLs across all posts
-            var allUploadURLs: [String] = []
-            for rawPost in rawPosts {
-                allUploadURLs.append(contentsOf: DiscourseMarkdownPreprocessor.extractUploadShortURLs(from: rawPost.markdown))
-            }
-            let uniqueUploadURLs = Array(Set(allUploadURLs))
-
-            // Batch-resolve uploads
-            let uploadMapping = try? await apiClient.lookupUploadURLs(baseURL: baseURL, shortURLs: uniqueUploadURLs)
-
-            // Build post number -> processed markdown mapping
             var markdownMap: [Int: String] = [:]
             for rawPost in rawPosts {
-                var md = rawPost.markdown
-                if let mapping = uploadMapping, !mapping.isEmpty {
-                    md = DiscourseMarkdownPreprocessor.replaceUploadURLs(in: md, mapping: mapping)
-                }
-                md = preprocessor.process(md)
-                markdownMap[rawPost.postNumber] = md
+                markdownMap[rawPost.postNumber] = preprocessor.process(rawPost.markdown)
             }
             postMarkdown = markdownMap
         } catch {

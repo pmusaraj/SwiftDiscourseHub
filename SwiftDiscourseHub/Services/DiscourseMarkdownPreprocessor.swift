@@ -5,6 +5,8 @@ struct DiscourseMarkdownPreprocessor {
 
     func process(_ markdown: String) -> String {
         var result = markdown
+        result = resolveUploadURLs(result)
+        result = cleanDiscourseImageSyntax(result)
         result = resolveRelativeImageURLs(result)
         result = convertQuotes(result)
         result = convertDetails(result)
@@ -12,27 +14,51 @@ struct DiscourseMarkdownPreprocessor {
         return result
     }
 
-    // Collect all upload:// short URLs from the markdown
-    static func extractUploadShortURLs(from markdown: String) -> [String] {
-        let pattern = #"upload://[A-Za-z0-9]+\.\w+"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(markdown.startIndex..., in: markdown)
-        return regex.matches(in: markdown, range: range).compactMap { match in
-            guard let r = Range(match.range, in: markdown) else { return nil }
-            return String(markdown[r])
-        }
-    }
+    // MARK: - Private
 
-    // Replace upload:// URLs with resolved real URLs
-    static func replaceUploadURLs(in markdown: String, mapping: [String: String]) -> String {
+    private func resolveUploadURLs(_ markdown: String) -> String {
+        // Replace upload://hash.ext with {baseURL}/uploads/short-url/hash.ext
+        // The short-url path 302-redirects to the real CDN URL (no auth needed)
+        let base = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
+        let pattern = #"upload://([A-Za-z0-9]+\.\w+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
+
+        let nsString = markdown as NSString
+        let range = NSRange(location: 0, length: nsString.length)
         var result = markdown
-        for (shortURL, realURL) in mapping {
-            result = result.replacingOccurrences(of: shortURL, with: realURL)
+
+        let matches = regex.matches(in: markdown, range: range).reversed()
+        for match in matches {
+            guard let hashRange = Range(match.range(at: 1), in: result),
+                  let fullRange = Range(match.range, in: result) else { continue }
+            let hashAndExt = String(result[hashRange])
+            let resolved = "\(base)/uploads/short-url/\(hashAndExt)"
+            result.replaceSubrange(fullRange, with: resolved)
         }
+
         return result
     }
 
-    // MARK: - Private
+    private func cleanDiscourseImageSyntax(_ markdown: String) -> String {
+        // Discourse uses ![name|WxH](url) and ![name|video](url) — the pipe breaks
+        // standard Markdown image parsing. Clean to ![name](url).
+        let pattern = #"!\[([^\]\|]*)\|[^\]]*\]"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
+
+        let nsString = markdown as NSString
+        let range = NSRange(location: 0, length: nsString.length)
+        var result = markdown
+
+        let matches = regex.matches(in: markdown, range: range).reversed()
+        for match in matches {
+            guard let nameRange = Range(match.range(at: 1), in: result),
+                  let fullRange = Range(match.range, in: result) else { continue }
+            let name = String(result[nameRange])
+            result.replaceSubrange(fullRange, with: "![\(name)]")
+        }
+
+        return result
+    }
 
     private func resolveRelativeImageURLs(_ markdown: String) -> String {
         // Match markdown images with relative URLs: ![alt](/uploads/...)
