@@ -5,14 +5,28 @@ struct TopicDetailView: View {
     let baseURL: String
 
     @State private var topicDetail: TopicDetailResponse?
+    @State private var loadedPosts: [Post] = []
     @State private var postMarkdown: [Int: String] = [:]
     @State private var isLoading = true
+    @State private var isLoadingMore = false
     @State private var error: String?
 
+    // Pagination state
+    @State private var stream: [Int] = []           // all post IDs in topic
+    @State private var loadedPostIds: Set<Int> = []  // post IDs we have metadata for
+    @State private var rawPage = 1                   // next raw page to fetch
+    @State private var rawExhausted = false          // no more raw pages
+
     private let apiClient = DiscourseAPIClient()
+    private let rawPageSize = 100
+    private let jsonChunkSize = 20
 
     private var topicURL: URL? {
         URLHelpers.resolveURL("/t/\(topicId)", baseURL: baseURL)
+    }
+
+    private var hasMore: Bool {
+        loadedPostIds.count < stream.count
     }
 
     var body: some View {
@@ -24,16 +38,27 @@ struct TopicDetailView: View {
                 ErrorStateView(title: "Failed to Load", message: error) {
                     Task { await loadTopic() }
                 }
-            } else if let detail = topicDetail, let posts = detail.postStream?.posts {
+            } else if !loadedPosts.isEmpty {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(posts) { post in
+                        ForEach(loadedPosts) { post in
                             PostView(
                                 post: post,
                                 baseURL: baseURL,
                                 markdown: postMarkdown[post.postNumber ?? 0]
                             )
                             Divider()
+                                .onAppear {
+                                    if post.id == loadedPosts.last?.id {
+                                        Task { await loadMorePosts() }
+                                    }
+                                }
+                        }
+
+                        if isLoadingMore {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding()
                         }
                     }
                 }
@@ -69,30 +94,112 @@ struct TopicDetailView: View {
         }
     }
 
+    // MARK: - Initial load
+
     private func loadTopic() async {
         isLoading = true
         error = nil
+        loadedPosts = []
+        postMarkdown = [:]
+        loadedPostIds = []
+        rawPage = 1
+        rawExhausted = false
+
         do {
             async let jsonResponse = apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
-            async let rawResponse = apiClient.fetchTopicRaw(baseURL: baseURL, topicId: topicId)
+            async let rawResponse = apiClient.fetchTopicRaw(baseURL: baseURL, topicId: topicId, page: 1)
 
             let detail = try await jsonResponse
             topicDetail = detail
+            stream = detail.postStream?.stream ?? []
 
-            // Parse raw markdown and preprocess
-            let rawText = try await rawResponse
-            let rawPosts = RawTopicParser.parse(rawText)
-            let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
-
-            var markdownMap: [Int: String] = [:]
-            for rawPost in rawPosts {
-                markdownMap[rawPost.postNumber] = preprocessor.process(rawPost.markdown)
+            // Initial JSON posts (first ~20)
+            let initialPosts = detail.postStream?.posts ?? []
+            loadedPosts = initialPosts
+            for post in initialPosts {
+                loadedPostIds.insert(post.id)
             }
-            postMarkdown = markdownMap
+
+            // Initial raw markdown (first ~100 posts)
+            let rawText = try await rawResponse
+            processRawText(rawText)
+            rawPage = 2
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+
+    // MARK: - Load more
+
+    private func loadMorePosts() async {
+        guard hasMore, !isLoadingMore else { return }
+        isLoadingMore = true
+
+        do {
+            // Find next batch of post IDs from stream that we haven't loaded
+            let nextIds = stream.filter { !loadedPostIds.contains($0) }
+            let batch = Array(nextIds.prefix(jsonChunkSize))
+
+            guard !batch.isEmpty else {
+                isLoadingMore = false
+                return
+            }
+
+            // Fetch JSON metadata for next batch
+            async let jsonResponse = apiClient.fetchTopicPosts(
+                baseURL: baseURL, topicId: topicId, postIds: batch
+            )
+
+            // Also fetch next raw page if needed
+            let needsMoreRaw: Bool = {
+                guard !rawExhausted else { return false }
+                // Check if any of the batch post IDs lack markdown
+                // We fetch raw proactively when we're about to run out
+                let highestLoadedPostNumber = loadedPosts.last?.postNumber ?? 0
+                let rawCoverage = rawPage * rawPageSize
+                return highestLoadedPostNumber + jsonChunkSize > rawCoverage - 20
+            }()
+
+            if needsMoreRaw {
+                async let rawResponse = apiClient.fetchTopicRaw(
+                    baseURL: baseURL, topicId: topicId, page: rawPage
+                )
+                let posts = try await jsonResponse
+                appendPosts(posts.postStream.posts)
+
+                let rawText = try await rawResponse
+                if rawText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    rawExhausted = true
+                } else {
+                    processRawText(rawText)
+                    rawPage += 1
+                }
+            } else {
+                let posts = try await jsonResponse
+                appendPosts(posts.postStream.posts)
+            }
+        } catch {
+            // Don't set error for pagination failures — just stop loading
+        }
+        isLoadingMore = false
+    }
+
+    // MARK: - Helpers
+
+    private func appendPosts(_ newPosts: [Post]) {
+        for post in newPosts where !loadedPostIds.contains(post.id) {
+            loadedPostIds.insert(post.id)
+            loadedPosts.append(post)
+        }
+    }
+
+    private func processRawText(_ rawText: String) {
+        let rawPosts = RawTopicParser.parse(rawText)
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
+        for rawPost in rawPosts {
+            postMarkdown[rawPost.postNumber] = preprocessor.process(rawPost.markdown)
+        }
     }
 }
 

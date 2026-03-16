@@ -113,8 +113,18 @@ actor DiscourseAPIClient {
         return try await fetch(TopicDetailResponse.self, from: url)
     }
 
-    func fetchTopicRaw(baseURL: String, topicId: Int) async throws -> String {
-        let url = try buildURL(base: baseURL, path: "/raw/\(topicId)")
+    func fetchTopicPosts(baseURL: String, topicId: Int, postIds: [Int]) async throws -> TopicPostsResponse {
+        guard !postIds.isEmpty else {
+            return TopicPostsResponse(postStream: TopicPostsResponse.PostStreamSlice(posts: []))
+        }
+        let idsParam = postIds.map { "post_ids[]=\($0)" }.joined(separator: "&")
+        let url = try buildURL(base: baseURL, path: "/t/\(topicId)/posts.json?\(idsParam)")
+        return try await fetch(TopicPostsResponse.self, from: url)
+    }
+
+    func fetchTopicRaw(baseURL: String, topicId: Int, page: Int = 1) async throws -> String {
+        let path = page > 1 ? "/raw/\(topicId)?page=\(page)" : "/raw/\(topicId)"
+        let url = try buildURL(base: baseURL, path: path)
         return try await fetchText(from: url)
     }
 

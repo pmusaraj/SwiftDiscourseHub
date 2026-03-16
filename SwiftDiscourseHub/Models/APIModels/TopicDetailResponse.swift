@@ -47,3 +47,11 @@ struct ActionSummary: Codable {
     let id: Int
     let count: Int?
 }
+
+struct TopicPostsResponse: Codable {
+    let postStream: PostStreamSlice
+
+    struct PostStreamSlice: Codable {
+        let posts: [Post]
+    }
+}
