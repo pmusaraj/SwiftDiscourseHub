@@ -10,8 +10,12 @@ final class DiscourseSite {
     var siteDescription: String?
     var sortOrder: Int
     var addedAt: Date
+    var loginRequired: Bool = false
+    var hasApiKey: Bool = false
 
-    init(baseURL: String, title: String, iconURL: String? = nil, logoURL: String? = nil, siteDescription: String? = nil, sortOrder: Int = 0) {
+    var isAuthenticated: Bool { hasApiKey }
+
+    init(baseURL: String, title: String, iconURL: String? = nil, logoURL: String? = nil, siteDescription: String? = nil, sortOrder: Int = 0, loginRequired: Bool = false) {
         // Normalize URL: ensure https, strip trailing slash
         var normalized = baseURL.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         if !normalized.hasPrefix("http://") && !normalized.hasPrefix("https://") {
@@ -26,6 +30,7 @@ final class DiscourseSite {
         self.logoURL = logoURL
         self.siteDescription = siteDescription
         self.sortOrder = sortOrder
+        self.loginRequired = loginRequired
         self.addedAt = Date()
     }
 }

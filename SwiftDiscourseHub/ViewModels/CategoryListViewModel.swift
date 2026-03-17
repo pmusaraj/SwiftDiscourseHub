@@ -6,7 +6,7 @@ final class CategoryListViewModel {
     var isLoading = false
     var error: DiscourseAPIError?
 
-    private let apiClient = DiscourseAPIClient()
+    var apiClient = DiscourseAPIClient()
 
     @MainActor
     func loadCategories(for site: DiscourseSite) async {

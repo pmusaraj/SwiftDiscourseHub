@@ -43,9 +43,18 @@
 		A10037 /* DiscourseTextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037 /* DiscourseTextStyle.swift */; };
 		A10038 /* Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10038 /* Previews.swift */; };
 		A10039 /* DiscoverSiteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10039 /* DiscoverSiteDetailView.swift */; };
+		A10040 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040 /* KeychainService.swift */; };
+		A10041 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041 /* AuthService.swift */; };
+		A10042 /* CreatePostResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10042 /* CreatePostResponse.swift */; };
+		A10043 /* LoginRequiredView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10043 /* LoginRequiredView.swift */; };
+		A10044 /* AuthFooterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10044 /* AuthFooterBar.swift */; };
+		A10045 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045 /* ComposerView.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
+		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
+		A20004 /* ComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* ComposerTests.swift */; };
 		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
+		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,8 +104,16 @@
 		B10037 /* DiscourseTextStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseTextStyle.swift; sourceTree = "<group>"; };
 		B10038 /* Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Previews.swift; sourceTree = "<group>"; };
 		B10039 /* DiscoverSiteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSiteDetailView.swift; sourceTree = "<group>"; };
+		B10040 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		B10041 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		B10042 /* CreatePostResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostResponse.swift; sourceTree = "<group>"; };
+		B10043 /* LoginRequiredView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginRequiredView.swift; sourceTree = "<group>"; };
+		B10044 /* AuthFooterBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFooterBar.swift; sourceTree = "<group>"; };
+		B10045 /* ComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerView.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
+		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
+		B20004 /* ComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -107,6 +124,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A30001 /* Textual in Frameworks */,
+				A30002 /* _CryptoExtras in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +188,7 @@
 				B10005 /* CategoryListResponse.swift */,
 				B10006 /* SiteBasicInfo.swift */,
 				B10029 /* TopicDetailResponse.swift */,
+				B10042 /* CreatePostResponse.swift */,
 			);
 			path = APIModels;
 			sourceTree = "<group>";
@@ -181,6 +200,8 @@
 				B10008 /* SiteDiscoveryService.swift */,
 				B10033 /* RawTopicParser.swift */,
 				B10034 /* DiscourseMarkdownPreprocessor.swift */,
+				B10040 /* KeychainService.swift */,
+				B10041 /* AuthService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -204,6 +225,8 @@
 				E10012 /* Categories */,
 				E10013 /* AddSite */,
 				E10015 /* Common */,
+				E10016 /* Auth */,
+				E10017 /* Composer */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -269,11 +292,30 @@
 			path = Common;
 			sourceTree = "<group>";
 		};
+		E10016 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				B10043 /* LoginRequiredView.swift */,
+				B10044 /* AuthFooterBar.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		E10017 /* Composer */ = {
+			isa = PBXGroup;
+			children = (
+				B10045 /* ComposerView.swift */,
+			);
+			path = Composer;
+			sourceTree = "<group>";
+		};
 		E20001 /* SwiftDiscourseHubTests */ = {
 			isa = PBXGroup;
 			children = (
 				B20001 /* DiscoverTests.swift */,
 				B20002 /* RawTopicParserTests.swift */,
+				B20003 /* AuthTests.swift */,
+				B20004 /* ComposerTests.swift */,
 			);
 			path = SwiftDiscourseHubTests;
 			sourceTree = "<group>";
@@ -296,6 +338,7 @@
 			name = SwiftDiscourseHub;
 			packageProductDependencies = (
 				R10001 /* Textual */,
+				R10002 /* _CryptoExtras */,
 			);
 			productName = SwiftDiscourseHub;
 			productReference = C10001 /* SwiftDiscourseHub.app */;
@@ -339,6 +382,7 @@
 			mainGroup = E10001;
 			packageReferences = (
 				S10001 /* XCRemoteSwiftPackageReference "textual" */,
+				S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */,
 			);
 			productRefGroup = E10003 /* Products */;
 			projectDirPath = "";
@@ -401,6 +445,12 @@
 				A10035 /* Theme.swift in Sources */,
 				A10037 /* DiscourseTextStyle.swift in Sources */,
 				A10038 /* Previews.swift in Sources */,
+				A10040 /* KeychainService.swift in Sources */,
+				A10041 /* AuthService.swift in Sources */,
+				A10042 /* CreatePostResponse.swift in Sources */,
+				A10043 /* LoginRequiredView.swift in Sources */,
+				A10044 /* AuthFooterBar.swift in Sources */,
+				A10045 /* ComposerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -410,6 +460,8 @@
 			files = (
 				A20001 /* DiscoverTests.swift in Sources */,
 				A20002 /* RawTopicParserTests.swift in Sources */,
+				A20003 /* AuthTests.swift in Sources */,
+				A20004 /* ComposerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,6 +586,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SwiftDiscourseHub/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -571,6 +624,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SwiftDiscourseHub/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -680,6 +734,14 @@
 				minimumVersion = 0.1.0;
 			};
 		};
+		S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-crypto.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -687,6 +749,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = S10001 /* XCRemoteSwiftPackageReference "textual" */;
 			productName = Textual;
+		};
+		R10002 /* _CryptoExtras */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */;
+			productName = _CryptoExtras;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

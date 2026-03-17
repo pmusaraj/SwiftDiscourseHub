@@ -7,6 +7,7 @@ struct SiteSidebarView: View {
     @Binding var selectedTopicId: Int?
     @Binding var showingDiscover: Bool
     @Environment(\.modelContext) private var modelContext
+    @Environment(AuthCoordinator.self) private var authCoordinator
 
     var body: some View {
         VStack(spacing: Theme.Sidebar.iconSpacing) {
@@ -21,6 +22,15 @@ struct SiteSidebarView: View {
                         showingDiscover = false
                     }
                     .contextMenu {
+                        if site.isAuthenticated {
+                            Button("Log Out") {
+                                Task {
+                                    await authCoordinator.logout(for: site.baseURL)
+                                    site.hasApiKey = false
+                                    try? modelContext.save()
+                                }
+                            }
+                        }
                         Button("Remove Site", role: .destructive) {
                             if selectedSite?.baseURL == site.baseURL {
                                 selectedSite = nil

@@ -3,6 +3,7 @@ import SwiftUI
 struct AddSiteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.apiClient) private var apiClient
     @State private var viewModel = AddSiteViewModel()
     @State private var showDiscover = false
     @State private var selectedDiscoverSite: DiscoverSite?
@@ -88,6 +89,7 @@ struct AddSiteSheet: View {
             .sheet(isPresented: $showDiscover) {
                 DiscoverSitesView(selectedDiscoverSite: $selectedDiscoverSite)
             }
+            .onAppear { viewModel.apiClient = apiClient }
         }
     }
 }

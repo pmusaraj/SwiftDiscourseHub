@@ -252,7 +252,7 @@ enum PreviewData {
         admin: true,
         moderator: false,
         staff: true,
-        actionsSummary: [ActionSummary(id: 2, count: 12)],
+        actionsSummary: [ActionSummary(id: 2, count: 12, acted: false)],
         replyToPostNumber: nil
     )
 
@@ -273,7 +273,7 @@ enum PreviewData {
         admin: false,
         moderator: false,
         staff: false,
-        actionsSummary: [ActionSummary(id: 2, count: 3)],
+        actionsSummary: [ActionSummary(id: 2, count: 3, acted: false)],
         replyToPostNumber: 1
     )
 }

@@ -5,6 +5,7 @@ struct TopicListView: View {
     @Binding var selectedTopicId: Int?
     @Binding var selectedTopic: Topic?
     @Binding var topicCategories: [DiscourseCategory]
+    @Environment(\.apiClient) private var apiClient
     @State private var topicVM = TopicListViewModel()
     @State private var categoryVM = CategoryListViewModel()
     @State private var contentWidth: CGFloat = 0
@@ -91,6 +92,8 @@ struct TopicListView: View {
             }
         }
         .task(id: site.baseURL) {
+            topicVM.apiClient = apiClient
+            categoryVM.apiClient = apiClient
             await topicVM.loadTopics(for: site)
             await categoryVM.loadCategories(for: site)
             topicCategories = categoryVM.categories

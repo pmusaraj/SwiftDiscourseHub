@@ -15,7 +15,7 @@ struct DiscoverSiteDetailView: View {
     @State private var isAdding = false
     @State private var contentWidth: CGFloat = 0
 
-    private let apiClient = DiscourseAPIClient()
+    @Environment(\.apiClient) private var apiClient
 
     private var isSiteAdded: Bool {
         let normalized = site.featuredLink.lowercased()

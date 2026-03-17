@@ -5,7 +5,7 @@ import Textual
 
 struct DiscourseStyle: StructuredText.Style {
     let inlineStyle: InlineStyle = InlineStyle()
-        .code(.monospaced, .fontScale(0.88))
+        .code(.monospaced)
         .strong(.fontWeight(.semibold))
         .link(.foregroundColor(.accentColor))
 
@@ -43,7 +43,8 @@ struct DiscourseHeadingStyle: StructuredText.HeadingStyle {
 struct DiscourseParagraphStyle: StructuredText.ParagraphStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .textual.lineSpacing(.fontScaled(0.3))
+            .textual.fontScale(1.2)
+            .textual.lineSpacing(.fontScaled(0.5))
             .textual.blockSpacing(.fontScaled(top: 0.6))
     }
 }

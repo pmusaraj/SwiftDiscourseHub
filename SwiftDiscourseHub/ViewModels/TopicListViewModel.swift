@@ -17,7 +17,7 @@ final class TopicListViewModel {
     var selectedCategoryId: Int?
     var selectedCategorySlug: String?
 
-    private let apiClient = DiscourseAPIClient()
+    var apiClient = DiscourseAPIClient()
 
     @MainActor
     func loadTopics(for site: DiscourseSite) async {

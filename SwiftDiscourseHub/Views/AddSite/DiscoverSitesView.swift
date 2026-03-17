@@ -21,7 +21,7 @@ struct DiscoverSitesView: View {
     @State private var validationError: String?
 
     private let discoveryService = SiteDiscoveryService()
-    private let apiClient = DiscourseAPIClient()
+    @Environment(\.apiClient) private var apiClient
 
     private var horizontalPadding: CGFloat {
         Theme.Padding.postHorizontal(for: contentWidth)

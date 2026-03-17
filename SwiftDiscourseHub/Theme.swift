@@ -1,26 +1,28 @@
 import SwiftUI
 
+
+
 enum Theme {
 
     // MARK: - Fonts
-
+    
     enum Fonts {
         static let topicTitle: Font = .headline
-        static let topicExcerpt: Font = .subheadline
+        static let topicExcerpt: Font = .body
         static let postAuthorName: Font = .subheadline.bold()
-        static let postBody: Font = .body
-        static let metadata: Font = .caption
-        static let metadataSmall: Font = .caption2
+        static let postBody: Font = .title3
+        static let metadata: Font = .callout
+        static let metadataSmall: Font = .caption
         static let topicHeaderTitle: Font = .title2.bold()
         static let sidebarIcon: Font = .title3
         static let siteIconFallback: Font = .title2.bold()
         static let discoverSiteTitle: Font = .headline
         static let discoverSiteDescription: Font = .subheadline
-        static let discoverSiteStats: Font = .caption
+        static let discoverSiteStats: Font = .footnote
         static let discoverCategory: Font = .subheadline
         static let categoryListTitle: Font = .headline
         static let categoryListDescription: Font = .subheadline
-        static let categoryListStats: Font = .caption
+        static let categoryListStats: Font = .footnote
     }
 
     // MARK: - Spacing (HStack / VStack gaps)
@@ -48,9 +50,9 @@ enum Theme {
         static let categoryFilterBottom: CGFloat = 4
         static let categoryBadgeHorizontal: CGFloat = 6
         static let categoryBadgeVertical: CGFloat = 2
-        static let postVertical: CGFloat = 16
-        static let postHorizontalCompact: CGFloat = 16
-        static let postHorizontalRegular: CGFloat = 32
+        static let postVertical: CGFloat = 20
+        static let postHorizontalCompact: CGFloat = 20
+        static let postHorizontalRegular: CGFloat = 40
         static let regularWidthBreakpoint: CGFloat = 600
 
         static func postHorizontal(for width: CGFloat) -> CGFloat {

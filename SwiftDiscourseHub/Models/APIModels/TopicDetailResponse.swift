@@ -41,11 +41,20 @@ struct Post: Codable, Identifiable {
     var likeCount: Int {
         actionsSummary?.first(where: { $0.id == 2 })?.count ?? 0
     }
+
+    var hasLiked: Bool {
+        actionsSummary?.first(where: { $0.id == 2 })?.acted == true
+    }
+
+    var canLike: Bool {
+        yours != true
+    }
 }
 
 struct ActionSummary: Codable {
     let id: Int
     let count: Int?
+    let acted: Bool?
 }
 
 struct TopicPostsResponse: Codable {

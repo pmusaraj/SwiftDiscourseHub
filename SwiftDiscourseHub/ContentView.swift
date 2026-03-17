@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var showingDiscover = false
     @State private var selectedDiscoverSite: DiscoverSite?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(AuthCoordinator.self) private var authCoordinator
 
     private var hasSites: Bool { !sites.isEmpty }
 
@@ -40,6 +41,19 @@ struct ContentView: View {
         .onChange(of: showingDiscover) {
             if !showingDiscover {
                 selectedDiscoverSite = nil
+            }
+        }
+        .onChange(of: authCoordinator.isAuthenticating) {
+            // When auth finishes successfully, update the site's hasApiKey flag
+            if !authCoordinator.isAuthenticating,
+               authCoordinator.authError == nil,
+               let baseURL = authCoordinator.pendingBaseURL,
+               let site = sites.first(where: { $0.baseURL == baseURL }) {
+                Task {
+                    if await authCoordinator.apiKey(for: baseURL) != nil {
+                        site.hasApiKey = true
+                    }
+                }
             }
         }
     }
@@ -137,9 +151,13 @@ struct ContentView: View {
                                     showingDiscover = false
                                 }, selectedDiscoverSite: $selectedDiscoverSite)
                             } else if let site = selectedSite {
-                                TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
-                                    .id(site.baseURL)
-                                    .transition(.opacity)
+                                if site.loginRequired && !site.isAuthenticated {
+                                    LoginRequiredView(site: site)
+                                } else {
+                                    TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                                        .id(site.baseURL)
+                                        .transition(.opacity)
+                                }
                             } else {
                                 ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
                             }
@@ -166,7 +184,7 @@ struct ContentView: View {
                     if hasDetail {
                         if let topicId = selectedTopicId, let site = selectedSite {
                             NavigationStack {
-                                TopicDetailView(topicId: topicId, baseURL: site.baseURL, siteTitle: site.title, topic: selectedTopic, categories: topicCategories)
+                                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
                             }
                             .overlay(alignment: .top) { toolbarBottomShadow }
                             .frame(maxWidth: .infinity)
@@ -201,7 +219,7 @@ struct ContentView: View {
                 } content: {
                     TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
                 } detail: {
-                    TopicDetailView(topicId: selectedTopicId!, baseURL: site.baseURL, siteTitle: site.title, topic: selectedTopic, categories: topicCategories)
+                    TopicDetailView(topicId: selectedTopicId!, site: site, topic: selectedTopic, categories: topicCategories)
                 }
             } else {
                 NavigationSplitView {
@@ -317,7 +335,7 @@ struct CompactTopicListView: View {
     var body: some View {
         TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
             .navigationDestination(item: $selectedTopicId) { topicId in
-                TopicDetailView(topicId: topicId, baseURL: site.baseURL, siteTitle: site.title, topic: selectedTopic, categories: topicCategories)
+                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
             }
     }
 }

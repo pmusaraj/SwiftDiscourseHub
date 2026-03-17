@@ -131,7 +131,7 @@ actor SiteDiscoveryService {
         }
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw DiscourseAPIError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0)
+            throw DiscourseAPIError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0, nil)
         }
 
         let decoder = JSONDecoder()

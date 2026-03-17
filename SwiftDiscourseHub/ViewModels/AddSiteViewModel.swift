@@ -8,7 +8,7 @@ final class AddSiteViewModel {
     var validationError: String?
     var validatedInfo: SiteBasicInfoResponse?
 
-    private let apiClient = DiscourseAPIClient()
+    var apiClient = DiscourseAPIClient()
 
     var normalizedURL: String {
         var url = urlText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -33,11 +33,7 @@ final class AddSiteViewModel {
 
         do {
             let info = try await apiClient.fetchBasicInfo(baseURL: normalizedURL)
-            if info.loginRequired == true {
-                validationError = "This site requires login (not yet supported)"
-            } else {
-                validatedInfo = info
-            }
+            validatedInfo = info
         } catch {
             validationError = error.localizedDescription
         }
@@ -51,7 +47,8 @@ final class AddSiteViewModel {
             title: info.title ?? normalizedURL,
             iconURL: info.appleTouchIconUrl ?? info.faviconUrl,
             logoURL: info.logoUrl,
-            siteDescription: info.description
+            siteDescription: info.description,
+            loginRequired: info.loginRequired ?? false
         )
         context.insert(site)
         try? context.save()
