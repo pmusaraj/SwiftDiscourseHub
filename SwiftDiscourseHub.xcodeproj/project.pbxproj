@@ -40,6 +40,7 @@
 		A10033 /* RawTopicParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* RawTopicParser.swift */; };
 		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* DiscourseMarkdownPreprocessor.swift */; };
 		A10035 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* Theme.swift */; };
+		A10037 /* DiscourseTextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037 /* DiscourseTextStyle.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
@@ -89,6 +90,7 @@
 		B10033 /* RawTopicParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParser.swift; sourceTree = "<group>"; };
 		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 		B10035 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B10037 /* DiscourseTextStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseTextStyle.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -256,6 +258,7 @@
 				B10023 /* RelativeTimeText.swift */,
 				B10024 /* ErrorStateView.swift */,
 				B10031 /* PostContentView.swift */,
+				B10037 /* DiscourseTextStyle.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -389,6 +392,7 @@
 				A10033 /* RawTopicParser.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
+				A10037 /* DiscourseTextStyle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

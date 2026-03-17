@@ -9,6 +9,7 @@ struct PostContentView: View {
 
     var body: some View {
         StructuredText(markdown: markdown, baseURL: siteBaseURL)
+            .textual.structuredTextStyle(DiscourseStyle())
             .textual.imageAttachmentLoader(.image(relativeTo: siteBaseURL))
             .textual.textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
