@@ -2,6 +2,7 @@ import Foundation
 
 enum TopicFilter: String, CaseIterable {
     case latest = "Latest"
+    case new = "New"
     case hot = "Hot"
 }
 
@@ -36,11 +37,13 @@ final class TopicListViewModel {
                 switch filter {
                 case .latest:
                     response = try await apiClient.fetchLatestTopics(baseURL: site.baseURL)
+                case .new:
+                    response = try await apiClient.fetchNewTopics(baseURL: site.baseURL)
                 case .hot:
                     response = try await apiClient.fetchHotTopics(baseURL: site.baseURL)
                 }
             }
-            topics = response.topicList?.topics ?? []
+            topics = (response.topicList?.topics ?? []).filter { $0.pinned != true }
             users = response.users ?? []
             hasMore = response.topicList?.moreTopicsUrl != nil
         } catch let apiError as DiscourseAPIError {
@@ -64,9 +67,16 @@ final class TopicListViewModel {
                     baseURL: site.baseURL, categorySlug: slug, categoryId: catId, page: currentPage
                 )
             } else {
-                response = try await apiClient.fetchLatestTopics(baseURL: site.baseURL, page: currentPage)
+                switch filter {
+                case .latest:
+                    response = try await apiClient.fetchLatestTopics(baseURL: site.baseURL, page: currentPage)
+                case .new:
+                    response = try await apiClient.fetchNewTopics(baseURL: site.baseURL, page: currentPage)
+                case .hot:
+                    response = try await apiClient.fetchLatestTopics(baseURL: site.baseURL, page: currentPage)
+                }
             }
-            let newTopics = response.topicList?.topics ?? []
+            let newTopics = (response.topicList?.topics ?? []).filter { $0.pinned != true }
             topics.append(contentsOf: newTopics)
             if let newUsers = response.users {
                 users.append(contentsOf: newUsers)

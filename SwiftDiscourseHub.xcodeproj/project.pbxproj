@@ -49,6 +49,7 @@
 		A10043 /* LoginRequiredView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10043 /* LoginRequiredView.swift */; };
 		A10044 /* AuthFooterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10044 /* AuthFooterBar.swift */; };
 		A10045 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045 /* ComposerView.swift */; };
+		A10046 /* ToastOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046 /* ToastOverlay.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
@@ -110,6 +111,7 @@
 		B10043 /* LoginRequiredView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginRequiredView.swift; sourceTree = "<group>"; };
 		B10044 /* AuthFooterBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFooterBar.swift; sourceTree = "<group>"; };
 		B10045 /* ComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerView.swift; sourceTree = "<group>"; };
+		B10046 /* ToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastOverlay.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
@@ -286,6 +288,7 @@
 				B10023 /* RelativeTimeText.swift */,
 				B10024 /* ErrorStateView.swift */,
 				B10031 /* PostContentView.swift */,
+				B10046 /* ToastOverlay.swift */,
 				B10037 /* DiscourseTextStyle.swift */,
 				B10038 /* Previews.swift */,
 			);
@@ -451,6 +454,7 @@
 				A10043 /* LoginRequiredView.swift in Sources */,
 				A10044 /* AuthFooterBar.swift in Sources */,
 				A10045 /* ComposerView.swift in Sources */,
+				A10046 /* ToastOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -69,12 +69,6 @@ actor DiscourseAPIClient {
         } else {
             log.warning("No API key found for \(baseURL)")
         }
-        if let clientId = await provider.clientId(for: baseURL) {
-            request.setValue(clientId, forHTTPHeaderField: "User-Api-Client-Id")
-            log.debug("Set User-Api-Client-Id header: \(clientId.prefix(8))...")
-        } else {
-            log.warning("No client ID found for \(baseURL)")
-        }
     }
 
     private func fetch<T: Decodable>(_ type: T.Type, from url: URL, baseURL: String? = nil) async throws -> T {
@@ -132,6 +126,12 @@ actor DiscourseAPIClient {
 
     func fetchHotTopics(baseURL: String) async throws -> TopicListResponse {
         let url = try buildURL(base: baseURL, path: "/hot.json")
+        return try await fetch(TopicListResponse.self, from: url, baseURL: baseURL)
+    }
+
+    func fetchNewTopics(baseURL: String, page: Int = 0) async throws -> TopicListResponse {
+        let path = page > 0 ? "/new.json?page=\(page)" : "/new.json"
+        let url = try buildURL(base: baseURL, path: path)
         return try await fetch(TopicListResponse.self, from: url, baseURL: baseURL)
     }
 

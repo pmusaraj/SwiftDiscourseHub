@@ -32,11 +32,13 @@ struct SiteSidebarView: View {
                             }
                         }
                         Button("Remove Site", role: .destructive) {
-                            if selectedSite?.baseURL == site.baseURL {
+                            let baseURL = site.baseURL
+                            if selectedSite?.baseURL == baseURL {
                                 selectedSite = nil
                             }
                             modelContext.delete(site)
                             try? modelContext.save()
+                            Task { await authCoordinator.removeSite(baseURL: baseURL) }
                         }
                     }
             }

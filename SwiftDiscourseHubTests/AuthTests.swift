@@ -107,14 +107,6 @@ private func testDefaults() -> UserDefaults {
         }
     }
 
-    @Test func clientIdIsStableAcrossCalls() async throws {
-        let authService = AuthService(defaults: testDefaults())
-        let id1 = await authService.getOrCreateClientId()
-        let id2 = await authService.getOrCreateClientId()
-        #expect(id1 == id2)
-        #expect(id1.count == 64)
-    }
-
     @Test func privateKeyPersistsAcrossInstances() async throws {
         let defaults = testDefaults()
         let baseURL = "https://test.example.com"
@@ -132,24 +124,40 @@ private func testDefaults() -> UserDefaults {
 
         let urlString = url.absoluteString
         #expect(urlString.contains("application_name=SwiftDiscourseHub"))
-        #expect(urlString.contains("client_id="))
         #expect(urlString.contains("scopes=read"))
         #expect(urlString.contains("public_key="))
         #expect(urlString.contains("nonce="))
-        #expect(urlString.contains("auth_redirect=discoursehub"))
+        #expect(urlString.contains("auth_redirect=discourse"))
         #expect(!nonce.isEmpty)
+    }
+
+    @Test func authURLContainsClientId() async throws {
+        let authService = AuthService(defaults: testDefaults())
+        let (url, _) = try await authService.buildAuthURL(for: "https://meta.discourse.org")
+
+        let urlString = url.absoluteString
+        #expect(urlString.contains("client_id="))
+    }
+
+    @Test func clientIdIsStableAcrossCalls() async throws {
+        let defaults = testDefaults()
+        let authService = AuthService(defaults: defaults)
+        let id1 = await authService.getOrCreateClientId()
+        let id2 = await authService.getOrCreateClientId()
+        #expect(id1 == id2)
+        #expect(id1.count == 64)
     }
 }
 
 @Suite struct CallbackParsingTests {
     @Test func callbackURLParsesPayload() throws {
-        let url = URL(string: "discoursehub://auth_redirect?payload=dGVzdA==")!
+        let url = URL(string: "discourse://auth_redirect?payload=dGVzdA==")!
         let payload = try AuthService.parseCallbackPayload(from: url)
         #expect(payload == "dGVzdA==")
     }
 
     @Test func missingPayloadThrows() {
-        let url = URL(string: "discoursehub://auth_redirect")!
+        let url = URL(string: "discourse://auth_redirect")!
         #expect(throws: AuthError.missingPayload) {
             try AuthService.parseCallbackPayload(from: url)
         }
@@ -178,7 +186,7 @@ private func testDefaults() -> UserDefaults {
         let encrypted = try await authService.encryptTestPayload(fakePayload, for: baseURL)
         let base64 = encrypted.base64EncodedString()
 
-        let callbackURL = URL(string: "discoursehub://auth_redirect?payload=\(base64.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)")!
+        let callbackURL = URL(string: "discourse://auth_redirect?payload=\(base64.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)")!
         let payload = try AuthService.parseCallbackPayload(from: callbackURL)
 
         let result = try await authService.decryptCallback(payload: payload, for: baseURL, expectedNonce: nonce)

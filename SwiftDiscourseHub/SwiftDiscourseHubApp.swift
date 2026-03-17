@@ -14,6 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 @main
 struct SwiftDiscourseHubApp: App {
+    @MainActor static let toastManager = ToastManager()
     @MainActor static let authCoordinator = AuthCoordinator()
     @MainActor static let sharedAPIClient = DiscourseAPIClient(
         credentialProvider: AuthCoordinatorCredentialProvider(coordinator: authCoordinator)
@@ -26,6 +27,8 @@ struct SwiftDiscourseHubApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .overlay { ToastOverlay() }
+                .environment(Self.toastManager)
                 .environment(Self.authCoordinator)
                 .environment(\.apiClient, Self.sharedAPIClient)
                 #if os(iOS)

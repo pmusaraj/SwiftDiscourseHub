@@ -9,7 +9,7 @@
 			<string>com.pmusaraj.SwiftDiscourseHub</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>discoursehub</string>
+				<string>discourse</string>
 			</array>
 		</dict>
 	</array>

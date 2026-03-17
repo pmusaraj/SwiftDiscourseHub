@@ -20,9 +20,12 @@ struct LoginRequiredView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
-            if authCoordinator.isAuthenticating {
-                ProgressView("Authenticating...")
-            } else {
+            HStack(spacing: 12) {
+                if authCoordinator.isAuthenticating {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
                 Button {
                     Task { await authCoordinator.startAuth(for: site.baseURL) }
                 } label: {
@@ -31,6 +34,7 @@ struct LoginRequiredView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .disabled(authCoordinator.isAuthenticating)
             }
 
             if let error = authCoordinator.authError {

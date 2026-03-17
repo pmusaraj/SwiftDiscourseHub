@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var selectedDiscoverSite: DiscoverSite?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
+    @Environment(ToastManager.self) private var toastManager
 
     private var hasSites: Bool { !sites.isEmpty }
 
@@ -52,8 +53,14 @@ struct ContentView: View {
                 Task {
                     if await authCoordinator.apiKey(for: baseURL) != nil {
                         site.hasApiKey = true
+                        toastManager.show("Logged in to \(site.title)", style: .success)
                     }
                 }
+            }
+        }
+        .onChange(of: authCoordinator.authError) {
+            if let error = authCoordinator.authError {
+                toastManager.show(error, style: .error, duration: 6.0)
             }
         }
     }
@@ -264,6 +271,7 @@ struct CompactSiteListView: View {
     @Binding var showingAddSite: Bool
     @Binding var showingDiscover: Bool
     @Environment(\.modelContext) private var modelContext
+    @Environment(AuthCoordinator.self) private var authCoordinator
 
     var body: some View {
         List {
@@ -284,8 +292,11 @@ struct CompactSiteListView: View {
                 }
             }
             .onDelete { indexSet in
-                for index in indexSet {
-                    modelContext.delete(sites[index])
+                let sitesToDelete = indexSet.map { sites[$0] }
+                for site in sitesToDelete {
+                    let baseURL = site.baseURL
+                    modelContext.delete(site)
+                    Task { await authCoordinator.removeSite(baseURL: baseURL) }
                 }
                 try? modelContext.save()
             }

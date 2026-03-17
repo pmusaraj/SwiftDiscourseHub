@@ -17,6 +17,7 @@ struct TopicDetailView: View {
     @State private var error: String?
     @State private var contentWidth: CGFloat = 0
     @State private var composerText = ""
+    @State private var showComposer = false
     @State private var likedPostIds: Set<Int> = []
     @State private var scrollTarget: Int?
 
@@ -27,6 +28,10 @@ struct TopicDetailView: View {
     @State private var rawExhausted = false
 
     @Environment(\.apiClient) private var apiClient
+    @Environment(ToastManager.self) private var toastManager
+    #if os(macOS)
+    @State private var keyMonitor: Any?
+    #endif
     private let rawPageSize = 100
     private let jsonChunkSize = 20
 
@@ -45,6 +50,10 @@ struct TopicDetailView: View {
 
     private var replyCount: Int {
         max((topic?.postsCount ?? 1) - 1, 0)
+    }
+
+    private var currentUsername: String? {
+        loadedPosts.first(where: { $0.yours == true })?.username
     }
 
     var body: some View {
@@ -78,7 +87,10 @@ struct TopicDetailView: View {
                                         }
                                     )
                                     .id(post.id)
-                                    Divider()
+                                    if post.id != loadedPosts.last?.id {
+                                        Divider()
+                                    }
+                                    Color.clear.frame(height: 0)
                                         .onAppear {
                                             if post.id == loadedPosts.last?.id {
                                                 Task { await loadMorePosts() }
@@ -103,7 +115,13 @@ struct TopicDetailView: View {
                         }
                     }
                     .safeAreaInset(edge: .bottom) {
-                        AuthFooterBar(site: site, topicId: topicId, composerText: $composerText) {
+                        AuthFooterBar(
+                            site: site,
+                            topicId: topicId,
+                            username: currentUsername,
+                            composerText: $composerText,
+                            showComposer: $showComposer
+                        ) {
                             Task { await refreshAfterPost() }
                         }
                     }
@@ -141,6 +159,11 @@ struct TopicDetailView: View {
                 }
             }
         }
+        #if os(macOS)
+        .onAppear { installKeyMonitor() }
+        .onDisappear { removeKeyMonitor() }
+        .onChange(of: topicId) { removeKeyMonitor(); installKeyMonitor() }
+        #endif
         .task(id: topicId) {
             await loadTopic()
         }
@@ -181,6 +204,38 @@ struct TopicDetailView: View {
         .background(.bar)
     }
 
+    // MARK: - Key Monitor
+
+    #if os(macOS)
+    private func installKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Only handle "r" with no modifiers, and only when composer is hidden
+            // and the first responder is not a text input field
+            guard event.characters == "r",
+                  event.modifierFlags.intersection(.deviceIndependentFlagsMask) == [],
+                  site.hasApiKey,
+                  !showComposer,
+                  !isFirstResponderTextInput() else {
+                return event
+            }
+            showComposer = true
+            return nil
+        }
+    }
+
+    private func removeKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+    }
+
+    private func isFirstResponderTextInput() -> Bool {
+        guard let firstResponder = NSApp.keyWindow?.firstResponder else { return false }
+        return firstResponder is NSTextView || firstResponder is NSTextField
+    }
+    #endif
+
     // MARK: - Actions
 
     private func toggleLike(post: Post) async {
@@ -194,7 +249,7 @@ struct TopicDetailView: View {
                 likedPostIds.insert(post.id)
             }
         } catch {
-            // Silently fail — the UI will revert on next reload
+            toastManager.show(error.localizedDescription, style: .error)
         }
     }
 
@@ -206,6 +261,7 @@ struct TopicDetailView: View {
             postNumber: post.postNumber ?? 1
         )
         composerText += quote
+        showComposer = true
     }
 
     // MARK: - Refresh after posting

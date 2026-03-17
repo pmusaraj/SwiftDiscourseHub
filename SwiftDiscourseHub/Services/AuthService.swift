@@ -6,13 +6,14 @@ import os.log
 
 private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "Auth")
 
-enum AuthError: Error, LocalizedError {
+enum AuthError: Error, LocalizedError, Equatable {
     case keypairGenerationFailed
     case decryptionFailed
     case nonceMismatch
     case invalidPayload
     case noCredentials
     case missingPayload
+    case serverError(String)
 
     var errorDescription: String? {
         switch self {
@@ -22,6 +23,7 @@ enum AuthError: Error, LocalizedError {
         case .invalidPayload: return "Invalid auth payload"
         case .noCredentials: return "No credentials found"
         case .missingPayload: return "Missing payload in callback URL"
+        case .serverError(let message): return message
         }
     }
 }
@@ -37,8 +39,8 @@ actor AuthService {
     private let defaults: UserDefaults
     private static let applicationName = "SwiftDiscourseHub"
     private static let scopes = "read,write"
-    static let callbackScheme = "discoursehub"
-    private static let authRedirect = "discoursehub://auth_redirect"
+    static let callbackScheme = "discourse"
+    private static let authRedirect = "discourse://auth_redirect"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -49,7 +51,6 @@ actor AuthService {
     func getOrCreateClientId() -> String {
         let key = "discourse_client_id"
         if let existing = defaults.string(forKey: key) {
-            log.debug("Using existing client_id: \(existing.prefix(8))...")
             return existing
         }
         var bytes = [UInt8](repeating: 0, count: 32)
@@ -151,55 +152,26 @@ actor AuthService {
         return authPayload
     }
 
-    // MARK: - Register Client
-
-    func registerClient(for baseURL: String) async throws {
-        let clientId = getOrCreateClientId()
-        let publicKey = try publicKeyPEM(for: baseURL)
-
-        guard let url = URL(string: baseURL + "/user-api-key-client") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
-
-        let body: [String: String] = [
-            "client_id": clientId,
-            "application_name": Self.applicationName,
-            "public_key": publicKey,
-            "auth_redirect": Self.authRedirect,
-            "scopes": Self.scopes,
-        ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        log.info("Registering client at \(url)")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse {
-            log.info("Register client response: \(httpResponse.statusCode)")
-            if httpResponse.statusCode != 200 {
-                let body = String(data: data, encoding: .utf8) ?? "<binary>"
-                log.error("Register client error body: \(body)")
-            }
-        }
-    }
-
     // MARK: - Credential Storage
 
     func storeApiKey(_ key: String, for baseURL: String) {
         defaults.set(key, forKey: "discourse_api_key|\(baseURL)")
+        logStoredCredentials(for: baseURL)
     }
 
     func getApiKey(for baseURL: String) -> String? {
         defaults.string(forKey: "discourse_api_key|\(baseURL)")
     }
 
-    func getClientId() -> String? {
-        defaults.string(forKey: "discourse_client_id")
-    }
-
     func removeCredentials(for baseURL: String) {
+        let hadApiKey = defaults.string(forKey: "discourse_api_key|\(baseURL)") != nil
+        let hadPrivateKey = defaults.string(forKey: "discourse_rsa_private_pem|\(baseURL)") != nil
+        log.info("removeCredentials for \(baseURL): apiKey=\(hadApiKey), privateKey=\(hadPrivateKey)")
+
         defaults.removeObject(forKey: "discourse_api_key|\(baseURL)")
         defaults.removeObject(forKey: "discourse_rsa_private_pem|\(baseURL)")
+
+        log.info("removeCredentials done for \(baseURL)")
     }
 
     // MARK: - Testing Helpers
@@ -229,6 +201,16 @@ actor AuthService {
         _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         return bytes.map { String(format: "%02x", $0) }.joined()
     }
+
+    func logStoredCredentials(for baseURL: String) {
+        let apiKey = defaults.string(forKey: "discourse_api_key|\(baseURL)")
+        let privateKey = defaults.string(forKey: "discourse_rsa_private_pem|\(baseURL)")
+        log.info("""
+            [Credentials] for \(baseURL):
+              api_key: \(apiKey != nil ? "\(apiKey!.prefix(12))... (\(apiKey!.count) chars)" : "nil")
+              rsa_private_pem: \(privateKey != nil ? "set (\(privateKey!.count) chars)" : "nil")
+            """)
+    }
 }
 
 // MARK: - AuthCoordinator
@@ -255,7 +237,6 @@ final class AuthCoordinator {
 
         do {
             log.info("[Coordinator] Starting auth for \(baseURL) (iOS)")
-            try await authService.registerClient(for: baseURL)
             let (authURL, nonce) = try await authService.buildAuthURL(for: baseURL)
             pendingNonce = nonce
 
@@ -292,7 +273,6 @@ final class AuthCoordinator {
 
         do {
             log.info("[Coordinator] Starting auth for \(baseURL) (macOS)")
-            try await authService.registerClient(for: baseURL)
             let (authURL, nonce) = try await authService.buildAuthURL(for: baseURL)
             pendingNonce = nonce
 
@@ -330,15 +310,29 @@ final class AuthCoordinator {
     }
 
     func logout(for baseURL: String) async {
+        log.info("[Coordinator] logout called for \(baseURL)")
+        // Try to revoke the key on the server (best-effort)
+        try? await SwiftDiscourseHubApp.sharedAPIClient.revokeApiKey(baseURL: baseURL)
         await authService.removeCredentials(for: baseURL)
+        log.info("[Coordinator] logout complete for \(baseURL)")
+    }
+
+    func removeSite(baseURL: String) async {
+        log.info("[Coordinator] removeSite called for \(baseURL)")
+        // Revoke key on server if we have one, then clean up all local auth data
+        if await authService.getApiKey(for: baseURL) != nil {
+            log.info("[Coordinator] Revoking API key on server for \(baseURL)")
+            try? await SwiftDiscourseHubApp.sharedAPIClient.revokeApiKey(baseURL: baseURL)
+        } else {
+            log.info("[Coordinator] No API key found for \(baseURL), skipping revoke")
+        }
+        log.info("[Coordinator] Removing local credentials for \(baseURL)")
+        await authService.removeCredentials(for: baseURL)
+        log.info("[Coordinator] removeSite complete for \(baseURL)")
     }
 
     func apiKey(for baseURL: String) async -> String? {
         await authService.getApiKey(for: baseURL)
-    }
-
-    func clientId() async -> String? {
-        await authService.getClientId()
     }
 }
 
@@ -346,7 +340,6 @@ final class AuthCoordinator {
 
 protocol AuthCredentialProvider: Sendable {
     func apiKey(for baseURL: String) async -> String?
-    func clientId(for baseURL: String) async -> String?
 }
 
 final class AuthCoordinatorCredentialProvider: AuthCredentialProvider {
@@ -358,9 +351,5 @@ final class AuthCoordinatorCredentialProvider: AuthCredentialProvider {
 
     func apiKey(for baseURL: String) async -> String? {
         await coordinator.apiKey(for: baseURL)
-    }
-
-    func clientId(for baseURL: String) async -> String? {
-        await coordinator.clientId()
     }
 }

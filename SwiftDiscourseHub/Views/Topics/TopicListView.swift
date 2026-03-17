@@ -12,7 +12,7 @@ struct TopicListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TopicFilterBar(viewModel: topicVM)
+            TopicFilterBar(viewModel: topicVM, isAuthenticated: site.isAuthenticated)
                 .padding(.vertical, Theme.Padding.topicFilterVertical)
                 .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
 

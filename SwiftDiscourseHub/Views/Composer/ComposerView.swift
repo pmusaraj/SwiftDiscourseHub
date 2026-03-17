@@ -10,6 +10,7 @@ struct ComposerView: View {
     @State private var submitError: String?
     @State private var selection: TextSelection?
     @State private var editorHeight: CGFloat = 52
+    @FocusState private var isEditorFocused: Bool
     @Environment(\.apiClient) private var apiClient
 
     private var canSubmit: Bool {
@@ -47,10 +48,12 @@ struct ComposerView: View {
             #endif
 
             TextEditor(text: $composerText, selection: $selection)
+                .focused($isEditorFocused)
                 .frame(height: editorHeight)
                 .font(.body)
                 .padding(.horizontal, 8)
                 .scrollContentBackground(.hidden)
+                .onAppear { isEditorFocused = true }
 
             if let error = submitError {
                 Text(error)
