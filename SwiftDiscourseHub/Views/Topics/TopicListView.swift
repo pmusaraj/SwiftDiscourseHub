@@ -7,11 +7,13 @@ struct TopicListView: View {
     @Binding var topicCategories: [DiscourseCategory]
     @State private var topicVM = TopicListViewModel()
     @State private var categoryVM = CategoryListViewModel()
+    @State private var contentWidth: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
             TopicFilterBar(viewModel: topicVM)
                 .padding(.vertical, Theme.Padding.topicFilterVertical)
+                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
 
             if let selectedSlug = topicVM.selectedCategorySlug,
                let cat = categoryVM.categories.first(where: { $0.slug == selectedSlug }) {
@@ -27,7 +29,7 @@ struct TopicListView: View {
                     .buttonStyle(.plain)
                     Spacer()
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
                 .padding(.bottom, Theme.Padding.categoryFilterBottom)
             }
 
@@ -42,39 +44,52 @@ struct TopicListView: View {
                 } else if topicVM.topics.isEmpty {
                     ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
                 } else {
-                    List(selection: $selectedTopicId) {
-                        ForEach(topicVM.topics) { topic in
-                            TopicRowView(
-                                topic: topic,
-                                users: topicVM.users,
-                                categories: categoryVM.categories,
-                                baseURL: site.baseURL
-                            )
-                            .tag(topic.id)
-                            .listRowSeparator(.hidden)
-                            .onAppear {
-                                if topic.id == topicVM.topics.last?.id {
-                                    Task { await topicVM.loadMore(for: site) }
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(topicVM.topics) { topic in
+                                TopicRowView(
+                                    topic: topic,
+                                    users: topicVM.users,
+                                    categories: categoryVM.categories,
+                                    baseURL: site.baseURL
+                                )
+                                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+                                .contentShape(Rectangle())
+                                .background(selectedTopicId == topic.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
+                                .onTapGesture {
+                                    selectedTopicId = topic.id
+                                }
+                                .onAppear {
+                                    if topic.id == topicVM.topics.last?.id {
+                                        Task { await topicVM.loadMore(for: site) }
+                                    }
                                 }
                             }
-                        }
-                        if topicVM.isLoading && !topicVM.topics.isEmpty {
-                            HStack {
-                                Spacer()
+                            if topicVM.isLoading && !topicVM.topics.isEmpty {
                                 ProgressView()
-                                Spacer()
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
                             }
                         }
                     }
-                    .listStyle(.plain)
                     .refreshable {
                         await topicVM.loadTopics(for: site)
                     }
                 }
             }
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { newWidth in
+            contentWidth = newWidth
+        }
         .navigationTitle(site.title)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Color.clear.frame(width: 0, height: 0)
+            }
+        }
         .task(id: site.baseURL) {
             await topicVM.loadTopics(for: site)
             await categoryVM.loadCategories(for: site)

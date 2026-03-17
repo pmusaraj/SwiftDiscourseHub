@@ -18,19 +18,20 @@ struct SiteIconView: View {
                 .aspectRatio(contentMode: .fit)
         } placeholder: {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.secondary.opacity(0.2))
+                RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius)
+                    .fill(.secondary.opacity(Theme.Sidebar.iconFallbackOpacity))
                 Text(fallbackLetter)
-                    .font(.title2.bold())
+                    .font(Theme.Fonts.siteIconFallback)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 42, height: 42)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(width: Theme.Sidebar.iconSize, height: Theme.Sidebar.iconSize)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius)
+                .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: Theme.Sidebar.iconBorderWidth)
         )
+        .padding(Theme.Sidebar.iconPadding)
         .help(site.title)
     }
 }

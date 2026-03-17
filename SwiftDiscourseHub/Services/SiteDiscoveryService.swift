@@ -55,6 +55,7 @@ struct DiscoverSite: Identifiable, Equatable {
     let excerpt: String?
     let logoUrl: String?
     let activeUsers30Days: Int?
+    let tags: [String]
 
     static func == (lhs: DiscoverSite, rhs: DiscoverSite) -> Bool {
         lhs.id == rhs.id
@@ -79,13 +80,18 @@ private struct DiscoverSearchTopic: Codable {
     let excerpt: String?
     let discoverEntryLogoUrl: String?
     let activeUsers30Days: Int?
+    let tags: [DiscoverTag]?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, excerpt
+        case id, title, excerpt, tags
         case featuredLink = "featured_link"
         case discoverEntryLogoUrl = "discover_entry_logo_url"
         case activeUsers30Days = "active_users_30_days"
     }
+}
+
+private struct DiscoverTag: Codable {
+    let name: String
 }
 
 private struct GroupedSearchResult: Codable {
@@ -139,13 +145,15 @@ actor SiteDiscoveryService {
 
         let sites = (searchResponse.topics ?? []).compactMap { topic -> DiscoverSite? in
             guard let link = topic.featuredLink, !link.isEmpty else { return nil }
+            let discoverTags = (topic.tags ?? []).map(\.name).filter { !$0.hasPrefix("locale-") && $0 != "discover" && $0 != "featured" }
             return DiscoverSite(
                 id: topic.id,
                 title: topic.title ?? link,
                 featuredLink: link.hasPrefix("http") ? link : "https://\(link)",
                 excerpt: topic.excerpt,
                 logoUrl: topic.discoverEntryLogoUrl,
-                activeUsers30Days: topic.activeUsers30Days
+                activeUsers30Days: topic.activeUsers30Days,
+                tags: discoverTags
             )
         }
 

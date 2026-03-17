@@ -3,6 +3,7 @@ import SwiftData
 
 struct DiscoverSitesView: View {
     var onSiteAdded: ((DiscourseSite) -> Void)?
+    @Binding var selectedDiscoverSite: DiscoverSite?
 
     @Query(sort: \DiscourseSite.sortOrder) private var savedSites: [DiscourseSite]
     @Environment(\.modelContext) private var modelContext
@@ -12,9 +13,19 @@ struct DiscoverSitesView: View {
     @State private var selectedCategory: DiscoverCategory = .featured
     @State private var currentPage = 1
     @State private var hasMore = false
+    @State private var contentWidth: CGFloat = 0
+
+    // Add by URL
+    @State private var urlText = ""
+    @State private var isValidating = false
+    @State private var validationError: String?
 
     private let discoveryService = SiteDiscoveryService()
     private let apiClient = DiscourseAPIClient()
+
+    private var horizontalPadding: CGFloat {
+        Theme.Padding.postHorizontal(for: contentWidth)
+    }
 
     private func isSiteAdded(_ site: DiscoverSite) -> Bool {
         let normalized = site.featuredLink.lowercased()
@@ -38,6 +49,11 @@ struct DiscoverSitesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Add by URL
+            addByURLBar
+
+            Divider()
+
             // Category filter chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -46,7 +62,7 @@ struct DiscoverSitesView: View {
                             selectedCategory = category
                         } label: {
                             Label(category.displayName, systemImage: category.iconName)
-                                .font(.subheadline)
+                                .font(Theme.Fonts.discoverCategory)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(selectedCategory == category ? Color.accentColor : Color.secondary.opacity(0.15))
@@ -56,7 +72,7 @@ struct DiscoverSitesView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, 8)
             }
 
@@ -74,34 +90,97 @@ struct DiscoverSitesView: View {
                 }
                 Spacer()
             } else {
-                List {
-                    ForEach(sites) { site in
-                        DiscoverSiteRow(
-                            site: site,
-                            isAdded: isSiteAdded(site),
-                            strippedExcerpt: stripHTML(site.excerpt),
-                            onAdd: { Task { await addSite(site) } }
-                        )
-                    }
-                    if hasMore {
-                        HStack {
-                            Spacer()
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(sites) { site in
+                            DiscoverSiteRow(
+                                site: site,
+                                isAdded: isSiteAdded(site),
+                                isSelected: selectedDiscoverSite?.id == site.id,
+                                strippedExcerpt: stripHTML(site.excerpt),
+                                onAdd: { Task { await addSite(site) } }
+                            )
+                            .padding(.horizontal, horizontalPadding)
+                            .contentShape(Rectangle())
+                            .background(selectedDiscoverSite?.id == site.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
+                            .onTapGesture {
+                                selectedDiscoverSite = site
+                            }
+                        }
+                        if hasMore {
                             ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding()
                                 .onAppear {
                                     Task { await loadMore() }
                                 }
-                            Spacer()
                         }
                     }
                 }
-                .listStyle(.plain)
             }
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { newWidth in
+            contentWidth = newWidth
+        }
         .navigationTitle("Discover")
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Color.clear.frame(width: 0, height: 0)
+            }
+        }
         .task(id: selectedCategory) {
             await loadSites(reset: true)
         }
     }
+
+    // MARK: - Add by URL
+
+    private var addByURLBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "link")
+                .foregroundStyle(.secondary)
+
+            TextField("Add site by URL...", text: $urlText)
+                #if os(iOS)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.URL)
+                #endif
+                .autocorrectionDisabled()
+                .textFieldStyle(.plain)
+                .onSubmit { Task { await validateAndAdd() } }
+
+            if isValidating {
+                ProgressView()
+                    .controlSize(.small)
+            } else if !urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Button {
+                    Task { await validateAndAdd() }
+                } label: {
+                    Text("Add")
+                        .font(.body.bold())
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+        }
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) {
+            if let validationError {
+                Text(validationError)
+                    .font(Theme.Fonts.metadataSmall)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, horizontalPadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .offset(y: 16)
+            }
+        }
+    }
+
+    // MARK: - Data Loading
 
     private func loadSites(reset: Bool) async {
         guard !isLoading else { return }
@@ -157,11 +236,53 @@ struct DiscoverSitesView: View {
             onSiteAdded?(site)
         }
     }
+
+    private func validateAndAdd() async {
+        let raw = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return }
+
+        var normalized = raw.lowercased()
+        if !normalized.hasPrefix("http://") && !normalized.hasPrefix("https://") {
+            normalized = "https://" + normalized
+        }
+        if normalized.hasSuffix("/") {
+            normalized = String(normalized.dropLast())
+        }
+
+        isValidating = true
+        validationError = nil
+
+        do {
+            let info = try await apiClient.fetchBasicInfo(baseURL: normalized)
+            if info.loginRequired == true {
+                validationError = "This site requires login"
+                isValidating = false
+                return
+            }
+            let site = DiscourseSite(
+                baseURL: normalized,
+                title: info.title ?? normalized,
+                iconURL: info.appleTouchIconUrl ?? info.faviconUrl,
+                logoURL: info.logoUrl,
+                siteDescription: info.description
+            )
+            await MainActor.run {
+                modelContext.insert(site)
+                try? modelContext.save()
+                onSiteAdded?(site)
+            }
+            urlText = ""
+        } catch {
+            validationError = "Could not connect to site"
+        }
+        isValidating = false
+    }
 }
 
 struct DiscoverSiteRow: View {
     let site: DiscoverSite
     let isAdded: Bool
+    let isSelected: Bool
     let strippedExcerpt: String
     let onAdd: () -> Void
 
@@ -175,27 +296,27 @@ struct DiscoverSiteRow: View {
                 } placeholder: {
                     siteLetterIcon
                 }
-                .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .frame(width: Theme.Discover.siteIconSize, height: Theme.Discover.siteIconSize)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Discover.siteIconCornerRadius))
             } else {
                 siteLetterIcon
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(site.title)
-                    .font(.headline)
+                    .font(Theme.Fonts.discoverSiteTitle)
                     .lineLimit(1)
 
                 if !strippedExcerpt.isEmpty {
                     Text(strippedExcerpt)
-                        .font(.subheadline)
+                        .font(Theme.Fonts.discoverSiteDescription)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
 
                 if let users = site.activeUsers30Days, users > 0 {
                     Label("\(users) active users", systemImage: "person.2")
-                        .font(.caption)
+                        .font(Theme.Fonts.discoverSiteStats)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -205,26 +326,27 @@ struct DiscoverSiteRow: View {
             if isAdded {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                    .font(.title3)
+                    .font(Theme.Discover.actionIconFont)
             } else {
                 Button(action: onAdd) {
                     Image(systemName: "plus.circle")
-                        .font(.title3)
+                        .font(Theme.Discover.actionIconFont)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Theme.Padding.topicRowVertical)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var siteLetterIcon: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(.secondary.opacity(0.2))
+            RoundedRectangle(cornerRadius: Theme.Discover.siteIconCornerRadius)
+                .fill(.secondary.opacity(Theme.Sidebar.iconFallbackOpacity))
             Text(String(site.title.prefix(1)).uppercased())
-                .font(.title2.bold())
+                .font(Theme.Fonts.siteIconFallback)
                 .foregroundStyle(.secondary)
         }
-        .frame(width: 44, height: 44)
+        .frame(width: Theme.Discover.siteIconSize, height: Theme.Discover.siteIconSize)
     }
 }

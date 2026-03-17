@@ -3,6 +3,7 @@ import SwiftUI
 struct TopicDetailView: View {
     let topicId: Int
     let baseURL: String
+    var siteTitle: String = ""
     var topic: Topic?
     var categories: [DiscourseCategory] = []
 
@@ -12,6 +13,7 @@ struct TopicDetailView: View {
     @State private var isLoading = true
     @State private var isLoadingMore = false
     @State private var error: String?
+    @State private var contentWidth: CGFloat = 0
 
     // Pagination state
     @State private var stream: [Int] = []           // all post IDs in topic
@@ -61,7 +63,8 @@ struct TopicDetailView: View {
                                 PostView(
                                     post: post,
                                     baseURL: baseURL,
-                                    markdown: postMarkdown[post.postNumber ?? 0]
+                                    markdown: postMarkdown[post.postNumber ?? 0],
+                                    contentWidth: contentWidth
                                 )
                                 Divider()
                                     .onAppear {
@@ -79,11 +82,17 @@ struct TopicDetailView: View {
                         }
                     }
                 }
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.width
+                } action: { newWidth in
+                    contentWidth = newWidth
+                }
             } else {
                 ContentUnavailableView("No Posts", systemImage: "text.bubble")
             }
         }
-        .navigationTitle("")
+        .navigationTitle(siteTitle)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -115,12 +124,12 @@ struct TopicDetailView: View {
 
     @ViewBuilder
     private func topicHeader(_ topic: Topic) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.topicHeaderVertical) {
             Text(topic.title ?? "Untitled")
-                .font(.title3.bold())
-                .lineLimit(3)
+                .font(Theme.Fonts.topicHeaderTitle)
+                .lineLimit(Theme.LineLimit.topicHeaderTitle)
 
-            HStack(spacing: 12) {
+            HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
                 if let cat = category {
                     CategoryBadgeView(name: cat.name ?? "Unknown", color: cat.color)
                 }
@@ -140,7 +149,8 @@ struct TopicDetailView: View {
             .font(Theme.Fonts.metadata)
             .foregroundStyle(.secondary)
         }
-        .padding()
+        .padding(.vertical, Theme.Padding.postVertical)
+        .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.bar)
     }
@@ -256,6 +266,7 @@ struct PostView: View {
     let post: Post
     let baseURL: String
     let markdown: String?
+    var contentWidth: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.postContentVertical) {
@@ -324,6 +335,7 @@ struct PostView: View {
             .font(Theme.Fonts.metadata)
             .foregroundStyle(.secondary)
         }
-        .padding()
+        .padding(.vertical, Theme.Padding.postVertical)
+        .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
     }
 }

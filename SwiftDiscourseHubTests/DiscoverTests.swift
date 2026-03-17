@@ -47,6 +47,24 @@ import Foundation
         }
     }
 
+    @Test func discoverSitesHaveTags() async throws {
+        let service = SiteDiscoveryService()
+        let result = try await service.fetchSites(category: .featured, page: 1)
+
+        // Tags should be parsed as string arrays from the API's tag objects
+        let sitesWithTags = result.sites.filter { !$0.tags.isEmpty }
+        #expect(sitesWithTags.count >= 5, "Expected at least 5 sites with tags, got \(sitesWithTags.count)")
+
+        // Tags should be plain strings, not contain meta-tags
+        for site in sitesWithTags.prefix(5) {
+            for tag in site.tags {
+                #expect(!tag.hasPrefix("locale-"), "Tag should not be a locale tag: \(tag)")
+                #expect(tag != "discover", "Tag should not be 'discover'")
+                #expect(tag != "featured", "Tag should not be 'featured'")
+            }
+        }
+    }
+
     @Test func discoverCategoryFilterWorks() async throws {
         let service = SiteDiscoveryService()
 

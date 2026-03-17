@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var topicCategories: [DiscourseCategory] = []
     @State private var showingAddSite = false
     @State private var showingDiscover = false
+    @State private var selectedDiscoverSite: DiscoverSite?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var hasSites: Bool { !sites.isEmpty }
@@ -35,6 +36,11 @@ struct ContentView: View {
         .onChange(of: selectedSite?.baseURL) {
             selectedTopicId = nil
             selectedTopic = nil
+        }
+        .onChange(of: showingDiscover) {
+            if !showingDiscover {
+                selectedDiscoverSite = nil
+            }
         }
     }
 
@@ -92,23 +98,35 @@ struct ContentView: View {
 
     #if os(macOS)
     private var hasDetail: Bool { selectedTopicId != nil && selectedSite != nil }
+    private var hasDiscoverDetail: Bool { showingDiscover && selectedDiscoverSite != nil }
+    private var hasRightPanel: Bool { hasDetail || hasDiscoverDetail }
 
-    private var panelShadow: some View {
+    private var toolbarBottomShadow: some View {
         LinearGradient(
-            colors: [.black.opacity(0.06), .black.opacity(0.02), .clear],
-            startPoint: .leading,
-            endPoint: .trailing
+            colors: [Theme.PanelShadow.shadowColor.opacity(Theme.Toolbar.bottomShadowOpacity), .clear],
+            startPoint: .top,
+            endPoint: .bottom
         )
-        .frame(width: 6)
+        .frame(height: Theme.Toolbar.bottomShadowHeight)
         .allowsHitTesting(false)
     }
 
     private var macOSLayout: some View {
         HStack(spacing: 0) {
-            SiteSidebarView(selectedSite: $selectedSite, showingDiscover: $showingDiscover)
+            SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                .background(.background)
+                .overlay(alignment: .trailing) {
+                    LinearGradient(
+                        colors: [Theme.PanelShadow.shadowColor.opacity(Theme.PanelShadow.shadowOpacity), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: Theme.PanelShadow.width)
+                    .offset(x: Theme.PanelShadow.width)
+                    .allowsHitTesting(false)
+                }
                 .zIndex(2)
-            panelShadow
-                .zIndex(1)
+
             GeometryReader { geo in
                 HStack(spacing: 0) {
                     NavigationStack {
@@ -117,8 +135,7 @@ struct ContentView: View {
                                 DiscoverSitesView(onSiteAdded: { site in
                                     selectedSite = site
                                     showingDiscover = false
-                                })
-                                .navigationTitle("Discover")
+                                }, selectedDiscoverSite: $selectedDiscoverSite)
                             } else if let site = selectedSite {
                                 TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
                                     .id(site.baseURL)
@@ -129,20 +146,47 @@ struct ContentView: View {
                         }
                         .animation(.easeInOut(duration: 0.2), value: selectedSite?.baseURL)
                     }
-                    .frame(width: hasDetail ? geo.size.width / 3 : geo.size.width)
+                    .overlay(alignment: .top) { toolbarBottomShadow }
+                    .background(.background)
+                    .overlay(alignment: .trailing) {
+                        if hasRightPanel {
+                            LinearGradient(
+                                colors: [Theme.PanelShadow.shadowColor.opacity(Theme.PanelShadow.shadowOpacity), .clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            .frame(width: Theme.PanelShadow.width)
+                            .offset(x: Theme.PanelShadow.width)
+                            .allowsHitTesting(false)
+                        }
+                    }
+                    .frame(width: hasRightPanel ? geo.size.width / 3 : geo.size.width)
                     .zIndex(1)
-
-                    panelShadow
 
                     if hasDetail {
                         if let topicId = selectedTopicId, let site = selectedSite {
-                            TopicDetailView(topicId: topicId, baseURL: site.baseURL, topic: selectedTopic, categories: topicCategories)
-                                .frame(maxWidth: .infinity)
-                                .id(topicId)
+                            NavigationStack {
+                                TopicDetailView(topicId: topicId, baseURL: site.baseURL, siteTitle: site.title, topic: selectedTopic, categories: topicCategories)
+                            }
+                            .overlay(alignment: .top) { toolbarBottomShadow }
+                            .frame(maxWidth: .infinity)
+                            .id(topicId)
+                        }
+                    } else if hasDiscoverDetail {
+                        if let discoverSite = selectedDiscoverSite {
+                            NavigationStack {
+                                DiscoverSiteDetailView(site: discoverSite, onSiteAdded: { site in
+                                    selectedSite = site
+                                    showingDiscover = false
+                                })
+                            }
+                            .overlay(alignment: .top) { toolbarBottomShadow }
+                            .frame(maxWidth: .infinity)
+                            .id(discoverSite.id)
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.25), value: hasDetail)
+                .animation(.easeInOut(duration: 0.25), value: hasRightPanel)
             }
         }
     }
@@ -153,22 +197,21 @@ struct ContentView: View {
         Group {
             if selectedTopicId != nil, let site = selectedSite {
                 NavigationSplitView {
-                    SiteSidebarView(selectedSite: $selectedSite, showingDiscover: $showingDiscover)
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } content: {
                     TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
                 } detail: {
-                    TopicDetailView(topicId: selectedTopicId!, baseURL: site.baseURL, topic: selectedTopic, categories: topicCategories)
+                    TopicDetailView(topicId: selectedTopicId!, baseURL: site.baseURL, siteTitle: site.title, topic: selectedTopic, categories: topicCategories)
                 }
             } else {
                 NavigationSplitView {
-                    SiteSidebarView(selectedSite: $selectedSite, showingDiscover: $showingDiscover)
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } detail: {
                     if showingDiscover {
                         DiscoverSitesView(onSiteAdded: { site in
                             selectedSite = site
                             showingDiscover = false
-                        })
-                        .navigationTitle("Discover")
+                        }, selectedDiscoverSite: $selectedDiscoverSite)
                     } else if let site = selectedSite {
                         TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
                     } else {
@@ -189,7 +232,7 @@ struct ContentView: View {
                     DiscoverSitesView(onSiteAdded: { site in
                         selectedSite = site
                         showingDiscover = false
-                    })
+                    }, selectedDiscoverSite: $selectedDiscoverSite)
                 }
         }
     }
@@ -274,7 +317,7 @@ struct CompactTopicListView: View {
     var body: some View {
         TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
             .navigationDestination(item: $selectedTopicId) { topicId in
-                TopicDetailView(topicId: topicId, baseURL: site.baseURL, topic: selectedTopic, categories: topicCategories)
+                TopicDetailView(topicId: topicId, baseURL: site.baseURL, siteTitle: site.title, topic: selectedTopic, categories: topicCategories)
             }
     }
 }

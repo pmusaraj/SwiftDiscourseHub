@@ -81,5 +81,6 @@ struct TopicRowView: View {
             }
         }
         .padding(.vertical, Theme.Padding.topicRowVertical)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

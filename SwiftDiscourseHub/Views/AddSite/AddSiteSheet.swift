@@ -5,6 +5,7 @@ struct AddSiteSheet: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = AddSiteViewModel()
     @State private var showDiscover = false
+    @State private var selectedDiscoverSite: DiscoverSite?
 
     var body: some View {
         NavigationStack {
@@ -85,7 +86,7 @@ struct AddSiteSheet: View {
                 }
             }
             .sheet(isPresented: $showDiscover) {
-                DiscoverSitesView()
+                DiscoverSitesView(selectedDiscoverSite: $selectedDiscoverSite)
             }
         }
     }

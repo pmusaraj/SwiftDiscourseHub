@@ -40,17 +40,17 @@ struct CategoryCardView: View {
                     .fill(Color(hex: category.color ?? "808080"))
                     .frame(width: 12, height: 12)
                 Text(category.name ?? "Unnamed")
-                    .font(.headline)
+                    .font(Theme.Fonts.categoryListTitle)
                 Spacer()
                 if let count = category.topicCount {
                     Text("\(count) topics")
-                        .font(.caption)
+                        .font(Theme.Fonts.categoryListStats)
                         .foregroundStyle(.secondary)
                 }
             }
             if let desc = category.descriptionText, !desc.isEmpty {
                 Text(desc)
-                    .font(.subheadline)
+                    .font(Theme.Fonts.categoryListDescription)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }

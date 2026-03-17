@@ -4,15 +4,20 @@ import SwiftData
 struct SiteSidebarView: View {
     @Query(sort: \DiscourseSite.sortOrder) private var sites: [DiscourseSite]
     @Binding var selectedSite: DiscourseSite?
+    @Binding var selectedTopicId: Int?
     @Binding var showingDiscover: Bool
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Theme.Sidebar.iconSpacing) {
             ForEach(sites) { site in
                 SiteIconView(site: site, isSelected: selectedSite?.baseURL == site.baseURL && !showingDiscover)
                     .onTapGesture {
-                        selectedSite = site
+                        if selectedSite?.baseURL == site.baseURL {
+                            selectedTopicId = nil
+                        } else {
+                            selectedSite = site
+                        }
                         showingDiscover = false
                     }
                     .contextMenu {
@@ -33,16 +38,16 @@ struct SiteSidebarView: View {
                 showingDiscover = true
             } label: {
                 Image(systemName: "globe")
-                    .font(.title3)
+                    .font(Theme.Fonts.sidebarIcon)
                     .foregroundStyle(showingDiscover && selectedSite == nil ? Color.accentColor : Color.secondary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
             }
             .buttonStyle(.plain)
             .help("Discover Communities")
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 8)
-        .frame(width: 80)
+        .padding(.vertical, Theme.Sidebar.paddingVertical)
+        .padding(.horizontal, Theme.Sidebar.paddingHorizontal)
+        .frame(width: Theme.Sidebar.width)
         .frame(maxHeight: .infinity)
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
