@@ -226,6 +226,69 @@ import Foundation
         #expect(!result.contains("upload://"))
     }
 
+    // MARK: - Checkbox tests
+
+    @Test func convertGFMTaskLists() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        - [x] Done item
+        - [ ] Todo item
+        - [X] Also done
+        """
+        let result = preprocessor.process(input)
+        #expect(result.contains("- ☑ Done item"))
+        #expect(result.contains("- ☐ Todo item"))
+        #expect(result.contains("- ☑ Also done"))
+    }
+
+    @Test func convertBareCheckboxes() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        [x] Checked
+        [ ] Unchecked
+        """
+        let result = preprocessor.process(input)
+        #expect(result.contains("☑ Checked"))
+        #expect(result.contains("☐ Unchecked"))
+    }
+
+    @Test func convertIndentedCheckboxes() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "  - [x] Nested checked item"
+        let result = preprocessor.process(input)
+        #expect(result.contains("  - ☑ Nested checked item"))
+    }
+
+    @Test func singleNewlinesPreservedAsHardBreaks() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        **Operating System:**
+        [x] Windows
+        [ ] Linux
+        **Kit Version:**
+        """
+        let result = preprocessor.process(input)
+        // Each line should end with two trailing spaces to force a hard break
+        #expect(result.contains("**Operating System:**  \n"), "Line should have trailing spaces for hard break")
+        #expect(result.contains("☑ Windows  \n"), "Checkbox line should have trailing spaces for hard break")
+        #expect(result.contains("☐ Linux  \n"), "Checkbox line should have trailing spaces for hard break")
+    }
+
+    @Test func hardBreaksSkipCodeBlocks() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        Before code
+        ```
+        line1
+        line2
+        ```
+        After code
+        """
+        let result = preprocessor.process(input)
+        #expect(!result.contains("line1  \n"), "Lines inside code blocks should not get trailing spaces")
+        #expect(result.contains("Before code  \n"), "Lines outside code blocks should get trailing spaces")
+    }
+
     @Test func videoSuffixCleaned() {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
         let input = "![clip|video](https://example.com/video.mp4)"

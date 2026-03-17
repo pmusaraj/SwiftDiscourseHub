@@ -3,45 +3,46 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* SwiftDiscourseHubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001; };
-		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
-		A10003 /* DiscourseSite.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003; };
-		A10004 /* TopicListResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004; };
-		A10005 /* CategoryListResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005; };
-		A10006 /* SiteBasicInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006; };
-		A10007 /* DiscourseAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007; };
-		A10008 /* SiteDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008; };
-		A10009 /* SiteListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009; };
-		A10010 /* TopicListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010; };
-		A10011 /* CategoryListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011; };
-		A10012 /* AddSiteViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
-		A10013 /* SiteSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10013; };
-		A10014 /* SiteIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10014; };
-		A10015 /* TopicListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10015; };
-		A10016 /* TopicRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10016; };
-		A10017 /* TopicFilterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10017; };
-		A10018 /* CategoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10018; };
-		A10019 /* CategoryBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10019; };
-		A10020 /* AddSiteSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
-		A10021 /* DiscoverSitesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
-		A10022 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
-		A10023 /* RelativeTimeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023; };
-		A10024 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024; };
-		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025; };
-		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026; };
-		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027; };
-		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028; };
-		A10029 /* TopicDetailResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029; };
-		A10031 /* PostContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
-		A10033 /* RawTopicParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
-		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
-		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001; };
-		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002; };
-		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001; };
+		A10001 /* SwiftDiscourseHubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* SwiftDiscourseHubApp.swift */; };
+		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* ContentView.swift */; };
+		A10003 /* DiscourseSite.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* DiscourseSite.swift */; };
+		A10004 /* TopicListResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004 /* TopicListResponse.swift */; };
+		A10005 /* CategoryListResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005 /* CategoryListResponse.swift */; };
+		A10006 /* SiteBasicInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006 /* SiteBasicInfo.swift */; };
+		A10007 /* DiscourseAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007 /* DiscourseAPIClient.swift */; };
+		A10008 /* SiteDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008 /* SiteDiscoveryService.swift */; };
+		A10009 /* SiteListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009 /* SiteListViewModel.swift */; };
+		A10010 /* TopicListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010 /* TopicListViewModel.swift */; };
+		A10011 /* CategoryListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011 /* CategoryListViewModel.swift */; };
+		A10012 /* AddSiteViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012 /* AddSiteViewModel.swift */; };
+		A10013 /* SiteSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10013 /* SiteSidebarView.swift */; };
+		A10014 /* SiteIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10014 /* SiteIconView.swift */; };
+		A10015 /* TopicListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10015 /* TopicListView.swift */; };
+		A10016 /* TopicRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10016 /* TopicRowView.swift */; };
+		A10017 /* TopicFilterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10017 /* TopicFilterBar.swift */; };
+		A10018 /* CategoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10018 /* CategoryListView.swift */; };
+		A10019 /* CategoryBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10019 /* CategoryBadgeView.swift */; };
+		A10020 /* AddSiteSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020 /* AddSiteSheet.swift */; };
+		A10021 /* DiscoverSitesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021 /* DiscoverSitesView.swift */; };
+		A10022 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022 /* CachedAsyncImage.swift */; };
+		A10023 /* RelativeTimeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* RelativeTimeText.swift */; };
+		A10024 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* ErrorStateView.swift */; };
+		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* URLHelpers.swift */; };
+		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* Color+Hex.swift */; };
+		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027 /* Assets.xcassets */; };
+		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028 /* TopicDetailView.swift */; };
+		A10029 /* TopicDetailResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029 /* TopicDetailResponse.swift */; };
+		A10031 /* PostContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031 /* PostContentView.swift */; };
+		A10033 /* RawTopicParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* RawTopicParser.swift */; };
+		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* DiscourseMarkdownPreprocessor.swift */; };
+		A10035 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* Theme.swift */; };
+		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
+		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
+		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +88,7 @@
 		B10031 /* PostContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentView.swift; sourceTree = "<group>"; };
 		B10033 /* RawTopicParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParser.swift; sourceTree = "<group>"; };
 		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
+		B10035 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -126,6 +128,7 @@
 			children = (
 				B10001 /* SwiftDiscourseHubApp.swift */,
 				B10002 /* ContentView.swift */,
+				B10035 /* Theme.swift */,
 				B10027 /* Assets.xcassets */,
 				E10004 /* Models */,
 				E10007 /* Services */,
@@ -314,7 +317,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2600;
 			};
 			buildConfigurationList = G10001 /* Build configuration list for PBXProject "SwiftDiscourseHub" */;
 			compatibilityVersion = "Xcode 15.0";
@@ -385,6 +388,7 @@
 				A10031 /* PostContentView.swift in Sources */,
 				A10033 /* RawTopicParser.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
+				A10035 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -415,19 +419,46 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -441,11 +472,38 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_STRICT_CONCURRENCY = minimal;
 			};
@@ -458,7 +516,10 @@
 				CODE_SIGN_ENTITLEMENTS = SwiftDiscourseHub/SwiftDiscourseHub.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
@@ -467,13 +528,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -492,7 +553,10 @@
 				CODE_SIGN_ENTITLEMENTS = SwiftDiscourseHub/SwiftDiscourseHub.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
@@ -501,13 +565,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -525,9 +589,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHubTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -546,9 +611,10 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pmusaraj.SwiftDiscourseHubTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -611,7 +677,6 @@
 			productName = Textual;
 		};
 /* End XCSwiftPackageProductDependency section */
-
 	};
 	rootObject = F10002 /* Project object */;
 }

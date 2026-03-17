@@ -3,6 +3,8 @@ import SwiftUI
 struct TopicDetailView: View {
     let topicId: Int
     let baseURL: String
+    var topic: Topic?
+    var categories: [DiscourseCategory] = []
 
     @State private var topicDetail: TopicDetailResponse?
     @State private var loadedPosts: [Post] = []
@@ -29,6 +31,15 @@ struct TopicDetailView: View {
         loadedPostIds.count < stream.count
     }
 
+    private var category: DiscourseCategory? {
+        guard let id = topic?.categoryId else { return nil }
+        return categories.first { $0.id == id }
+    }
+
+    private var replyCount: Int {
+        max((topic?.postsCount ?? 1) - 1, 0)
+    }
+
     var body: some View {
         Group {
             if isLoading {
@@ -39,26 +50,32 @@ struct TopicDetailView: View {
                     Task { await loadTopic() }
                 }
             } else if !loadedPosts.isEmpty {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(loadedPosts) { post in
-                            PostView(
-                                post: post,
-                                baseURL: baseURL,
-                                markdown: postMarkdown[post.postNumber ?? 0]
-                            )
-                            Divider()
-                                .onAppear {
-                                    if post.id == loadedPosts.last?.id {
-                                        Task { await loadMorePosts() }
+                VStack(spacing: 0) {
+                    if let topic {
+                        topicHeader(topic)
+                        Divider()
+                    }
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(loadedPosts) { post in
+                                PostView(
+                                    post: post,
+                                    baseURL: baseURL,
+                                    markdown: postMarkdown[post.postNumber ?? 0]
+                                )
+                                Divider()
+                                    .onAppear {
+                                        if post.id == loadedPosts.last?.id {
+                                            Task { await loadMorePosts() }
+                                        }
                                     }
-                                }
-                        }
+                            }
 
-                        if isLoadingMore {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                            if isLoadingMore {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                            }
                         }
                     }
                 }
@@ -66,7 +83,7 @@ struct TopicDetailView: View {
                 ContentUnavailableView("No Posts", systemImage: "text.bubble")
             }
         }
-        .navigationTitle(topicDetail?.title ?? "Topic")
+        .navigationTitle("")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -92,6 +109,40 @@ struct TopicDetailView: View {
         .task(id: topicId) {
             await loadTopic()
         }
+    }
+
+    // MARK: - Topic Header
+
+    @ViewBuilder
+    private func topicHeader(_ topic: Topic) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(topic.title ?? "Untitled")
+                .font(.title3.bold())
+                .lineLimit(3)
+
+            HStack(spacing: 12) {
+                if let cat = category {
+                    CategoryBadgeView(name: cat.name ?? "Unknown", color: cat.color)
+                }
+
+                if let createdAt = topic.createdAt {
+                    Label {
+                        RelativeTimeText(dateString: createdAt)
+                    } icon: {
+                        Image(systemName: "calendar")
+                    }
+                }
+
+                Spacer()
+
+                Label("\(replyCount) \(replyCount == 1 ? "reply" : "replies")", systemImage: "bubble.left.and.bubble.right")
+            }
+            .font(Theme.Fonts.metadata)
+            .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.bar)
     }
 
     // MARK: - Initial load
@@ -154,8 +205,6 @@ struct TopicDetailView: View {
             // Also fetch next raw page if needed
             let needsMoreRaw: Bool = {
                 guard !rawExhausted else { return false }
-                // Check if any of the batch post IDs lack markdown
-                // We fetch raw proactively when we're about to run out
                 let highestLoadedPostNumber = loadedPosts.last?.postNumber ?? 0
                 let rawCoverage = rawPage * rawPageSize
                 return highestLoadedPostNumber + jsonChunkSize > rawCoverage - 20
@@ -209,11 +258,11 @@ struct PostView: View {
     let markdown: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.postContentVertical) {
             // Header: avatar + username + date
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.Spacing.postHeaderHorizontal) {
                 CachedAsyncImage(
-                    url: URLHelpers.avatarURL(template: post.avatarTemplate, size: 90, baseURL: baseURL)
+                    url: URLHelpers.avatarURL(template: post.avatarTemplate, size: Theme.Avatar.postFetch, baseURL: baseURL)
                 ) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
@@ -221,36 +270,36 @@ struct PostView: View {
                         .resizable()
                         .foregroundStyle(.secondary)
                 }
-                .frame(width: 36, height: 36)
+                .frame(width: Theme.Avatar.postDisplay, height: Theme.Avatar.postDisplay)
                 .clipShape(Circle())
 
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 4) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.postAuthorVertical) {
+                    HStack(spacing: Theme.Spacing.postNameItems) {
                         Text(post.name ?? post.username ?? "Unknown")
-                            .font(.subheadline.bold())
+                            .font(Theme.Fonts.postAuthorName)
                         if post.staff == true {
                             Image(systemName: "shield.fill")
-                                .font(.caption2)
+                                .font(Theme.Fonts.metadataSmall)
                                 .foregroundStyle(.blue)
                         }
                     }
-                    HStack(spacing: 4) {
+                    HStack(spacing: Theme.Spacing.postNameItems) {
                         if let username = post.username {
                             Text("@\(username)")
-                                .font(.caption)
+                                .font(Theme.Fonts.metadata)
                                 .foregroundStyle(.secondary)
                         }
                         Text("·")
                             .foregroundStyle(.secondary)
                         RelativeTimeText(dateString: post.createdAt)
-                            .font(.caption)
+                            .font(Theme.Fonts.metadata)
                     }
                 }
                 Spacer()
 
                 if let postNumber = post.postNumber {
                     Text("#\(postNumber)")
-                        .font(.caption)
+                        .font(Theme.Fonts.metadata)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -260,11 +309,11 @@ struct PostView: View {
                 PostContentView(markdown: md, baseURL: baseURL)
             } else if let cooked = post.cooked, !cooked.isEmpty {
                 Text(cooked)
-                    .font(.body)
+                    .font(Theme.Fonts.postBody)
             }
 
             // Footer: likes + replies
-            HStack(spacing: 16) {
+            HStack(spacing: Theme.Spacing.postFooterHorizontal) {
                 if post.likeCount > 0 {
                     Label("\(post.likeCount)", systemImage: "heart")
                 }
@@ -272,7 +321,7 @@ struct PostView: View {
                     Label("\(replies)", systemImage: "arrowshape.turn.up.left")
                 }
             }
-            .font(.caption)
+            .font(Theme.Fonts.metadata)
             .foregroundStyle(.secondary)
         }
         .padding()

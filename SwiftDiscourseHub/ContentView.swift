@@ -5,6 +5,8 @@ struct ContentView: View {
     @Query(sort: \DiscourseSite.sortOrder) private var sites: [DiscourseSite]
     @State private var selectedSite: DiscourseSite?
     @State private var selectedTopicId: Int?
+    @State private var selectedTopic: Topic?
+    @State private var topicCategories: [DiscourseCategory] = []
     @State private var showingAddSite = false
     @State private var showingDiscover = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -32,6 +34,7 @@ struct ContentView: View {
         }
         .onChange(of: selectedSite?.baseURL) {
             selectedTopicId = nil
+            selectedTopic = nil
         }
     }
 
@@ -80,21 +83,83 @@ struct ContentView: View {
     // MARK: - Regular (Mac / iPad) — 2-column, expanding to 3 when topic selected
 
     private var regularLayout: some View {
+        #if os(macOS)
+        macOSLayout
+        #else
+        iPadLayout
+        #endif
+    }
+
+    #if os(macOS)
+    private var hasDetail: Bool { selectedTopicId != nil && selectedSite != nil }
+
+    private var panelShadow: some View {
+        LinearGradient(
+            colors: [.black.opacity(0.06), .black.opacity(0.02), .clear],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(width: 6)
+        .allowsHitTesting(false)
+    }
+
+    private var macOSLayout: some View {
+        HStack(spacing: 0) {
+            SiteSidebarView(selectedSite: $selectedSite, showingDiscover: $showingDiscover)
+                .zIndex(2)
+            panelShadow
+                .zIndex(1)
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    NavigationStack {
+                        Group {
+                            if showingDiscover {
+                                DiscoverSitesView(onSiteAdded: { site in
+                                    selectedSite = site
+                                    showingDiscover = false
+                                })
+                                .navigationTitle("Discover")
+                            } else if let site = selectedSite {
+                                TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                                    .id(site.baseURL)
+                                    .transition(.opacity)
+                            } else {
+                                ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
+                            }
+                        }
+                        .animation(.easeInOut(duration: 0.2), value: selectedSite?.baseURL)
+                    }
+                    .frame(width: hasDetail ? geo.size.width / 3 : geo.size.width)
+                    .zIndex(1)
+
+                    panelShadow
+
+                    if hasDetail {
+                        if let topicId = selectedTopicId, let site = selectedSite {
+                            TopicDetailView(topicId: topicId, baseURL: site.baseURL, topic: selectedTopic, categories: topicCategories)
+                                .frame(maxWidth: .infinity)
+                                .id(topicId)
+                        }
+                    }
+                }
+                .animation(.easeInOut(duration: 0.25), value: hasDetail)
+            }
+        }
+    }
+    #endif
+
+    #if os(iOS)
+    private var iPadLayout: some View {
         Group {
             if selectedTopicId != nil, let site = selectedSite {
-                // 3-column: sidebar | topics | detail
                 NavigationSplitView {
                     SiteSidebarView(selectedSite: $selectedSite, showingDiscover: $showingDiscover)
                 } content: {
-                    TopicListView(site: site, selectedTopicId: $selectedTopicId)
+                    TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
                 } detail: {
-                    TopicDetailView(topicId: selectedTopicId!, baseURL: site.baseURL)
+                    TopicDetailView(topicId: selectedTopicId!, baseURL: site.baseURL, topic: selectedTopic, categories: topicCategories)
                 }
-                #if os(macOS)
-                .navigationSplitViewColumnWidth(min: 48, ideal: 48, max: 48)
-                #endif
             } else {
-                // 2-column: sidebar | content
                 NavigationSplitView {
                     SiteSidebarView(selectedSite: $selectedSite, showingDiscover: $showingDiscover)
                 } detail: {
@@ -105,17 +170,15 @@ struct ContentView: View {
                         })
                         .navigationTitle("Discover")
                     } else if let site = selectedSite {
-                        TopicListView(site: site, selectedTopicId: $selectedTopicId)
+                        TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
                     } else {
                         ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
                     }
                 }
-                #if os(macOS)
-                .navigationSplitViewColumnWidth(min: 48, ideal: 48, max: 48)
-                #endif
             }
         }
     }
+    #endif
 
     // MARK: - Compact (iPhone)
 
@@ -205,11 +268,13 @@ struct CompactSiteListView: View {
 struct CompactTopicListView: View {
     let site: DiscourseSite
     @State private var selectedTopicId: Int?
+    @State private var selectedTopic: Topic?
+    @State private var topicCategories: [DiscourseCategory] = []
 
     var body: some View {
-        TopicListView(site: site, selectedTopicId: $selectedTopicId)
+        TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
             .navigationDestination(item: $selectedTopicId) { topicId in
-                TopicDetailView(topicId: topicId, baseURL: site.baseURL)
+                TopicDetailView(topicId: topicId, baseURL: site.baseURL, topic: selectedTopic, categories: topicCategories)
             }
     }
 }

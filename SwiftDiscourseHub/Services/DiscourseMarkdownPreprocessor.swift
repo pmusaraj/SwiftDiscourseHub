@@ -5,16 +5,41 @@ struct DiscourseMarkdownPreprocessor {
 
     func process(_ markdown: String) -> String {
         var result = markdown
+        result = convertCheckboxes(result)
         result = resolveUploadURLs(result)
         result = cleanDiscourseImageSyntax(result)
         result = resolveRelativeImageURLs(result)
         result = convertQuotes(result)
         result = convertDetails(result)
         result = convertMentions(result)
+        result = ensureHardBreaks(result)
         return result
     }
 
     // MARK: - Private
+
+    private func convertCheckboxes(_ markdown: String) -> String {
+        // Discourse uses - [x] / - [ ] (GFM task lists) and bare [x] / [ ] for checkboxes.
+        // Convert to unicode checkbox characters since Textual doesn't support GFM task lists.
+        let pattern = #"^(\s*(?:[-*+]\s+)?)\[([ xX])\] "#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines) else {
+            return markdown
+        }
+        let nsString = markdown as NSString
+        let range = NSRange(location: 0, length: nsString.length)
+        var result = markdown
+        for match in regex.matches(in: markdown, range: range).reversed() {
+            guard let fullRange = Range(match.range, in: result),
+                  let checkRange = Range(match.range(at: 2), in: result) else { continue }
+            let leading = match.range(at: 1).location != NSNotFound
+                ? String(result[Range(match.range(at: 1), in: result)!])
+                : ""
+            let checked = result[checkRange] != " "
+            let replacement = leading + (checked ? "☑ " : "☐ ")
+            result.replaceSubrange(fullRange, with: replacement)
+        }
+        return result
+    }
 
     private func resolveUploadURLs(_ markdown: String) -> String {
         // Replace upload://hash.ext with {baseURL}/uploads/short-url/hash.ext
@@ -133,6 +158,29 @@ struct DiscourseMarkdownPreprocessor {
         }
 
         return result
+    }
+
+    private func ensureHardBreaks(_ markdown: String) -> String {
+        // Discourse treats single newlines as hard line breaks (<br>).
+        // Standard Markdown treats them as soft breaks (collapsed into space).
+        // Add two trailing spaces before each newline to force hard breaks,
+        // but skip lines inside fenced code blocks.
+        var lines = markdown.components(separatedBy: "\n")
+        var inCodeFence = false
+        for i in lines.indices {
+            let trimmed = lines[i].trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") {
+                inCodeFence.toggle()
+                continue
+            }
+            if inCodeFence { continue }
+            // Skip blank lines — they already produce paragraph breaks
+            if trimmed.isEmpty { continue }
+            // Skip lines that already end with two+ spaces
+            if lines[i].hasSuffix("  ") { continue }
+            lines[i] = lines[i] + "  "
+        }
+        return lines.joined(separator: "\n")
     }
 
     private func convertMentions(_ markdown: String) -> String {

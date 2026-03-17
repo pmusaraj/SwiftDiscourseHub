@@ -18,17 +18,17 @@ struct SiteIconView: View {
                 .aspectRatio(contentMode: .fit)
         } placeholder: {
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(.secondary.opacity(0.2))
                 Text(fallbackLetter)
                     .font(.title2.bold())
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 40, height: 40)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .frame(width: 42, height: 42)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
         )
         .help(site.title)

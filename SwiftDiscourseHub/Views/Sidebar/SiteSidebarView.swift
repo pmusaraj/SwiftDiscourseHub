@@ -33,16 +33,17 @@ struct SiteSidebarView: View {
                 showingDiscover = true
             } label: {
                 Image(systemName: "globe")
-                    .font(.body)
+                    .font(.title3)
                     .foregroundStyle(showingDiscover && selectedSite == nil ? Color.accentColor : Color.secondary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 40, height: 40)
             }
             .buttonStyle(.plain)
             .help("Discover Communities")
         }
         .padding(.vertical, 10)
-        .padding(.horizontal, 4)
-        .frame(width: 48)
+        .padding(.horizontal, 8)
+        .frame(width: 80)
+        .frame(maxHeight: .infinity)
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif

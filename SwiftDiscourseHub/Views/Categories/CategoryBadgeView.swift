@@ -5,17 +5,17 @@ struct CategoryBadgeView: View {
     let color: String?
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Theme.Spacing.categoryBadgeHorizontal) {
             Circle()
-                .fill(Color(hex: color ?? "808080"))
-                .frame(width: 8, height: 8)
+                .fill(Color(hex: color ?? Theme.CategoryBadge.defaultColor))
+                .frame(width: Theme.CategoryBadge.dotSize, height: Theme.CategoryBadge.dotSize)
             Text(name)
-                .font(.caption)
-                .lineLimit(1)
+                .font(Theme.Fonts.metadata)
+                .lineLimit(Theme.LineLimit.categoryName)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(Color(hex: color ?? "808080").opacity(0.1))
+        .padding(.horizontal, Theme.Padding.categoryBadgeHorizontal)
+        .padding(.vertical, Theme.Padding.categoryBadgeVertical)
+        .background(Color(hex: color ?? Theme.CategoryBadge.defaultColor).opacity(Theme.CategoryBadge.backgroundOpacity))
         .clipShape(Capsule())
     }
 }

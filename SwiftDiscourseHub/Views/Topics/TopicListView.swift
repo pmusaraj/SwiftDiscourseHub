@@ -3,13 +3,15 @@ import SwiftUI
 struct TopicListView: View {
     let site: DiscourseSite
     @Binding var selectedTopicId: Int?
+    @Binding var selectedTopic: Topic?
+    @Binding var topicCategories: [DiscourseCategory]
     @State private var topicVM = TopicListViewModel()
     @State private var categoryVM = CategoryListViewModel()
 
     var body: some View {
         VStack(spacing: 0) {
             TopicFilterBar(viewModel: topicVM)
-                .padding(.vertical, 8)
+                .padding(.vertical, Theme.Padding.topicFilterVertical)
 
             if let selectedSlug = topicVM.selectedCategorySlug,
                let cat = categoryVM.categories.first(where: { $0.slug == selectedSlug }) {
@@ -26,7 +28,7 @@ struct TopicListView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 4)
+                .padding(.bottom, Theme.Padding.categoryFilterBottom)
             }
 
             Group {
@@ -49,6 +51,7 @@ struct TopicListView: View {
                                 baseURL: site.baseURL
                             )
                             .tag(topic.id)
+                            .listRowSeparator(.hidden)
                             .onAppear {
                                 if topic.id == topicVM.topics.last?.id {
                                     Task { await topicVM.loadMore(for: site) }
@@ -71,18 +74,18 @@ struct TopicListView: View {
             }
         }
         .navigationTitle(site.title)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .task(id: site.baseURL) {
             await topicVM.loadTopics(for: site)
             await categoryVM.loadCategories(for: site)
+            topicCategories = categoryVM.categories
         }
         .onChange(of: topicVM.filter) {
             topicVM.clearCategory()
             Task { await topicVM.loadTopics(for: site) }
         }
-    }
-
-    func selectedTopic() -> Topic? {
-        guard let id = selectedTopicId else { return nil }
-        return topicVM.topics.first { $0.id == id }
+        .onChange(of: selectedTopicId) {
+            selectedTopic = topicVM.topics.first { $0.id == selectedTopicId }
+        }
     }
 }

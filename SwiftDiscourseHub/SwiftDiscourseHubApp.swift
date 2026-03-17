@@ -8,5 +8,9 @@ struct SwiftDiscourseHubApp: App {
             ContentView()
         }
         .modelContainer(for: DiscourseSite.self)
+        #if os(macOS)
+        .windowStyle(.titleBar)
+        .windowToolbarStyle(.unified)
+        #endif
     }
 }
