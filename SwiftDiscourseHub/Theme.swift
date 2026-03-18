@@ -17,7 +17,7 @@ enum Theme {
         static let topicHeaderTitle: Font = .title2.bold()
         static let sidebarIcon: Font = .title3
         static let siteIconFallback: Font = .title2.bold()
-        static let discoverSiteTitle: Font = .headline
+        static let discoverSiteTitle: Font = .title3.bold()
         static let discoverSiteDescription: Font = .body
         static let discoverSiteStats: Font = .body
         static let discoverCategory: Font = .subheadline
@@ -109,7 +109,7 @@ enum Theme {
     enum Discover {
         static let siteIconSize: CGFloat = 44
         static let siteIconCornerRadius: CGFloat = 10
-        static let actionIconFont: Font = .title2
+        static let actionIconFont: Font = .title
         static let detailIconSize: CGFloat = 64
         static let detailIconCornerRadius: CGFloat = 14
         static let tagPaddingH: CGFloat = 10

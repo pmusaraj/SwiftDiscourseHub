@@ -43,8 +43,21 @@ struct DiscoverSitesView: View {
 
     private func stripHTML(_ html: String?) -> String {
         guard let html else { return "" }
-        return html.replacing(/<[^>]+>/, with: "")
+        var text = html.replacing(/<[^>]+>/, with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Decode common HTML entities
+        let entities: [(String, String)] = [
+            ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
+            ("&quot;", "\""), ("&#39;", "'"), ("&apos;", "'"),
+            ("&#x27;", "'"), ("&rsquo;", "\u{2019}"), ("&lsquo;", "\u{2018}"),
+            ("&rdquo;", "\u{201D}"), ("&ldquo;", "\u{201C}"),
+            ("&ndash;", "\u{2013}"), ("&mdash;", "\u{2014}"),
+            ("&hellip;", "\u{2026}"), ("&nbsp;", " "),
+        ]
+        for (entity, replacement) in entities {
+            text = text.replacingOccurrences(of: entity, with: replacement)
+        }
+        return text
     }
 
     var body: some View {
@@ -65,7 +78,7 @@ struct DiscoverSitesView: View {
                                 .font(Theme.Fonts.discoverCategory)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(selectedCategory == category ? Color.accentColor : Color.secondary.opacity(0.15))
+                                .background(selectedCategory == category ? Color.purple : Color.secondary.opacity(0.15))
                                 .foregroundStyle(selectedCategory == category ? .white : .primary)
                                 .clipShape(Capsule())
                         }
@@ -92,7 +105,7 @@ struct DiscoverSitesView: View {
                 Spacer()
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 16)], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 340), spacing: 16)], spacing: 16) {
                         ForEach(sites) { site in
                             NavigationLink(value: site) {
                                 DiscoverSiteCard(
@@ -103,22 +116,28 @@ struct DiscoverSitesView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .onAppear {
+                                if hasMore, site.id == sites.last?.id {
+                                    Task { await loadMore() }
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, horizontalPadding)
                     .padding(.vertical, 12)
 
-                    if hasMore {
+                    if isLoading && !sites.isEmpty {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .onAppear {
-                                Task { await loadMore() }
-                            }
                     }
                 }
                 .scrollIndicators(.never)
             }
+        }
+        .background {
+            discoverBackground
+                .ignoresSafeArea()
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
@@ -140,6 +159,20 @@ struct DiscoverSitesView: View {
         .task(id: selectedCategory) {
             await loadSites(reset: true)
         }
+    }
+
+    // MARK: - Background
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var discoverBackground: some View {
+        LinearGradient(
+            colors: colorScheme == .dark
+                ? [Color(red: 0.22, green: 0.10, blue: 0.30), .black]
+                : [Color(red: 0.85, green: 0.82, blue: 1.0), .white],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
     // MARK: - Add by URL

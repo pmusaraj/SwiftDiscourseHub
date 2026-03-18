@@ -228,22 +228,22 @@ enum PreviewData {
     static let discoverSites: [DiscoverSite] = [
         DiscoverSite(id: 1, title: "Meta Discourse", featuredLink: "https://meta.discourse.org",
                      excerpt: "<p>The official community for Discourse, the open-source discussion platform. Get help, share feedback, and discuss features.</p>",
-                     logoUrl: nil, activeUsers30Days: 2450, tags: ["open-source", "support"]),
+                     logoUrl: nil, activeUsers30Days: 2450, topics30Days: 580, tags: ["open-source", "support"]),
         DiscoverSite(id: 2, title: "Swift Forums", featuredLink: "https://forums.swift.org",
                      excerpt: "<p>The Swift programming language community. Discuss proposals, share code, and collaborate on the future of Swift.</p>",
-                     logoUrl: nil, activeUsers30Days: 1800, tags: ["technology", "open-source"]),
+                     logoUrl: nil, activeUsers30Days: 1800, topics30Days: 320, tags: ["technology", "open-source"]),
         DiscoverSite(id: 3, title: "Rust Users", featuredLink: "https://users.rust-lang.org",
                      excerpt: nil,
-                     logoUrl: nil, activeUsers30Days: 950, tags: ["technology"]),
+                     logoUrl: nil, activeUsers30Days: 950, topics30Days: 210, tags: ["technology"]),
         DiscoverSite(id: 4, title: "Elixir Forum", featuredLink: "https://elixirforum.com",
                      excerpt: "<p>Pair programming with the Elixir community. Ask questions, share projects, and learn about Phoenix, LiveView, and more.</p>",
-                     logoUrl: nil, activeUsers30Days: 720, tags: ["technology"]),
+                     logoUrl: nil, activeUsers30Days: 720, topics30Days: 150, tags: ["technology"]),
         DiscoverSite(id: 5, title: "NixOS Discourse", featuredLink: "https://discourse.nixos.org",
                      excerpt: nil,
-                     logoUrl: nil, activeUsers30Days: nil, tags: ["open-source"]),
+                     logoUrl: nil, activeUsers30Days: nil, topics30Days: nil, tags: ["open-source"]),
         DiscoverSite(id: 6, title: "Keyboard Maestro", featuredLink: "https://forum.keyboardmaestro.com",
                      excerpt: "<p>Community forum for Keyboard Maestro, the powerful macOS automation tool. Share macros and get help with workflows.</p>",
-                     logoUrl: nil, activeUsers30Days: 310, tags: ["interests"]),
+                     logoUrl: nil, activeUsers30Days: 310, topics30Days: 45, tags: ["interests"]),
     ]
 
     static let smallActionPosts: [Post] = [

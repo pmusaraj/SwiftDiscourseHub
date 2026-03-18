@@ -55,6 +55,7 @@ struct DiscoverSite: Identifiable, Hashable {
     let excerpt: String?
     let logoUrl: String?
     let activeUsers30Days: Int?
+    let topics30Days: Int?
     let tags: [String]
 
     static func == (lhs: DiscoverSite, rhs: DiscoverSite) -> Bool {
@@ -84,6 +85,7 @@ private struct DiscoverSearchTopic: Codable {
     let excerpt: String?
     let discoverEntryLogoUrl: String?
     let activeUsers30Days: Int?
+    let topics30Days: Int?
     let tags: [DiscoverTag]?
 
     enum CodingKeys: String, CodingKey {
@@ -91,6 +93,7 @@ private struct DiscoverSearchTopic: Codable {
         case featuredLink = "featured_link"
         case discoverEntryLogoUrl = "discover_entry_logo_url"
         case activeUsers30Days = "active_users_30_days"
+        case topics30Days = "topics_30_days"
     }
 }
 
@@ -157,6 +160,7 @@ actor SiteDiscoveryService {
                 excerpt: topic.excerpt,
                 logoUrl: topic.discoverEntryLogoUrl,
                 activeUsers30Days: topic.activeUsers30Days,
+                topics30Days: topic.topics30Days,
                 tags: discoverTags
             )
         }

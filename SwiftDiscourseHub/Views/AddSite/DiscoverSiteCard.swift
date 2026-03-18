@@ -7,7 +7,7 @@ struct DiscoverSiteCard: View {
     let onAdd: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 if let logoUrl = site.logoUrl,
                    let url = URL(string: logoUrl.hasPrefix("//") ? "https:\(logoUrl)" : logoUrl),
@@ -42,24 +42,34 @@ struct DiscoverSiteCard: View {
             }
 
             Text(strippedExcerpt.isEmpty ? " " : strippedExcerpt)
-                .font(Theme.Fonts.discoverSiteDescription)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .font(Theme.Fonts.postBody)
+                .foregroundStyle(.primary.opacity(0.7))
+                .lineLimit(4)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .opacity(strippedExcerpt.isEmpty ? 0 : 1)
 
-            Label {
-                Text(site.activeUsers30Days.map { "\($0) active users" } ?? " ")
-            } icon: {
-                Image(systemName: "person.2")
+            HStack(spacing: 16) {
+                if let users = site.activeUsers30Days, users > 0 {
+                    Label {
+                        Text("\(Self.roundedStat(users)) active users")
+                    } icon: {
+                        Image(systemName: "person.2")
+                    }
+                }
+                if let topics = site.topics30Days, topics > 0 {
+                    Label {
+                        Text("\(Self.roundedStat(topics)) recent topics")
+                    } icon: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                    }
+                }
             }
             .font(Theme.Fonts.discoverSiteStats)
             .foregroundStyle(.secondary)
-            .opacity(site.activeUsers30Days != nil && site.activeUsers30Days! > 0 ? 1 : 0)
         }
-        .padding(12)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background)
+        .background(.thinMaterial)
         .clipShape(.rect(cornerRadius: 10))
         .shadow(color: .primary.opacity(0.08), radius: 4, y: 2)
     }
@@ -73,5 +83,20 @@ struct DiscoverSiteCard: View {
                 .foregroundStyle(.secondary)
         }
         .frame(width: Theme.Discover.siteIconSize, height: Theme.Discover.siteIconSize)
+    }
+
+    static func roundedStat(_ value: Int) -> String {
+        switch value {
+        case ..<10: return "\(value)"
+        case ..<100:
+            let base = (value / 10) * 10
+            return "\(base)+"
+        case ..<1000:
+            let base = (value / 100) * 100
+            return "\(base)+"
+        default:
+            let base = (value / 1000) * 1000
+            return "\(base)+"
+        }
     }
 }
