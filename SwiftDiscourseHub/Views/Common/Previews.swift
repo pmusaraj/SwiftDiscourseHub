@@ -376,6 +376,151 @@ private struct TopicHeaderPreview: View {
     }
 }
 
+// MARK: - Topic View
+
+#Preview("Topic View") {
+    TopicViewPreview()
+        .frame(width: 700, height: 900)
+}
+
+private struct TopicViewPreview: View {
+    @State private var composerText = ""
+
+    private var posts: [Post] {[
+        PreviewData.post,
+        PreviewData.post2,
+        Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
+             createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
+             postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
+             topicId: 1, admin: false, moderator: true, staff: true,
+             actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)], replyToPostNumber: nil),
+        Post(id: 4, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
+             createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 4,
+             postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
+             topicId: 1, admin: false, moderator: false, staff: false,
+             actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)], replyToPostNumber: 3),
+        Post(id: 5, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+             createdAt: "2025-12-19T11:00:00.000Z", cooked: nil, postNumber: 5,
+             postType: 1, replyCount: 0, readsCount: 30, score: 1.5, yours: true,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: [], replyToPostNumber: nil),
+    ]}
+
+    private let markdowns: [Int: String] = [
+        1: PreviewData.sampleMarkdown,
+        2: PreviewData.shortMarkdown,
+        3: """
+        Great points @sam! I'd also recommend looking into the `ThemeModifier` API \
+        which gives you fine-grained control over individual components.
+
+        ```javascript
+        api.modifyClass("component:topic-list-item", {
+          pluginId: "my-theme",
+          didInsertElement() {
+            this.element.style.borderLeft = "3px solid var(--tertiary)";
+          }
+        });
+        ```
+        """,
+        4: """
+        > Great points @sam!
+
+        Thanks @eviltrout! That's exactly what I was looking for. \
+        The `ThemeModifier` approach is much cleaner than what I had before.
+
+        One follow-up question: does this work with **child themes** as well?
+        """,
+        5: """
+        Yes, child themes inherit all modifiers from the parent. You can also \
+        override specific modifiers in the child theme if needed.
+
+        See the [theme documentation](https://meta.discourse.org/t/themes) for more details.
+        """,
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Topic header
+            VStack(alignment: .leading, spacing: Theme.Spacing.topicHeaderVertical) {
+                Text(PreviewData.topic.title ?? "Untitled")
+                    .font(Theme.Fonts.topicHeaderTitle)
+                    .lineLimit(Theme.LineLimit.topicHeaderTitle)
+
+                HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
+                    CategoryBadgeView(name: "Feature", color: "25AAE2")
+
+                    Label {
+                        RelativeTimeText(dateString: PreviewData.topic.createdAt)
+                    } icon: {
+                        Image(systemName: "calendar")
+                    }
+
+                    Spacer()
+
+                    Label("^[\(41) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
+                }
+                .font(Theme.Fonts.metadata)
+                .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.bar)
+
+            Divider()
+
+            // Posts
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(posts) { post in
+                        PostView(
+                            post: post,
+                            baseURL: PreviewData.baseURL,
+                            markdown: markdowns[post.postNumber ?? 0],
+                            contentWidth: 700,
+                            isLiked: post.hasLiked
+                        )
+                        .id(post.id)
+                        if post.id != posts.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+            }
+            .scrollIndicators(.never)
+
+            // Composer
+            Divider()
+            VStack(spacing: 0) {
+                TextEditor(text: $composerText)
+                    .frame(height: 52)
+                    .font(.body)
+                    .padding(.horizontal, 8)
+                    .scrollContentBackground(.hidden)
+
+                HStack {
+                    Label("Attach", systemImage: "paperclip")
+                        .labelStyle(.iconOnly)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 8)
+
+                    Spacer()
+
+                    Button {
+                    } label: {
+                        Label("Reply", systemImage: "paperplane.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .padding(8)
+                }
+            }
+            .background(.bar)
+        }
+    }
+}
+
 // MARK: - Sidebar
 
 #Preview("Sidebar") {
