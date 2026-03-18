@@ -644,6 +644,86 @@ private struct TopicViewPreview: View {
     .frame(width: 500)
 }
 
+// MARK: - Rich Links
+
+#Preview("Rich Links") {
+    ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("GitHub Repo").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://github.com/discourse/discourse",
+                title: "GitHub - discourse/discourse: A platform for community discussion",
+                description: "A platform for community discussion. Free, open, simple.",
+                imageURL: "https://opengraph.githubassets.com/1/discourse/discourse",
+                faviconURL: "https://github.githubassets.com/favicons/favicon.svg",
+                siteName: "GitHub"
+            ))
+
+            Text("Generic Website").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://discourse.org/",
+                title: "Discourse is the place to build civilized communities",
+                description: "Discourse is modern forum software for meaningful discussions, support, and teamwork that gives your online community everything it needs in one place.",
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "Discourse - Civilized Discussion"
+            ))
+
+            Text("Minimal (title only)").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://www.google.com/",
+                title: "Google",
+                description: nil,
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: nil
+            ))
+        }
+        .padding()
+    }
+    .frame(width: 500, height: 700)
+}
+
+#Preview("Post with Rich Link") {
+    ScrollView {
+        PostView(
+            post: Post(
+                id: 300, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
+                createdAt: "2026-03-16T09:00:00.000Z",
+                cooked: """
+                <p>Check out the source code:</p>
+                <aside class="onebox githubrepo" data-onebox-src="https://github.com/discourse/discourse">
+                  <header class="source">
+                      <a href="https://github.com/discourse/discourse" target="_blank">github.com</a>
+                  </header>
+                  <article class="onebox-body">
+                    <img src="https://opengraph.githubassets.com/1/discourse/discourse" class="thumbnail" width="690" height="344">
+                    <h3><a href="https://github.com/discourse/discourse" target="_blank">GitHub - discourse/discourse: A platform for community discussion</a></h3>
+                    <p>A platform for community discussion. Free, open, simple.</p>
+                  </article>
+                </aside>
+                <p>It's fully open source!</p>
+                """,
+                postNumber: 1,
+                postType: 1, replyCount: 3, readsCount: 50, score: 8.0, yours: false,
+                topicId: 1, admin: false, moderator: false, staff: true,
+                actionsSummary: [ActionSummary(id: 2, count: 7, acted: false)],
+                replyToPostNumber: nil, actionCode: nil
+            ),
+            baseURL: PreviewData.baseURL,
+            markdown: """
+            Check out the source code:
+
+            https://github.com/discourse/discourse
+
+            It's fully open source!
+            """,
+            contentWidth: 500
+        )
+    }
+    .frame(width: 500, height: 500)
+}
+
 // MARK: - Discover Site Card
 
 #Preview("Discover Site Card") {

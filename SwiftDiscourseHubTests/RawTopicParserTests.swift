@@ -427,4 +427,107 @@ import Foundation
         #expect(result.contains("![clip](https://example.com/video.mp4)"),
                 "Video pipe suffix should be cleaned: \(result)")
     }
+
+    // MARK: - Onebox parsing tests
+
+    @Test func parseOneboxFromCooked() {
+        let cooked = """
+        <p>Check this out:</p>
+        <aside class="onebox allowlistedgeneric" data-onebox-src="https://www.example.com/">
+          <header class="source">
+              <img src="https://example.com/favicon.png" class="site-icon" width="32" height="32">
+              <a href="https://www.example.com/" target="_blank">example.com</a>
+          </header>
+          <article class="onebox-body">
+            <img src="https://example.com/preview.jpg" class="thumbnail" width="690" height="362">
+            <h3><a href="https://www.example.com/" target="_blank">Example Domain</a></h3>
+            <p>This domain is for use in illustrative examples.</p>
+          </article>
+        </aside>
+        """
+        let oneboxes = DiscourseMarkdownPreprocessor.parseOneboxes(from: cooked)
+        #expect(oneboxes.count == 1)
+        let info = oneboxes["https://www.example.com"]
+        #expect(info?.title == "Example Domain")
+        #expect(info?.description == "This domain is for use in illustrative examples.")
+        #expect(info?.imageURL == "https://example.com/preview.jpg")
+        #expect(info?.faviconURL == "https://example.com/favicon.png")
+        #expect(info?.siteName == "example.com")
+        #expect(info?.domain == "example.com")
+    }
+
+    @Test func richLinkSegmentExtraction() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://forum.example.com")
+        let input = """
+        Check this out:
+
+        https://www.example.com/
+
+        What do you think?
+        """
+        let processed = preprocessor.process(input)
+        let oneboxes = [
+            "https://www.example.com": OneboxInfo(
+                url: "https://www.example.com/",
+                title: "Example",
+                description: "A test site",
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "example.com"
+            )
+        ]
+        let segments = DiscourseMarkdownPreprocessor.extractSegments(from: processed, oneboxes: oneboxes)
+        #expect(segments.count == 3)
+        if case .markdown(let text) = segments[0] {
+            #expect(text.contains("Check this out"))
+        }
+        if case .richLink(let info) = segments[1] {
+            #expect(info.title == "Example")
+        } else {
+            Issue.record("Expected a richLink segment")
+        }
+        if case .markdown(let text) = segments[2] {
+            #expect(text.contains("What do you think"))
+        }
+    }
+
+    @Test func parseGitHubPROneboxWithH4() {
+        let cooked = """
+        <aside class="onebox githubpullrequest" data-onebox-src="https://github.com/discourse/discourse/pull/38698">
+          <header class="source">
+              <a href="https://github.com/discourse/discourse/pull/38698" target="_blank">github.com/discourse/discourse</a>
+          </header>
+          <article class="onebox-body">
+            <div class="github-info-container">
+              <h4><a href="https://github.com/discourse/discourse/pull/38698" target="_blank">DEPS: Bump stripe (#38698)</a></h4>
+            </div>
+            <p class="github-body-container">Bumps stripe from 11.1.0 to 18.4.2.</p>
+          </article>
+        </aside>
+        """
+        let oneboxes = DiscourseMarkdownPreprocessor.parseOneboxes(from: cooked)
+        let info = oneboxes["https://github.com/discourse/discourse/pull/38698"]
+        #expect(info?.title == "DEPS: Bump stripe (#38698)")
+        #expect(info?.description == "Bumps stripe from 11.1.0 to 18.4.2.")
+        #expect(info?.siteName == "github.com/discourse/discourse")
+    }
+
+    @Test func bareURLWithoutOneboxBecomesMarkdownLink() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://forum.example.com")
+        let input = """
+        Check this:
+
+        https://meta.discourse.org/t/some-topic/12345
+
+        Nice right?
+        """
+        let processed = preprocessor.process(input)
+        let segments = DiscourseMarkdownPreprocessor.extractSegments(from: processed, oneboxes: [:])
+        #expect(segments.count == 3)
+        if case .markdown(let text) = segments[1] {
+            #expect(text.contains("[https://meta.discourse.org/t/some-topic/12345](https://meta.discourse.org/t/some-topic/12345)"))
+        } else {
+            Issue.record("Expected bare URL converted to markdown link")
+        }
+    }
 }

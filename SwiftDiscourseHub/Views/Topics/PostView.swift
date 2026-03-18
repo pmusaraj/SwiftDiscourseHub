@@ -72,7 +72,8 @@ struct PostView: View {
 
             // Content
             if let md = markdown {
-                let segments = DiscourseMarkdownPreprocessor.extractSegments(from: md)
+                let oneboxes = DiscourseMarkdownPreprocessor.parseOneboxes(from: post.cooked)
+                let segments = DiscourseMarkdownPreprocessor.extractSegments(from: md, oneboxes: oneboxes)
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                         switch segment {
@@ -90,6 +91,8 @@ struct PostView: View {
                                 currentTopicId: currentTopicId,
                                 onScrollToPost: onScrollToPost
                             )
+                        case .richLink(let info):
+                            RichLinkView(info: info)
                         }
                     }
                 }
