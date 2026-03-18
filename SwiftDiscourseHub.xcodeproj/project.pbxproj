@@ -60,6 +60,7 @@
 		A10054 /* CategoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10054 /* CategoryCardView.swift */; };
 		A10055 /* DiscoverSiteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10055 /* DiscoverSiteCard.swift */; };
 		A10056 /* CurrentUserResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10056 /* CurrentUserResponse.swift */; };
+		A10057 /* SmallActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10057 /* SmallActionView.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
@@ -132,6 +133,7 @@
 		B10054 /* CategoryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryCardView.swift; sourceTree = "<group>"; };
 		B10055 /* DiscoverSiteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSiteCard.swift; sourceTree = "<group>"; };
 		B10056 /* CurrentUserResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserResponse.swift; sourceTree = "<group>"; };
+		B10057 /* SmallActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallActionView.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
@@ -274,6 +276,7 @@
 				B10048 /* CompactSiteListView.swift */,
 				B10049 /* CompactTopicListView.swift */,
 				B10050 /* PostView.swift */,
+				B10057 /* SmallActionView.swift */,
 			);
 			path = Topics;
 			sourceTree = "<group>";
@@ -490,6 +493,7 @@
 				A10048 /* CompactSiteListView.swift in Sources */,
 				A10049 /* CompactTopicListView.swift in Sources */,
 				A10050 /* PostView.swift in Sources */,
+				A10057 /* SmallActionView.swift in Sources */,
 				A10051 /* MarkdownFormatter.swift in Sources */,
 				A10052 /* DiscoverSiteRow.swift in Sources */,
 				A10055 /* DiscoverSiteCard.swift in Sources */,

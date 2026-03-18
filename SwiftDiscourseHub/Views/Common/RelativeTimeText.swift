@@ -23,8 +23,13 @@ struct RelativeTimeText: View {
 
     var body: some View {
         if let date {
-            Text(date, style: .relative)
-                .foregroundStyle(.secondary)
+            if date.timeIntervalSinceNow > -7 * 86400 {
+                Text(date, format: .relative(presentation: .named))
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(date, format: .dateTime.month(.abbreviated).day())
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

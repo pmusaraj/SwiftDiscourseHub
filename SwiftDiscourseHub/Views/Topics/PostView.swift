@@ -6,6 +6,7 @@ struct PostView: View {
     let markdown: String?
     var contentWidth: CGFloat = 0
     var isLiked: Bool = false
+    var isWhisper: Bool = false
     var onLike: (() async -> Void)?
     var onQuote: ((String) -> Void)?
 
@@ -50,6 +51,12 @@ struct PostView: View {
                     }
                 }
                 Spacer()
+
+                if isWhisper {
+                    Label("Whisper", systemImage: "eye.slash.fill")
+                        .font(Theme.Fonts.metadataSmall)
+                        .foregroundStyle(.orange)
+                }
 
                 if let postNumber = post.postNumber {
                     Text("#\(postNumber)")
@@ -123,6 +130,7 @@ struct PostView: View {
         }
         .padding(.vertical, Theme.Padding.postVertical)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+        .background(isWhisper ? Color.orange.opacity(0.04) : Color.clear)
     }
 
     private var likeCountDisplay: String {

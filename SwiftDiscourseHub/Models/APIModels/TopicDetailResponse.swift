@@ -37,6 +37,7 @@ struct Post: Codable, Identifiable {
     let staff: Bool?
     let actionsSummary: [ActionSummary]?
     let replyToPostNumber: Int?
+    let actionCode: String?
 
     var likeCount: Int {
         actionsSummary?.first(where: { $0.id == 2 })?.count ?? 0
@@ -49,6 +50,10 @@ struct Post: Codable, Identifiable {
     var canLike: Bool {
         yours != true
     }
+
+    var isSmallAction: Bool { postType == 3 }
+    var isWhisper: Bool { postType == 4 }
+    var isModeratorAction: Bool { postType == 2 }
 }
 
 struct ActionSummary: Codable {

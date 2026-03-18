@@ -276,7 +276,8 @@ enum PreviewData {
         moderator: false,
         staff: true,
         actionsSummary: [ActionSummary(id: 2, count: 12, acted: false)],
-        replyToPostNumber: nil
+        replyToPostNumber: nil,
+        actionCode: nil
     )
 
     static let post2 = Post(
@@ -297,7 +298,8 @@ enum PreviewData {
         moderator: false,
         staff: false,
         actionsSummary: [ActionSummary(id: 2, count: 3, acted: false)],
-        replyToPostNumber: 1
+        replyToPostNumber: 1,
+        actionCode: nil
     )
 }
 
@@ -416,17 +418,29 @@ private struct TopicViewPreview: View {
              createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
              postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
              topicId: 1, admin: false, moderator: true, staff: true,
-             actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)], replyToPostNumber: nil),
+             actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)], replyToPostNumber: nil, actionCode: nil),
+        // Small action: topic closed
+        Post(id: 6, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+             createdAt: "2025-12-17T12:00:00.000Z", cooked: nil, postNumber: 4,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "closed.enabled"),
         Post(id: 4, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
-             createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 4,
+             createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 5,
              postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
              topicId: 1, admin: false, moderator: false, staff: false,
-             actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)], replyToPostNumber: 3),
+             actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)], replyToPostNumber: 3, actionCode: nil),
+        // Whisper post
+        Post(id: 7, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+             createdAt: "2025-12-18T17:00:00.000Z", cooked: nil, postNumber: 6,
+             postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: nil),
         Post(id: 5, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
-             createdAt: "2025-12-19T11:00:00.000Z", cooked: nil, postNumber: 5,
+             createdAt: "2025-12-19T11:00:00.000Z", cooked: nil, postNumber: 7,
              postType: 1, replyCount: 0, readsCount: 30, score: 1.5, yours: true,
              topicId: 1, admin: true, moderator: false, staff: true,
-             actionsSummary: [], replyToPostNumber: nil),
+             actionsSummary: [], replyToPostNumber: nil, actionCode: nil),
     ]}
 
     private let markdowns: [Int: String] = [
@@ -445,7 +459,8 @@ private struct TopicViewPreview: View {
         });
         ```
         """,
-        4: """
+        // 4 is a small action — no markdown
+        5: """
         > Great points @sam!
 
         Thanks @eviltrout! That's exactly what I was looking for. \
@@ -453,7 +468,11 @@ private struct TopicViewPreview: View {
 
         One follow-up question: does this work with **child themes** as well?
         """,
-        5: """
+        6: """
+        *This is a staff-only note: the user's account was flagged for review \
+        but it looks like a false positive. Clearing the flag now.*
+        """,
+        7: """
         Yes, child themes inherit all modifiers from the parent. You can also \
         override specific modifiers in the child theme if needed.
 
@@ -553,6 +572,52 @@ private struct TopicViewPreview: View {
             .padding(.bottom, 4)
         }
     }
+}
+
+// MARK: - Small Actions
+
+#Preview("Small Actions") {
+    VStack(spacing: 0) {
+        ForEach([
+            ("closed.enabled", "codinghorror"),
+            ("closed.disabled", "sam"),
+            ("archived.enabled", "eviltrout"),
+            ("pinned.enabled", "codinghorror"),
+            ("visible.disabled", "sam"),
+            ("tags_changed", "eviltrout"),
+            ("split_topic", "codinghorror"),
+        ], id: \.0) { actionCode, username in
+            SmallActionView(post: Post(
+                id: 100, username: username, name: nil, avatarTemplate: nil,
+                createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: nil,
+                postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+                topicId: 1, admin: true, moderator: false, staff: true,
+                actionsSummary: nil, replyToPostNumber: nil, actionCode: actionCode
+            ))
+            Divider()
+        }
+    }
+    .padding(.horizontal)
+    .frame(width: 500)
+}
+
+// MARK: - Whisper Post
+
+#Preview("Whisper Post") {
+    PostView(
+        post: Post(
+            id: 200, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+            createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: 3,
+            postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
+            topicId: 1, admin: true, moderator: false, staff: true,
+            actionsSummary: nil, replyToPostNumber: nil, actionCode: nil
+        ),
+        baseURL: PreviewData.baseURL,
+        markdown: "*Staff note: this user's account was reviewed and cleared.*",
+        contentWidth: 500,
+        isWhisper: true
+    )
+    .frame(width: 500)
 }
 
 // MARK: - Discover Site Card

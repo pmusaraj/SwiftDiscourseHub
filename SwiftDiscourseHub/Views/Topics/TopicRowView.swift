@@ -43,10 +43,32 @@ struct TopicRowView: View {
             .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: Theme.Spacing.topicRowVertical) {
-                // Title
-                Text(topic.title ?? "Untitled")
-                    .font(Theme.Fonts.topicTitle)
-                    .lineLimit(Theme.LineLimit.topicTitle)
+                // Title + status icons
+                HStack(spacing: 4) {
+                    if topic.pinned == true {
+                        Image(systemName: "pin.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    if topic.closed == true {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if topic.archived == true {
+                        Image(systemName: "archivebox.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if topic.visible == false {
+                        Image(systemName: "eye.slash")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(topic.title ?? "Untitled")
+                        .font(Theme.Fonts.topicTitle)
+                        .lineLimit(Theme.LineLimit.topicTitle)
+                }
 
                 // Category + time
                 HStack(spacing: Theme.Spacing.metadataItems) {

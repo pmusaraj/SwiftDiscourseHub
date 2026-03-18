@@ -75,28 +75,34 @@ struct TopicDetailView: View {
                         ScrollView {
                             LazyVStack(alignment: .leading, spacing: 0) {
                                 ForEach(loadedPosts) { post in
-                                    PostView(
-                                        post: post,
-                                        baseURL: baseURL,
-                                        markdown: postMarkdown[post.postNumber ?? 0],
-                                        contentWidth: contentWidth,
-                                        isLiked: likedPostIds.contains(post.id) || post.hasLiked,
-                                        onLike: post.canLike ? {
-                                            guard site.isAuthenticated else {
-                                                toastManager.show("Please login to like this post", style: .info)
-                                                return
+                                    if post.isSmallAction {
+                                        SmallActionView(post: post)
+                                            .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+                                    } else {
+                                        PostView(
+                                            post: post,
+                                            baseURL: baseURL,
+                                            markdown: postMarkdown[post.postNumber ?? 0],
+                                            contentWidth: contentWidth,
+                                            isLiked: likedPostIds.contains(post.id) || post.hasLiked,
+                                            isWhisper: post.isWhisper,
+                                            onLike: post.canLike ? {
+                                                guard site.isAuthenticated else {
+                                                    toastManager.show("Please login to like this post", style: .info)
+                                                    return
+                                                }
+                                                await toggleLike(post: post)
+                                            } : nil,
+                                            onQuote: { selectedText in
+                                                quoteText(selectedText, from: post)
                                             }
-                                            await toggleLike(post: post)
-                                        } : nil,
-                                        onQuote: { selectedText in
-                                            quoteText(selectedText, from: post)
-                                        }
-                                    )
-                                    .id(post.id)
+                                        )
+                                    }
                                     if post.id != loadedPosts.last?.id {
                                         Divider()
                                     }
                                     Color.clear.frame(height: 0)
+                                        .id(post.id)
                                         .onAppear {
                                             if post.id == loadedPosts.last?.id {
                                                 Task { await loadMorePosts() }
@@ -182,9 +188,27 @@ struct TopicDetailView: View {
     @ViewBuilder
     private func topicHeader(_ topic: Topic) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.topicHeaderVertical) {
-            Text(topic.title ?? "Untitled")
-                .font(Theme.Fonts.topicHeaderTitle)
-                .lineLimit(Theme.LineLimit.topicHeaderTitle)
+            HStack(spacing: 6) {
+                if topic.pinned == true {
+                    Image(systemName: "pin.fill")
+                        .foregroundStyle(.orange)
+                }
+                if topic.closed == true {
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(.secondary)
+                }
+                if topic.archived == true {
+                    Image(systemName: "archivebox.fill")
+                        .foregroundStyle(.secondary)
+                }
+                if topic.visible == false {
+                    Image(systemName: "eye.slash")
+                        .foregroundStyle(.secondary)
+                }
+                Text(topic.title ?? "Untitled")
+                    .font(Theme.Fonts.topicHeaderTitle)
+                    .lineLimit(Theme.LineLimit.topicHeaderTitle)
+            }
 
             HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
                 if let cat = category {
