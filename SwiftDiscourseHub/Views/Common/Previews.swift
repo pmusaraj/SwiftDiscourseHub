@@ -246,6 +246,44 @@ enum PreviewData {
                      logoUrl: nil, activeUsers30Days: 310, tags: ["interests"]),
     ]
 
+    static let smallActionPosts: [Post] = [
+        Post(id: 101, username: "codinghorror", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "closed.enabled"),
+        Post(id: 102, username: "sam", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T11:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: false, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "closed.disabled"),
+        Post(id: 103, username: "eviltrout", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T12:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: false, moderator: true, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "archived.enabled"),
+        Post(id: 104, username: "codinghorror", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T13:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "pinned.enabled"),
+        Post(id: 105, username: "sam", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T14:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: false, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "visible.disabled"),
+        Post(id: 106, username: "eviltrout", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T15:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: false, moderator: true, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "tags_changed"),
+        Post(id: 107, username: "codinghorror", name: nil, avatarTemplate: nil,
+             createdAt: "2026-03-15T16:00:00.000Z", cooked: nil, postNumber: nil,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "split_topic"),
+    ]
+
     static let users = [
         DiscourseUser(id: 1, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil),
         DiscourseUser(id: 2, username: "sam", name: "Sam Saffron", avatarTemplate: nil),
@@ -578,22 +616,8 @@ private struct TopicViewPreview: View {
 
 #Preview("Small Actions") {
     VStack(spacing: 0) {
-        ForEach([
-            ("closed.enabled", "codinghorror"),
-            ("closed.disabled", "sam"),
-            ("archived.enabled", "eviltrout"),
-            ("pinned.enabled", "codinghorror"),
-            ("visible.disabled", "sam"),
-            ("tags_changed", "eviltrout"),
-            ("split_topic", "codinghorror"),
-        ], id: \.0) { actionCode, username in
-            SmallActionView(post: Post(
-                id: 100, username: username, name: nil, avatarTemplate: nil,
-                createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: nil,
-                postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
-                topicId: 1, admin: true, moderator: false, staff: true,
-                actionsSummary: nil, replyToPostNumber: nil, actionCode: actionCode
-            ))
+        ForEach(PreviewData.smallActionPosts) { post in
+            SmallActionView(post: post)
             Divider()
         }
     }

@@ -16,6 +16,10 @@ struct AuthFooterBar: View {
                     showComposer = false
                     onPostCreated?()
                 }
+                .onKeyPress(.escape) {
+                    showComposer = false
+                    return .handled
+                }
             } else {
                 statusBar
             }
@@ -46,9 +50,12 @@ struct AuthFooterBar: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.bar)
+        .background(.ultraThinMaterial)
+        .clipShape(.rect(cornerRadius: 12))
+        .padding(.horizontal, 8)
+        .padding(.bottom, 4)
     }
 
     private var loginPrompt: some View {
@@ -82,8 +89,11 @@ struct AuthFooterBar: View {
             .controlSize(.small)
             .disabled(authCoordinator.isAuthenticating)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(.bar)
+        .background(.ultraThinMaterial)
+        .clipShape(.rect(cornerRadius: 12))
+        .padding(.horizontal, 8)
+        .padding(.bottom, 4)
     }
 }

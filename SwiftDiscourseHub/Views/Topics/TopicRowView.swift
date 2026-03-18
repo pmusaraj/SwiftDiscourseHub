@@ -99,7 +99,8 @@ struct TopicRowView: View {
                         Label(likes, systemImage: "heart")
                     }
                 }
-                .font(Theme.Fonts.metadata)
+                .font(Theme.Fonts.statCount)
+                .imageScale(.large)
                 .foregroundStyle(.secondary)
             }
         }

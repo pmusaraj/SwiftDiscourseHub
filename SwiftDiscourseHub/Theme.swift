@@ -7,12 +7,13 @@ enum Theme {
     // MARK: - Fonts
     
     enum Fonts {
-        static let topicTitle: Font = .headline
+        static let topicTitle: Font = .title3.bold()
         static let topicExcerpt: Font = .body
         static let postAuthorName: Font = .body.bold()
         static let postBody: Font = .body
         static let metadata: Font = .body
         static let metadataSmall: Font = .caption
+        static let statCount: Font = .subheadline
         static let topicHeaderTitle: Font = .title2.bold()
         static let sidebarIcon: Font = .title3
         static let siteIconFallback: Font = .title2.bold()
@@ -29,7 +30,7 @@ enum Theme {
 
     enum Spacing {
         static let topicRowHorizontal: CGFloat = 10
-        static let topicRowVertical: CGFloat = 6
+        static let topicRowVertical: CGFloat = 10
         static let topicRowStats: CGFloat = 12
         static let metadataItems: CGFloat = 6
         static let postContentVertical: CGFloat = 8
@@ -52,7 +53,7 @@ enum Theme {
         static let categoryFilterBottom: CGFloat = 4
         static let categoryBadgeHorizontal: CGFloat = 6
         static let categoryBadgeVertical: CGFloat = 2
-        static let postVertical: CGFloat = 16
+        static let postVertical: CGFloat = 18
         static let postHorizontalCompact: CGFloat = 24
         static let postHorizontalRegular: CGFloat = 48
         static let regularWidthBreakpoint: CGFloat = 700
@@ -119,8 +120,8 @@ enum Theme {
 
     enum PostBody {
         // Paragraph
-        static let paragraphFontScale: CGFloat = 1.1
-        static let paragraphLineSpacing: CGFloat = 0.5
+        static let paragraphFontScale: CGFloat = 1.2
+        static let paragraphLineSpacing: CGFloat = 0.35
         static let paragraphBlockSpacingTop: CGFloat = 0.9
 
         // Headings

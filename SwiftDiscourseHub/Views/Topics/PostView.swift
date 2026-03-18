@@ -126,7 +126,8 @@ struct PostView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .font(Theme.Fonts.metadata)
+            .font(Theme.Fonts.statCount)
+            .imageScale(.large)
         }
         .padding(.vertical, Theme.Padding.postVertical)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
