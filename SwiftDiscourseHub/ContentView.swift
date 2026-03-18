@@ -150,11 +150,14 @@ struct ContentView: View {
                         ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
                     }
                 } detail: {
-                    if let topicId = selectedTopicId, let site = selectedSite {
-                        TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
-                    } else {
-                        ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                    NavigationStack {
+                        if let topicId = selectedTopicId, let site = selectedSite {
+                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+                        } else {
+                            ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                        }
                     }
+                    .id(selectedTopicId)
                 }
             }
         }
@@ -181,16 +184,19 @@ struct ContentView: View {
                 ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
             }
         } detail: {
-            if let topicId = selectedTopicId, let site = selectedSite {
-                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
-            } else if showingDiscover, let discoverSite = selectedDiscoverSite {
-                DiscoverSiteDetailView(site: discoverSite, onSiteAdded: { site in
-                    selectedSite = site
-                    showingDiscover = false
-                })
-            } else {
-                ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+            NavigationStack {
+                if let topicId = selectedTopicId, let site = selectedSite {
+                    TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+                } else if showingDiscover, let discoverSite = selectedDiscoverSite {
+                    DiscoverSiteDetailView(site: discoverSite, onSiteAdded: { site in
+                        selectedSite = site
+                        showingDiscover = false
+                    })
+                } else {
+                    ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                }
             }
+            .id(selectedTopicId)
         }
     }
     #endif

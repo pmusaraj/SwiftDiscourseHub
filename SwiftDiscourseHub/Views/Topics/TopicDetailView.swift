@@ -39,6 +39,16 @@ struct TopicDetailView: View {
         URLHelpers.resolveURL("/t/\(topicId)", baseURL: baseURL)
     }
 
+    private var avatarLookup: [String: String] {
+        var lookup: [String: String] = [:]
+        for post in loadedPosts {
+            if let username = post.username, let template = post.avatarTemplate {
+                lookup[username] = template
+            }
+        }
+        return lookup
+    }
+
     private var hasMore: Bool {
         loadedPostIds.count < stream.count
     }
@@ -86,6 +96,8 @@ struct TopicDetailView: View {
                                             contentWidth: contentWidth,
                                             isLiked: likedPostIds.contains(post.id) || post.hasLiked,
                                             isWhisper: post.isWhisper,
+                                            currentTopicId: topicId,
+                                            avatarLookup: avatarLookup,
                                             onLike: post.canLike ? {
                                                 guard site.isAuthenticated else {
                                                     toastManager.show("Please login to like this post", style: .info)
@@ -95,6 +107,9 @@ struct TopicDetailView: View {
                                             } : nil,
                                             onQuote: { selectedText in
                                                 quoteText(selectedText, from: post)
+                                            },
+                                            onScrollToPost: { postNumber in
+                                                scrollToPostNumber(postNumber)
                                             }
                                         )
                                     }
@@ -180,6 +195,9 @@ struct TopicDetailView: View {
         #endif
         .task(id: topicId) {
             await loadTopic()
+        }
+        .navigationDestination(for: LinkedTopicDestination.self) { dest in
+            TopicDetailView(topicId: dest.topicId, site: site, categories: categories)
         }
     }
 
@@ -282,6 +300,12 @@ struct TopicDetailView: View {
             }
         } catch {
             toastManager.show(error.localizedDescription, style: .error)
+        }
+    }
+
+    private func scrollToPostNumber(_ postNumber: Int) {
+        if let post = loadedPosts.first(where: { $0.postNumber == postNumber }) {
+            scrollTarget = post.id
         }
     }
 

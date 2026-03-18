@@ -1,5 +1,21 @@
 import Foundation
 
+struct QuoteInfo {
+    let username: String
+    let postNumber: Int?
+    let topicId: Int?
+    let content: String
+}
+
+enum PostContentSegment {
+    case markdown(String)
+    case quote(QuoteInfo)
+}
+
+struct LinkedTopicDestination: Hashable {
+    let topicId: Int
+}
+
 struct DiscourseMarkdownPreprocessor {
     let baseURL: String
 
@@ -10,11 +26,74 @@ struct DiscourseMarkdownPreprocessor {
         result = resolveUploadURLs(result)
         result = cleanDiscourseImageSyntax(result)
         result = resolveRelativeImageURLs(result)
-        result = convertQuotes(result)
         result = convertDetails(result)
         result = convertMentions(result)
         result = ensureHardBreaks(result)
         return result
+    }
+
+    // MARK: - Quote Segment Extraction
+
+    static func extractSegments(from markdown: String) -> [PostContentSegment] {
+        let pattern = #"(?s)\[quote="([^"]*?)"\](.*?)\[/quote\]"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return [.markdown(markdown)]
+        }
+
+        let range = NSRange(markdown.startIndex..., in: markdown)
+        let matches = regex.matches(in: markdown, range: range)
+
+        if matches.isEmpty {
+            return [.markdown(markdown)]
+        }
+
+        var segments: [PostContentSegment] = []
+        var lastEnd = markdown.startIndex
+
+        for match in matches {
+            guard let fullRange = Range(match.range, in: markdown),
+                  let metaRange = Range(match.range(at: 1), in: markdown),
+                  let contentRange = Range(match.range(at: 2), in: markdown) else { continue }
+
+            let textBefore = String(markdown[lastEnd..<fullRange.lowerBound])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !textBefore.isEmpty {
+                segments.append(.markdown(textBefore))
+            }
+
+            let meta = String(markdown[metaRange])
+            let content = String(markdown[contentRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+            segments.append(.quote(parseQuoteMeta(meta, content: content)))
+
+            lastEnd = fullRange.upperBound
+        }
+
+        let remaining = String(markdown[lastEnd...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if !remaining.isEmpty {
+            segments.append(.markdown(remaining))
+        }
+
+        return segments
+    }
+
+    private static func parseQuoteMeta(_ meta: String, content: String) -> QuoteInfo {
+        var username = ""
+        var postNumber: Int?
+        var topicId: Int?
+
+        let parts = meta.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        if let first = parts.first {
+            username = first
+        }
+        for part in parts.dropFirst() {
+            if part.hasPrefix("post:"), let num = Int(part.dropFirst(5)) {
+                postNumber = num
+            } else if part.hasPrefix("topic:"), let num = Int(part.dropFirst(6)) {
+                topicId = num
+            }
+        }
+
+        return QuoteInfo(username: username, postNumber: postNumber, topicId: topicId, content: content)
     }
 
     // MARK: - HTML Conversion
@@ -151,31 +230,6 @@ struct DiscourseMarkdownPreprocessor {
             let base = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
             let resolved = "![\(alt)](\(base)\(path))"
             result.replaceSubrange(fullRange, with: resolved)
-        }
-
-        return result
-    }
-
-    private func convertQuotes(_ markdown: String) -> String {
-        // [quote="username, post:3, topic:123"]...[/quote]
-        let pattern = #"(?s)\[quote="([^"]*?)(?:,\s*post:\d+)?(?:,\s*topic:\d+)?(?:,\s*full:\w+)?"\](.*?)\[/quote\]"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
-
-        let nsString = markdown as NSString
-        let range = NSRange(location: 0, length: nsString.length)
-        var result = markdown
-
-        let matches = regex.matches(in: markdown, range: range).reversed()
-        for match in matches {
-            guard let nameRange = Range(match.range(at: 1), in: result),
-                  let contentRange = Range(match.range(at: 2), in: result),
-                  let fullRange = Range(match.range, in: result) else { continue }
-
-            let name = String(result[nameRange]).components(separatedBy: ",").first?.trimmingCharacters(in: .whitespaces) ?? ""
-            let content = String(result[contentRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-            let quoted = content.components(separatedBy: "\n").map { "> \($0)" }.joined(separator: "\n")
-            let replacement = "**\(name):**\n\(quoted)"
-            result.replaceSubrange(fullRange, with: replacement)
         }
 
         return result

@@ -107,7 +107,7 @@ import Foundation
         #expect(result.contains("https://meta.discourse.org/uploads/default/original/1X/abc.png"))
     }
 
-    @Test func convertQuotes() {
+    @Test func quotesPreservedForSegmentExtraction() {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
         let input = """
         [quote="alice, post:3, topic:123"]
@@ -115,8 +115,46 @@ import Foundation
         [/quote]
         """
         let result = preprocessor.process(input)
-        #expect(result.contains("**alice:**"))
-        #expect(result.contains("> This is a quote."))
+        // Quotes are no longer converted to blockquotes — they're left intact
+        // for the view layer to render as enriched quote blocks
+        #expect(result.contains("[quote=\"alice, post:3, topic:123\"]"))
+        #expect(result.contains("[/quote]"))
+
+        // Verify segment extraction works
+        let segments = DiscourseMarkdownPreprocessor.extractSegments(from: result)
+        #expect(segments.count == 1)
+        if case .quote(let info) = segments.first {
+            #expect(info.username == "alice")
+            #expect(info.postNumber == 3)
+            #expect(info.topicId == 123)
+            #expect(info.content.contains("This is a quote."))
+        } else {
+            Issue.record("Expected a quote segment")
+        }
+    }
+
+    @Test func quoteSegmentsWithSurroundingText() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        Before the quote.
+        [quote="bob, post:1, topic:456"]
+        Quoted content.
+        [/quote]
+        After the quote.
+        """
+        let result = preprocessor.process(input)
+        let segments = DiscourseMarkdownPreprocessor.extractSegments(from: result)
+        #expect(segments.count == 3)
+        if case .markdown(let text) = segments[0] {
+            #expect(text.contains("Before the quote."))
+        }
+        if case .quote(let info) = segments[1] {
+            #expect(info.username == "bob")
+            #expect(info.topicId == 456)
+        }
+        if case .markdown(let text) = segments[2] {
+            #expect(text.contains("After the quote."))
+        }
     }
 
     @Test func convertDetails() {

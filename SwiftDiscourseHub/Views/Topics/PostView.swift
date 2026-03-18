@@ -7,8 +7,11 @@ struct PostView: View {
     var contentWidth: CGFloat = 0
     var isLiked: Bool = false
     var isWhisper: Bool = false
+    var currentTopicId: Int = 0
+    var avatarLookup: [String: String] = [:]
     var onLike: (() async -> Void)?
     var onQuote: ((String) -> Void)?
+    var onScrollToPost: ((Int) -> Void)?
 
     @State private var isLiking = false
 
@@ -69,18 +72,38 @@ struct PostView: View {
 
             // Content
             if let md = markdown {
-                PostContentView(markdown: md, baseURL: baseURL)
-                    .contextMenu {
-                        if let onQuote {
-                            Button {
-                                let plainText = md
-                                    .replacing(/!\[.*?\]\(.*?\)/, with: "[image]")
-                                onQuote(plainText)
-                            } label: {
-                                Label("Quote in Reply", systemImage: "text.quote")
-                            }
+                let segments = DiscourseMarkdownPreprocessor.extractSegments(from: md)
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                        switch segment {
+                        case .markdown(let text):
+                            PostContentView(markdown: text, baseURL: baseURL)
+                        case .quote(let info):
+                            QuoteBlockView(
+                                quote: info,
+                                baseURL: baseURL,
+                                avatarURL: URLHelpers.avatarURL(
+                                    template: avatarLookup[info.username],
+                                    size: Theme.Avatar.postFetch,
+                                    baseURL: baseURL
+                                ),
+                                currentTopicId: currentTopicId,
+                                onScrollToPost: onScrollToPost
+                            )
                         }
                     }
+                }
+                .contextMenu {
+                    if let onQuote {
+                        Button {
+                            let plainText = md
+                                .replacing(/!\[.*?\]\(.*?\)/, with: "[image]")
+                            onQuote(plainText)
+                        } label: {
+                            Label("Quote in Reply", systemImage: "text.quote")
+                        }
+                    }
+                }
             } else if let cooked = post.cooked, !cooked.isEmpty {
                 Text(cooked)
                     .font(Theme.Fonts.postBody)
