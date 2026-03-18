@@ -3,6 +3,7 @@ import SwiftData
 import SwiftUI
 
 @Observable
+@MainActor
 final class SiteListViewModel {
     var showingAddSite = false
 

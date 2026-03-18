@@ -57,7 +57,7 @@ struct DiscourseMarkdownPreprocessor {
             result = regex.stringByReplacingMatches(in: result, range: range, withTemplate: rule.replacement)
         }
         // Clean up leftover blank lines from removed block-level elements
-        result = result.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        result = result.replacing(/\n{3,}/, with: "\n\n")
         return result
     }
 

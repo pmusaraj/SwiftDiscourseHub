@@ -20,7 +20,8 @@ struct TopicRowView: View {
     private func formatCount(_ count: Int?) -> String? {
         guard let count, count > 0 else { return nil }
         if count >= 1000 {
-            return String(format: "%.1fk", Double(count) / 1000)
+            let value = Double(count) / 1000
+            return value.formatted(.number.precision(.fractionLength(1))) + "k"
         }
         return "\(count)"
     }
@@ -58,7 +59,7 @@ struct TopicRowView: View {
 
                 // Excerpt
                 if let excerpt = topic.excerpt, !excerpt.isEmpty {
-                    Text(excerpt.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression))
+                    Text(excerpt.replacing(/<[^>]+>/, with: ""))
                         .font(Theme.Fonts.topicExcerpt)
                         .foregroundStyle(.secondary)
                         .lineLimit(Theme.LineLimit.topicExcerpt)

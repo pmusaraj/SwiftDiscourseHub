@@ -49,9 +49,9 @@ struct ToastOverlay: View {
                 .padding(.vertical, 12)
                 .background(backgroundColor(for: toast.style))
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(.rect(cornerRadius: 10))
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                .onTapGesture { toastManager.dismiss() }
+                .onTapGesture(perform: toastManager.dismiss)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }

@@ -102,7 +102,7 @@ actor AuthService {
         ]
         // URLQueryItem doesn't encode '+' (valid in RFC 3986 query but interpreted as space by servers)
         components.percentEncodedQuery = components.percentEncodedQuery?
-            .replacingOccurrences(of: "+", with: "%2B")
+            .replacing("+", with: "%2B")
 
         guard let url = components.url else {
             throw AuthError.invalidPayload

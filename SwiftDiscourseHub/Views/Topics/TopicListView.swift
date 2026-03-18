@@ -48,18 +48,20 @@ struct TopicListView: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(topicVM.topics) { topic in
-                                TopicRowView(
-                                    topic: topic,
-                                    users: topicVM.users,
-                                    categories: categoryVM.categories,
-                                    baseURL: site.baseURL
-                                )
-                                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-                                .contentShape(Rectangle())
-                                .background(selectedTopicId == topic.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
-                                .onTapGesture {
+                                Button {
                                     selectedTopicId = topic.id
+                                } label: {
+                                    TopicRowView(
+                                        topic: topic,
+                                        users: topicVM.users,
+                                        categories: categoryVM.categories,
+                                        baseURL: site.baseURL
+                                    )
+                                    .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+                                    .contentShape(Rectangle())
+                                    .background(selectedTopicId == topic.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
                                 }
+                                .buttonStyle(.plain)
                                 .onAppear {
                                     if topic.id == topicVM.topics.last?.id {
                                         Task { await topicVM.loadMore(for: site) }
@@ -85,7 +87,9 @@ struct TopicListView: View {
             contentWidth = newWidth
         }
         .navigationTitle(site.title)
+        #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Color.clear.frame(width: 0, height: 0)

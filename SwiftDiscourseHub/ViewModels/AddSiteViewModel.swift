@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 
 @Observable
+@MainActor
 final class AddSiteViewModel {
     var urlText = ""
     var isValidating = false
@@ -21,7 +22,6 @@ final class AddSiteViewModel {
         return url
     }
 
-    @MainActor
     func validate() async {
         guard !urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             validationError = "Please enter a URL"

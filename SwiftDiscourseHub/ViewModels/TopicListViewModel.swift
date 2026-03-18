@@ -7,6 +7,7 @@ enum TopicFilter: String, CaseIterable {
 }
 
 @Observable
+@MainActor
 final class TopicListViewModel {
     var topics: [Topic] = []
     var users: [DiscourseUser] = []
@@ -20,7 +21,6 @@ final class TopicListViewModel {
 
     var apiClient = DiscourseAPIClient()
 
-    @MainActor
     func loadTopics(for site: DiscourseSite) async {
         isLoading = true
         error = nil
@@ -54,7 +54,6 @@ final class TopicListViewModel {
         isLoading = false
     }
 
-    @MainActor
     func loadMore(for site: DiscourseSite) async {
         guard !isLoading, hasMore else { return }
         isLoading = true

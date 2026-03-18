@@ -51,6 +51,13 @@
 		A10045 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10045 /* ComposerView.swift */; };
 		A10046 /* ToastOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10046 /* ToastOverlay.swift */; };
 		A10047 /* UploadResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10047 /* UploadResponse.swift */; };
+		A10048 /* CompactSiteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10048 /* CompactSiteListView.swift */; };
+		A10049 /* CompactTopicListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10049 /* CompactTopicListView.swift */; };
+		A10050 /* PostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10050 /* PostView.swift */; };
+		A10051 /* MarkdownFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051 /* MarkdownFormatter.swift */; };
+		A10052 /* DiscoverSiteRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10052 /* DiscoverSiteRow.swift */; };
+		A10053 /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10053 /* FlowLayout.swift */; };
+		A10054 /* CategoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10054 /* CategoryCardView.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
@@ -114,6 +121,13 @@
 		B10045 /* ComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerView.swift; sourceTree = "<group>"; };
 		B10046 /* ToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastOverlay.swift; sourceTree = "<group>"; };
 		B10047 /* UploadResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadResponse.swift; sourceTree = "<group>"; };
+		B10048 /* CompactSiteListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactSiteListView.swift; sourceTree = "<group>"; };
+		B10049 /* CompactTopicListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactTopicListView.swift; sourceTree = "<group>"; };
+		B10050 /* PostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostView.swift; sourceTree = "<group>"; };
+		B10051 /* MarkdownFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownFormatter.swift; sourceTree = "<group>"; };
+		B10052 /* DiscoverSiteRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSiteRow.swift; sourceTree = "<group>"; };
+		B10053 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
+		B10054 /* CategoryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryCardView.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
@@ -252,6 +266,9 @@
 				B10016 /* TopicRowView.swift */,
 				B10017 /* TopicFilterBar.swift */,
 				B10028 /* TopicDetailView.swift */,
+				B10048 /* CompactSiteListView.swift */,
+				B10049 /* CompactTopicListView.swift */,
+				B10050 /* PostView.swift */,
 			);
 			path = Topics;
 			sourceTree = "<group>";
@@ -261,6 +278,7 @@
 			children = (
 				B10018 /* CategoryListView.swift */,
 				B10019 /* CategoryBadgeView.swift */,
+				B10054 /* CategoryCardView.swift */,
 			);
 			path = Categories;
 			sourceTree = "<group>";
@@ -271,6 +289,7 @@
 				B10020 /* AddSiteSheet.swift */,
 				B10021 /* DiscoverSitesView.swift */,
 				B10039 /* DiscoverSiteDetailView.swift */,
+				B10052 /* DiscoverSiteRow.swift */,
 			);
 			path = AddSite;
 			sourceTree = "<group>";
@@ -280,6 +299,7 @@
 			children = (
 				B10025 /* URLHelpers.swift */,
 				B10026 /* Color+Hex.swift */,
+				B10053 /* FlowLayout.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -311,6 +331,7 @@
 			isa = PBXGroup;
 			children = (
 				B10045 /* ComposerView.swift */,
+				B10051 /* MarkdownFormatter.swift */,
 			);
 			path = Composer;
 			sourceTree = "<group>";
@@ -459,6 +480,13 @@
 				A10045 /* ComposerView.swift in Sources */,
 				A10046 /* ToastOverlay.swift in Sources */,
 				A10047 /* UploadResponse.swift in Sources */,
+				A10048 /* CompactSiteListView.swift in Sources */,
+				A10049 /* CompactTopicListView.swift in Sources */,
+				A10050 /* PostView.swift in Sources */,
+				A10051 /* MarkdownFormatter.swift in Sources */,
+				A10052 /* DiscoverSiteRow.swift in Sources */,
+				A10053 /* FlowLayout.swift in Sources */,
+				A10054 /* CategoryCardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

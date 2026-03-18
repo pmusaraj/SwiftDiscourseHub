@@ -219,30 +219,33 @@ struct ContentView: View {
 
     #if os(iOS)
     private var iPadLayout: some View {
-        Group {
-            if selectedTopicId != nil, let site = selectedSite {
-                NavigationSplitView {
-                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
-                } content: {
+        NavigationSplitView {
+            SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+        } content: {
+            if showingDiscover {
+                DiscoverSitesView(onSiteAdded: { site in
+                    selectedSite = site
+                    showingDiscover = false
+                }, selectedDiscoverSite: $selectedDiscoverSite)
+            } else if let site = selectedSite {
+                if site.loginRequired && !site.isAuthenticated {
+                    LoginRequiredView(site: site)
+                } else {
                     TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
-                } detail: {
-                    TopicDetailView(topicId: selectedTopicId!, site: site, topic: selectedTopic, categories: topicCategories)
                 }
             } else {
-                NavigationSplitView {
-                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
-                } detail: {
-                    if showingDiscover {
-                        DiscoverSitesView(onSiteAdded: { site in
-                            selectedSite = site
-                            showingDiscover = false
-                        }, selectedDiscoverSite: $selectedDiscoverSite)
-                    } else if let site = selectedSite {
-                        TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
-                    } else {
-                        ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
-                    }
-                }
+                ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
+            }
+        } detail: {
+            if let topicId = selectedTopicId, let site = selectedSite {
+                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+            } else if showingDiscover, let discoverSite = selectedDiscoverSite {
+                DiscoverSiteDetailView(site: discoverSite, onSiteAdded: { site in
+                    selectedSite = site
+                    showingDiscover = false
+                })
+            } else {
+                ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
             }
         }
     }
@@ -260,93 +263,5 @@ struct ContentView: View {
                     }, selectedDiscoverSite: $selectedDiscoverSite)
                 }
         }
-    }
-}
-
-// MARK: - Compact site list for iPhone
-
-struct CompactSiteListView: View {
-    @Query(sort: \DiscourseSite.sortOrder) private var sites: [DiscourseSite]
-    @Binding var selectedSite: DiscourseSite?
-    @Binding var showingAddSite: Bool
-    @Binding var showingDiscover: Bool
-    @Environment(\.modelContext) private var modelContext
-    @Environment(AuthCoordinator.self) private var authCoordinator
-
-    var body: some View {
-        List {
-            ForEach(sites) { site in
-                NavigationLink {
-                    CompactTopicListView(site: site)
-                } label: {
-                    HStack(spacing: 12) {
-                        SiteIconView(site: site, isSelected: false)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(site.title)
-                                .font(.headline)
-                            Text(site.baseURL)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .onDelete { indexSet in
-                let sitesToDelete = indexSet.map { sites[$0] }
-                for site in sitesToDelete {
-                    let baseURL = site.baseURL
-                    modelContext.delete(site)
-                    Task { await authCoordinator.removeSite(baseURL: baseURL) }
-                }
-                try? modelContext.save()
-            }
-        }
-        .navigationTitle("Sites")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        showingAddSite = true
-                    } label: {
-                        Label("Add Site by URL", systemImage: "link")
-                    }
-                    Button {
-                        showingDiscover = true
-                    } label: {
-                        Label("Discover Communities", systemImage: "globe")
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
-        }
-        .overlay {
-            if sites.isEmpty {
-                ContentUnavailableView {
-                    Label("No Sites", systemImage: "globe")
-                } description: {
-                    Text("Add a Discourse community to get started")
-                } actions: {
-                    Button("Discover Communities") { showingDiscover = true }
-                        .buttonStyle(.bordered)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Compact topic list with NavigationLink to detail
-
-struct CompactTopicListView: View {
-    let site: DiscourseSite
-    @State private var selectedTopicId: Int?
-    @State private var selectedTopic: Topic?
-    @State private var topicCategories: [DiscourseCategory] = []
-
-    var body: some View {
-        TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
-            .navigationDestination(item: $selectedTopicId) { topicId in
-                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
-            }
     }
 }

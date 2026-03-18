@@ -15,7 +15,7 @@ enum URLHelpers {
     /// Avatar templates look like: "/user_avatar/meta.discourse.org/username/{size}/12345_2.png"
     static func avatarURL(template: String?, size: Int, baseURL: String) -> URL? {
         guard let template else { return nil }
-        let resolved = template.replacingOccurrences(of: "{size}", with: "\(size)")
+        let resolved = template.replacing("{size}", with: "\(size)")
         return resolveURL(resolved, baseURL: baseURL)
     }
 }

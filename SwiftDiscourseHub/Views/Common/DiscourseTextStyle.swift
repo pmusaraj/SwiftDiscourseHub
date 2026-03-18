@@ -84,7 +84,7 @@ struct DiscourseCodeBlockStyle: StructuredText.CodeBlockStyle {
                 .padding(.horizontal, 14)
         }
         .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .clipShape(.rect(cornerRadius: 6))
         .textual.blockSpacing(.fontScaled(top: 0.8, bottom: 0))
     }
 }

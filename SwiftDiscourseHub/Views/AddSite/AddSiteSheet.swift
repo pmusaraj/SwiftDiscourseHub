@@ -86,7 +86,7 @@ struct AddSiteSheet: View {
                     }
                 }
             }
-            .sheet(isPresented: $showDiscover) {
+            .navigationDestination(isPresented: $showDiscover) {
                 DiscoverSitesView(selectedDiscoverSite: $selectedDiscoverSite)
             }
             .onAppear { viewModel.apiClient = apiClient }

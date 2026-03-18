@@ -15,12 +15,6 @@ struct RelativeTimeText: View {
         return f
     }()
 
-    private static let relativeFormatter: RelativeDateTimeFormatter = {
-        let f = RelativeDateTimeFormatter()
-        f.unitsStyle = .abbreviated
-        return f
-    }()
-
     private var date: Date? {
         guard let dateString else { return nil }
         return Self.isoFormatter.date(from: dateString)
@@ -29,7 +23,7 @@ struct RelativeTimeText: View {
 
     var body: some View {
         if let date {
-            Text(Self.relativeFormatter.localizedString(for: date, relativeTo: .now))
+            Text(date, style: .relative)
                 .foregroundStyle(.secondary)
         }
     }

@@ -26,11 +26,11 @@ struct SiteIconView: View {
             }
         }
         .frame(width: Theme.Sidebar.iconSize, height: Theme.Sidebar.iconSize)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius))
-        .overlay(
+        .clipShape(.rect(cornerRadius: Theme.Sidebar.iconCornerRadius))
+        .overlay {
             RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius)
                 .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: Theme.Sidebar.iconBorderWidth)
-        )
+        }
         .padding(Theme.Sidebar.iconPadding)
         .help(site.title)
     }

@@ -107,7 +107,7 @@ struct ComposerView: View {
 
             // Thumbnail strip
             if !uploads.isEmpty || isUploading {
-                ScrollView(.horizontal, showsIndicators: false) {
+                ScrollView(.horizontal) {
                     HStack(spacing: 8) {
                         ForEach(uploads, id: \.id) { upload in
                             uploadThumbnailView(upload)
@@ -125,6 +125,7 @@ struct ComposerView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                 }
+                .scrollIndicators(.hidden)
             }
 
             if let error = submitError {
@@ -145,7 +146,8 @@ struct ComposerView: View {
                         Label("Choose File", systemImage: "doc")
                     }
                 } label: {
-                    Image(systemName: "paperclip")
+                    Label("Attach", systemImage: "paperclip")
+                        .labelStyle(.iconOnly)
                         .font(.body)
                 }
                 .menuStyle(.borderlessButton)
@@ -199,7 +201,7 @@ struct ComposerView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 60, height: 60)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(.rect(cornerRadius: 6))
                 } else {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(.quaternary)
@@ -309,8 +311,8 @@ struct ComposerView: View {
                     HStack(spacing: 8) {
                         if let avatarTemplate = user.avatarTemplate {
                             let avatarURL = avatarTemplate.hasPrefix("http")
-                                ? URL(string: avatarTemplate.replacingOccurrences(of: "{size}", with: "48"))
-                                : URL(string: site.baseURL + avatarTemplate.replacingOccurrences(of: "{size}", with: "48"))
+                                ? URL(string: avatarTemplate.replacing("{size}", with: "48"))
+                                : URL(string: site.baseURL + avatarTemplate.replacing("{size}", with: "48"))
                             CachedAsyncImage(url: avatarURL) { image in
                                 image.resizable()
                             } placeholder: {
@@ -339,7 +341,7 @@ struct ComposerView: View {
             }
         }
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(.rect(cornerRadius: 8))
         .shadow(color: .black.opacity(0.15), radius: 8, y: -2)
         .padding(.horizontal, 8)
     }
@@ -440,59 +442,5 @@ struct ComposerView: View {
             submitError = error.localizedDescription
         }
         isSubmitting = false
-    }
-}
-
-// MARK: - MarkdownFormatter
-
-enum MarkdownFormatter {
-    enum Format {
-        case bold, italic, link, quote
-    }
-
-    static func apply(_ format: Format, to text: String) -> String {
-        switch format {
-        case .bold:
-            return toggleWrap(text, prefix: "**", suffix: "**", placeholder: "bold text")
-        case .italic:
-            return toggleWrap(text, prefix: "*", suffix: "*", placeholder: "italic text")
-        case .link:
-            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return text + "[link text](url)"
-            }
-            return text + "[link text](url)"
-        case .quote:
-            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return text + "> "
-            }
-            let lines = text.components(separatedBy: "\n")
-            return lines.map { line in
-                if line.hasPrefix("> ") { return String(line.dropFirst(2)) }
-                return "> " + line
-            }.joined(separator: "\n")
-        }
-    }
-
-    static func bold(_ text: String) -> String { apply(.bold, to: text) }
-    static func italic(_ text: String) -> String { apply(.italic, to: text) }
-    static func link(_ text: String) -> String { apply(.link, to: text) }
-    static func quote(_ text: String) -> String { apply(.quote, to: text) }
-
-    static func quoteReply(text: String, username: String, topicId: Int, postNumber: Int) -> String {
-        let quoted = text.components(separatedBy: "\n").map { "> \($0)" }.joined(separator: "\n")
-        return "[quote=\"\(username), post:\(postNumber), topic:\(topicId)\"]\n\(quoted)\n[/quote]\n\n"
-    }
-
-    private static func toggleWrap(_ text: String, prefix: String, suffix: String, placeholder: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return text + "\(prefix)\(placeholder)\(suffix)"
-        }
-        if trimmed.hasPrefix(prefix) && trimmed.hasSuffix(suffix) && trimmed.count > prefix.count + suffix.count {
-            let start = trimmed.index(trimmed.startIndex, offsetBy: prefix.count)
-            let end = trimmed.index(trimmed.endIndex, offsetBy: -suffix.count)
-            return String(trimmed[start..<end])
-        }
-        return "\(prefix)\(trimmed)\(suffix)"
     }
 }

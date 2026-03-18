@@ -1,6 +1,7 @@
 import Foundation
 
 @Observable
+@MainActor
 final class CategoryListViewModel {
     var categories: [DiscourseCategory] = []
     var isLoading = false
@@ -8,7 +9,6 @@ final class CategoryListViewModel {
 
     var apiClient = DiscourseAPIClient()
 
-    @MainActor
     func loadCategories(for site: DiscourseSite) async {
         isLoading = true
         error = nil

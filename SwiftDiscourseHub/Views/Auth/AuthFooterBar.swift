@@ -26,9 +26,15 @@ struct AuthFooterBar: View {
 
     private var statusBar: some View {
         HStack {
-            Label(username != nil ? "Logged in as **\(username!)**" : "Logged in", systemImage: "person.crop.circle")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Group {
+                if let username {
+                    Label("Logged in as **\(username)**", systemImage: "person.crop.circle")
+                } else {
+                    Label("Logged in", systemImage: "person.crop.circle")
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -55,7 +61,7 @@ struct AuthFooterBar: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(width: 24, height: 24)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(.rect(cornerRadius: 4))
             }
 
             Text("Sign up or log in to interact on **\(site.title)**")

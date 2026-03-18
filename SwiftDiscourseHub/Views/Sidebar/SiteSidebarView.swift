@@ -12,16 +12,18 @@ struct SiteSidebarView: View {
     var body: some View {
         VStack(spacing: Theme.Sidebar.iconSpacing) {
             ForEach(sites) { site in
-                SiteIconView(site: site, isSelected: selectedSite?.baseURL == site.baseURL && !showingDiscover)
-                    .onTapGesture {
-                        if selectedSite?.baseURL == site.baseURL {
-                            selectedTopicId = nil
-                        } else {
-                            selectedSite = site
-                        }
-                        showingDiscover = false
+                Button {
+                    if selectedSite?.baseURL == site.baseURL {
+                        selectedTopicId = nil
+                    } else {
+                        selectedSite = site
                     }
-                    .contextMenu {
+                    showingDiscover = false
+                } label: {
+                    SiteIconView(site: site, isSelected: selectedSite?.baseURL == site.baseURL && !showingDiscover)
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
                         if site.isAuthenticated {
                             Button("Log Out") {
                                 Task {
@@ -45,15 +47,14 @@ struct SiteSidebarView: View {
 
             Spacer()
 
-            Button {
+            Button("Discover Communities", systemImage: "globe") {
                 selectedSite = nil
                 showingDiscover = true
-            } label: {
-                Image(systemName: "globe")
-                    .font(Theme.Fonts.sidebarIcon)
-                    .foregroundStyle(showingDiscover && selectedSite == nil ? Color.accentColor : Color.secondary)
-                    .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
             }
+            .labelStyle(.iconOnly)
+            .font(Theme.Fonts.sidebarIcon)
+            .foregroundStyle(showingDiscover && selectedSite == nil ? Color.accentColor : Color.secondary)
+            .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
             .buttonStyle(.plain)
             .help("Discover Communities")
         }
