@@ -228,6 +228,52 @@ actor DiscourseAPIClient {
         }
     }
 
+    func uploadFile(baseURL: String, data: Data, fileName: String, mimeType: String) async throws -> UploadResponse {
+        let url = try buildURL(base: baseURL, path: "/uploads.json")
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
+        await addAuthHeaders(to: &request, baseURL: baseURL)
+
+        var body = Data()
+        // upload_type field
+        body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ncomposer\r\n".data(using: .utf8)!)
+        // synchronous field
+        body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"synchronous\"\r\n\r\ntrue\r\n".data(using: .utf8)!)
+        // file field
+        body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\nContent-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        log.info("POST \(url) upload \(fileName) (\(data.count) bytes)")
+
+        let responseData: Data
+        let response: URLResponse
+        do {
+            (responseData, response) = try await session.data(for: request)
+        } catch {
+            throw DiscourseAPIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw DiscourseAPIError.networkError(URLError(.badServerResponse))
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: responseData))
+        }
+
+        do {
+            return try makeDecoder().decode(UploadResponse.self, from: responseData)
+        } catch {
+            throw DiscourseAPIError.decodingError(error)
+        }
+    }
+
     func revokeApiKey(baseURL: String) async throws {
         let url = try buildURL(base: baseURL, path: "/user-api-key/revoke.json")
         var request = URLRequest(url: url)
