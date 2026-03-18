@@ -7,7 +7,7 @@ struct TopicDetailView: View {
     var categories: [DiscourseCategory] = []
 
     private var baseURL: String { site.baseURL }
-    private var siteTitle: String { site.title }
+
 
     @State private var topicDetail: TopicDetailResponse?
     @State private var loadedPosts: [Post] = []
@@ -111,6 +111,7 @@ struct TopicDetailView: View {
                                 }
                             }
                         }
+                        .scrollIndicators(.never)
                         .onChange(of: scrollTarget) {
                             if let target = scrollTarget {
                                 withAnimation {
@@ -141,7 +142,7 @@ struct TopicDetailView: View {
                 ContentUnavailableView("No Posts", systemImage: "text.bubble")
             }
         }
-        .navigationTitle(siteTitle)
+        .navigationTitle("")
         #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         #endif

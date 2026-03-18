@@ -55,7 +55,7 @@ struct DiscoverSitesView: View {
             Divider()
 
             // Category filter chips
-            ScrollView(.horizontal) {
+            ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(DiscoverCategory.allCases) { category in
                         Button {
@@ -75,7 +75,7 @@ struct DiscoverSitesView: View {
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, 8)
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(.never)
 
             Divider()
 
@@ -92,34 +92,32 @@ struct DiscoverSitesView: View {
                 Spacer()
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 0) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 16)], spacing: 16) {
                         ForEach(sites) { site in
-                            Button {
-                                selectedDiscoverSite = site
-                            } label: {
-                                DiscoverSiteRow(
+                            NavigationLink(value: site) {
+                                DiscoverSiteCard(
                                     site: site,
                                     isAdded: isSiteAdded(site),
-                                    isSelected: selectedDiscoverSite?.id == site.id,
                                     strippedExcerpt: stripHTML(site.excerpt),
                                     onAdd: { Task { await addSite(site) } }
                                 )
-                                .padding(.horizontal, horizontalPadding)
-                                .contentShape(Rectangle())
-                                .background(selectedDiscoverSite?.id == site.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
                             }
                             .buttonStyle(.plain)
                         }
-                        if hasMore {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .onAppear {
-                                    Task { await loadMore() }
-                                }
-                        }
+                    }
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.vertical, 12)
+
+                    if hasMore {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .onAppear {
+                                Task { await loadMore() }
+                            }
                     }
                 }
+                .scrollIndicators(.never)
             }
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -127,7 +125,10 @@ struct DiscoverSitesView: View {
         } action: { newWidth in
             contentWidth = newWidth
         }
-        .navigationTitle("Discover")
+        .navigationDestination(for: DiscoverSite.self) { site in
+            DiscoverSiteDetailView(site: site, onSiteAdded: onSiteAdded)
+        }
+        .navigationTitle("")
         #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         #endif

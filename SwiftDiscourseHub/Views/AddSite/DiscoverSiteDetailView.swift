@@ -83,6 +83,7 @@ struct DiscoverSiteDetailView: View {
             .padding(.vertical, Theme.Padding.postVertical)
             .padding(.horizontal, horizontalPadding)
         }
+        .scrollIndicators(.never)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
         } action: { newWidth in

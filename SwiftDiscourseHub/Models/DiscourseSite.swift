@@ -12,6 +12,7 @@ final class DiscourseSite {
     var addedAt: Date
     var loginRequired: Bool = false
     var hasApiKey: Bool = false
+    var username: String?
 
     var isAuthenticated: Bool { hasApiKey }
 

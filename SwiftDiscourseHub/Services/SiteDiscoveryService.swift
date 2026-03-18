@@ -48,7 +48,7 @@ enum DiscoverCategory: String, CaseIterable, Identifiable {
     }
 }
 
-struct DiscoverSite: Identifiable, Equatable {
+struct DiscoverSite: Identifiable, Hashable {
     let id: Int
     let title: String
     let featuredLink: String
@@ -59,6 +59,10 @@ struct DiscoverSite: Identifiable, Equatable {
 
     static func == (lhs: DiscoverSite, rhs: DiscoverSite) -> Bool {
         lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 

@@ -8,10 +8,12 @@ struct SiteSidebarView: View {
     @Binding var showingDiscover: Bool
     @Environment(\.modelContext) private var modelContext
     @Environment(AuthCoordinator.self) private var authCoordinator
+    @Environment(\.apiClient) private var apiClient
 
     var body: some View {
         VStack(spacing: Theme.Sidebar.iconSpacing) {
             ForEach(sites) { site in
+                let isSelected = selectedSite?.baseURL == site.baseURL && !showingDiscover
                 Button {
                     if selectedSite?.baseURL == site.baseURL {
                         selectedTopicId = nil
@@ -20,42 +22,76 @@ struct SiteSidebarView: View {
                     }
                     showingDiscover = false
                 } label: {
-                    SiteIconView(site: site, isSelected: selectedSite?.baseURL == site.baseURL && !showingDiscover)
+                    HStack(spacing: 8) {
+                        SiteIconView(site: site, isSelected: isSelected)
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(site.title)
+                                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                                .lineLimit(1)
+
+                            if site.isAuthenticated, let username = site.username {
+                                Text("@\(username)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 4)
+                    .background(isSelected ? Color.accentColor.opacity(0.12) : .clear)
+                    .clipShape(.rect(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
-                        if site.isAuthenticated {
-                            Button("Log Out") {
-                                Task {
-                                    await authCoordinator.logout(for: site.baseURL)
-                                    site.hasApiKey = false
-                                    try? modelContext.save()
-                                }
+                    if site.isAuthenticated {
+                        Button("Log Out") {
+                            Task {
+                                await authCoordinator.logout(for: site.baseURL)
+                                site.hasApiKey = false
+                                site.username = nil
+                                try? modelContext.save()
                             }
-                        }
-                        Button("Remove Site", role: .destructive) {
-                            let baseURL = site.baseURL
-                            if selectedSite?.baseURL == baseURL {
-                                selectedSite = nil
-                            }
-                            modelContext.delete(site)
-                            try? modelContext.save()
-                            Task { await authCoordinator.removeSite(baseURL: baseURL) }
                         }
                     }
+                    Button("Remove Site", role: .destructive) {
+                        let baseURL = site.baseURL
+                        if selectedSite?.baseURL == baseURL {
+                            selectedSite = nil
+                        }
+                        modelContext.delete(site)
+                        try? modelContext.save()
+                        Task { await authCoordinator.removeSite(baseURL: baseURL) }
+                    }
+                }
             }
 
             Spacer()
 
-            Button("Discover Communities", systemImage: "globe") {
+            Button {
                 selectedSite = nil
                 showingDiscover = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 16))
+                        .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
+
+                    Text("Discover")
+                        .font(.subheadline)
+
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 4)
+                .background(showingDiscover ? Color.accentColor.opacity(0.12) : .clear)
+                .clipShape(.rect(cornerRadius: 8))
             }
-            .labelStyle(.iconOnly)
-            .font(Theme.Fonts.sidebarIcon)
-            .foregroundStyle(showingDiscover && selectedSite == nil ? Color.accentColor : Color.secondary)
-            .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
             .buttonStyle(.plain)
+            .foregroundStyle(showingDiscover ? Color.accentColor : .secondary)
             .help("Discover Communities")
         }
         .padding(.vertical, Theme.Sidebar.paddingVertical)
@@ -68,6 +104,13 @@ struct SiteSidebarView: View {
         .onAppear {
             if selectedSite == nil, let first = sites.first {
                 selectedSite = first
+            }
+        }
+        .task {
+            for site in sites where site.isAuthenticated && site.username == nil {
+                if let username = try? await apiClient.fetchCurrentUsername(baseURL: site.baseURL) {
+                    site.username = username
+                }
             }
         }
     }

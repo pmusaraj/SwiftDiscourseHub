@@ -13,6 +13,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
     @Environment(ToastManager.self) private var toastManager
+    @Environment(\.apiClient) private var apiClient
 
     private var hasSites: Bool { !sites.isEmpty }
 
@@ -54,6 +55,9 @@ struct ContentView: View {
                     if await authCoordinator.apiKey(for: baseURL) != nil {
                         site.hasApiKey = true
                         toastManager.show("Logged in to \(site.title)", style: .success)
+                        if let username = try? await apiClient.fetchCurrentUsername(baseURL: baseURL) {
+                            site.username = username
+                        }
                     }
                 }
             }
@@ -107,7 +111,7 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Regular (Mac / iPad) — 2-column, expanding to 3 when topic selected
+    // MARK: - Regular (Mac / iPad) — 3-column split view
 
     private var regularLayout: some View {
         #if os(macOS)
@@ -118,100 +122,40 @@ struct ContentView: View {
     }
 
     #if os(macOS)
-    private var hasDetail: Bool { selectedTopicId != nil && selectedSite != nil }
-    private var hasDiscoverDetail: Bool { showingDiscover && selectedDiscoverSite != nil }
-    private var hasRightPanel: Bool { hasDetail || hasDiscoverDetail }
-
-    private var toolbarBottomShadow: some View {
-        LinearGradient(
-            colors: [Theme.PanelShadow.shadowColor.opacity(Theme.Toolbar.bottomShadowOpacity), .clear],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .frame(height: Theme.Toolbar.bottomShadowHeight)
-        .allowsHitTesting(false)
-    }
-
     private var macOSLayout: some View {
-        HStack(spacing: 0) {
-            SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
-                .background(.background)
-                .overlay(alignment: .trailing) {
-                    LinearGradient(
-                        colors: [Theme.PanelShadow.shadowColor.opacity(Theme.PanelShadow.shadowOpacity), .clear],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: Theme.PanelShadow.width)
-                    .offset(x: Theme.PanelShadow.width)
-                    .allowsHitTesting(false)
-                }
-                .zIndex(2)
-
-            GeometryReader { geo in
-                HStack(spacing: 0) {
+        Group {
+            if showingDiscover {
+                NavigationSplitView {
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                } detail: {
                     NavigationStack {
-                        Group {
-                            if showingDiscover {
-                                DiscoverSitesView(onSiteAdded: { site in
-                                    selectedSite = site
-                                    showingDiscover = false
-                                }, selectedDiscoverSite: $selectedDiscoverSite)
-                            } else if let site = selectedSite {
-                                if site.loginRequired && !site.isAuthenticated {
-                                    LoginRequiredView(site: site)
-                                } else {
-                                    TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
-                                        .id(site.baseURL)
-                                        .transition(.opacity)
-                                }
-                            } else {
-                                ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
-                            }
-                        }
-                        .animation(.easeInOut(duration: 0.2), value: selectedSite?.baseURL)
-                    }
-                    .overlay(alignment: .top) { toolbarBottomShadow }
-                    .background(.background)
-                    .overlay(alignment: .trailing) {
-                        if hasRightPanel {
-                            LinearGradient(
-                                colors: [Theme.PanelShadow.shadowColor.opacity(Theme.PanelShadow.shadowOpacity), .clear],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                            .frame(width: Theme.PanelShadow.width)
-                            .offset(x: Theme.PanelShadow.width)
-                            .allowsHitTesting(false)
-                        }
-                    }
-                    .frame(width: hasRightPanel ? geo.size.width / 3 : geo.size.width)
-                    .zIndex(1)
-
-                    if hasDetail {
-                        if let topicId = selectedTopicId, let site = selectedSite {
-                            NavigationStack {
-                                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
-                            }
-                            .overlay(alignment: .top) { toolbarBottomShadow }
-                            .frame(maxWidth: .infinity)
-                            .id(topicId)
-                        }
-                    } else if hasDiscoverDetail {
-                        if let discoverSite = selectedDiscoverSite {
-                            NavigationStack {
-                                DiscoverSiteDetailView(site: discoverSite, onSiteAdded: { site in
-                                    selectedSite = site
-                                    showingDiscover = false
-                                })
-                            }
-                            .overlay(alignment: .top) { toolbarBottomShadow }
-                            .frame(maxWidth: .infinity)
-                            .id(discoverSite.id)
-                        }
+                        DiscoverSitesView(onSiteAdded: { site in
+                            selectedSite = site
+                            showingDiscover = false
+                        }, selectedDiscoverSite: $selectedDiscoverSite)
                     }
                 }
-                .animation(.easeInOut(duration: 0.25), value: hasRightPanel)
+            } else {
+                NavigationSplitView {
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                } content: {
+                    if let site = selectedSite {
+                        if site.loginRequired && !site.isAuthenticated {
+                            LoginRequiredView(site: site)
+                        } else {
+                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                                .id(site.baseURL)
+                        }
+                    } else {
+                        ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
+                    }
+                } detail: {
+                    if let topicId = selectedTopicId, let site = selectedSite {
+                        TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+                    } else {
+                        ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                    }
+                }
             }
         }
     }

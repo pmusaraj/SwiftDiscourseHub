@@ -26,6 +26,7 @@ struct CategoryListView: View {
             }
             .padding()
         }
+        .scrollIndicators(.never)
         .navigationTitle("Categories")
     }
 }

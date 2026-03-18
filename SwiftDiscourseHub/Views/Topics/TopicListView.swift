@@ -75,6 +75,7 @@ struct TopicListView: View {
                             }
                         }
                     }
+                    .scrollIndicators(.never)
                     .refreshable {
                         await topicVM.loadTopics(for: site)
                     }
@@ -86,9 +87,10 @@ struct TopicListView: View {
         } action: { newWidth in
             contentWidth = newWidth
         }
-        .navigationTitle(site.title)
+        .navigationTitle("")
         #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .navigationSplitViewColumnWidth(min: 320, ideal: 420, max: 600)
         #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

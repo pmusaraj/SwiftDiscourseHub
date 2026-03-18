@@ -10,7 +10,6 @@ struct ComposerView: View {
 
     @State private var isSubmitting = false
     @State private var submitError: String?
-    @State private var selection: TextSelection?
     @State private var editorHeight: CGFloat = 52
     @State private var uploads: [UploadResponse] = []
     @State private var uploadThumbnails: [Int: Image] = [:]
@@ -57,7 +56,7 @@ struct ComposerView: View {
             }
             #endif
 
-            TextEditor(text: $composerText, selection: $selection)
+            TextEditor(text: $composerText)
                 .focused($isEditorFocused)
                 .frame(height: editorHeight)
                 .font(.body)
@@ -125,7 +124,7 @@ struct ComposerView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                 }
-                .scrollIndicators(.hidden)
+                .scrollIndicators(.never)
             }
 
             if let error = submitError {
@@ -380,8 +379,10 @@ struct ComposerView: View {
         mentionSearchTask?.cancel()
 
         guard let fragment = extractMentionFragment(), fragment.count >= 1 else {
-            mentionSuggestions = []
-            mentionSelectedIndex = 0
+            if !mentionSuggestions.isEmpty {
+                mentionSuggestions = []
+                mentionSelectedIndex = 0
+            }
             return
         }
 
@@ -408,7 +409,6 @@ struct ComposerView: View {
             let searchSuffix = "@" + fragment
             if composerText.hasSuffix(searchSuffix) {
                 composerText = String(composerText.dropLast(searchSuffix.count)) + "@\(username) "
-                selection = .init(insertionPoint: composerText.endIndex)
             }
         }
         mentionSuggestions = []

@@ -89,16 +89,16 @@ enum Theme {
     // MARK: - Sidebar
 
     enum Sidebar {
-        static let width: CGFloat = 80
-        static let iconSize: CGFloat = 42
-        static let discoverButtonSize: CGFloat = 42
-        static let iconCornerRadius: CGFloat = 12
+        static let width: CGFloat = 180
+        static let iconSize: CGFloat = 32
+        static let discoverButtonSize: CGFloat = 32
+        static let iconCornerRadius: CGFloat = 8
         static let iconBorderWidth: CGFloat = 2
         static let iconFallbackOpacity: Double = 0.2
-        static let iconSpacing: CGFloat = 16
+        static let iconSpacing: CGFloat = 4
         static let paddingVertical: CGFloat = 10
         static let paddingHorizontal: CGFloat = 10
-        static let iconPadding: CGFloat = 4
+        static let iconPadding: CGFloat = 2
     }
 
     // MARK: - Discover
