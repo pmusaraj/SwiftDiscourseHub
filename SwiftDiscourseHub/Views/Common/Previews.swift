@@ -489,8 +489,16 @@ private struct TopicViewPreview: View {
             .scrollIndicators(.never)
 
             // Composer
-            Divider()
             VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    Image(systemName: "line.3.horizontal")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                }
+                .frame(height: 10)
+
                 TextEditor(text: $composerText)
                     .frame(height: 52)
                     .font(.body)
@@ -516,7 +524,10 @@ private struct TopicViewPreview: View {
                     .padding(8)
                 }
             }
-            .background(.bar)
+            .background(.ultraThinMaterial)
+            .clipShape(.rect(cornerRadius: 12))
+            .padding(.horizontal, 8)
+            .padding(.bottom, 4)
         }
     }
 }

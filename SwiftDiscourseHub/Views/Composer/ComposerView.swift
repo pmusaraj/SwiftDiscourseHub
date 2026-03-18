@@ -28,8 +28,6 @@ struct ComposerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Divider()
-
             // Resize handle at top
             HStack {
                 Spacer()
@@ -135,10 +133,14 @@ struct ComposerView: View {
             }
 
             HStack {
+                Spacer()
+
                 Menu {
+                    #if os(iOS)
                     PhotosPicker(selection: $selectedPhotoItem, matching: .any(of: [.images, .screenshots])) {
                         Label("Photo Library", systemImage: "photo")
                     }
+                    #endif
                     Button {
                         showingFileImporter = true
                     } label: {
@@ -151,10 +153,7 @@ struct ComposerView: View {
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .padding(.leading, 8)
                 .disabled(isUploading)
-
-                Spacer()
 
                 Button {
                     Task { await submit() }
@@ -170,10 +169,13 @@ struct ComposerView: View {
                 .controlSize(.small)
                 .disabled(!canSubmit)
                 .keyboardShortcut(.return, modifiers: .command)
-                .padding(8)
             }
+            .padding(8)
         }
-        .background(.bar)
+        .background(.ultraThinMaterial)
+        .clipShape(.rect(cornerRadius: 12))
+        .padding(.horizontal, 8)
+        .padding(.bottom, 4)
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
             Task { await handlePhotoSelection(newItem) }
