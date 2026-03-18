@@ -9,20 +9,20 @@ enum Theme {
     enum Fonts {
         static let topicTitle: Font = .headline
         static let topicExcerpt: Font = .body
-        static let postAuthorName: Font = .subheadline.bold()
-        static let postBody: Font = .title3
-        static let metadata: Font = .callout
+        static let postAuthorName: Font = .body.bold()
+        static let postBody: Font = .body
+        static let metadata: Font = .body
         static let metadataSmall: Font = .caption
         static let topicHeaderTitle: Font = .title2.bold()
         static let sidebarIcon: Font = .title3
         static let siteIconFallback: Font = .title2.bold()
         static let discoverSiteTitle: Font = .headline
-        static let discoverSiteDescription: Font = .subheadline
-        static let discoverSiteStats: Font = .footnote
+        static let discoverSiteDescription: Font = .body
+        static let discoverSiteStats: Font = .body
         static let discoverCategory: Font = .subheadline
         static let categoryListTitle: Font = .headline
         static let categoryListDescription: Font = .subheadline
-        static let categoryListStats: Font = .footnote
+        static let categoryListStats: Font = .caption
     }
 
     // MARK: - Spacing (HStack / VStack gaps)
@@ -33,6 +33,8 @@ enum Theme {
         static let topicRowStats: CGFloat = 12
         static let metadataItems: CGFloat = 6
         static let postContentVertical: CGFloat = 8
+        static let postHeaderToBody: CGFloat = 16
+        static let postBodyToFooter: CGFloat = 16
         static let postHeaderHorizontal: CGFloat = 8
         static let postAuthorVertical: CGFloat = 1
         static let postNameItems: CGFloat = 4
@@ -50,10 +52,10 @@ enum Theme {
         static let categoryFilterBottom: CGFloat = 4
         static let categoryBadgeHorizontal: CGFloat = 6
         static let categoryBadgeVertical: CGFloat = 2
-        static let postVertical: CGFloat = 20
-        static let postHorizontalCompact: CGFloat = 20
-        static let postHorizontalRegular: CGFloat = 40
-        static let regularWidthBreakpoint: CGFloat = 600
+        static let postVertical: CGFloat = 16
+        static let postHorizontalCompact: CGFloat = 24
+        static let postHorizontalRegular: CGFloat = 48
+        static let regularWidthBreakpoint: CGFloat = 700
 
         static func postHorizontal(for width: CGFloat) -> CGFloat {
             width > regularWidthBreakpoint ? postHorizontalRegular : postHorizontalCompact
@@ -111,6 +113,41 @@ enum Theme {
         static let detailIconCornerRadius: CGFloat = 14
         static let tagPaddingH: CGFloat = 10
         static let tagPaddingV: CGFloat = 4
+    }
+
+    // MARK: - Post Body (Textual/Markdown rendering)
+
+    enum PostBody {
+        // Paragraph
+        static let paragraphFontScale: CGFloat = 1.1
+        static let paragraphLineSpacing: CGFloat = 0.5
+        static let paragraphBlockSpacingTop: CGFloat = 0.9
+
+        // Headings
+        static let headingFontScales: [CGFloat] = [2.0, 1.6, 1.4, 1.2, 1.1, 1.0]
+        static let headingLineSpacing: CGFloat = 0.15
+        static let headingBlockSpacingTop: CGFloat = 1.4
+        static let headingBlockSpacingBottom: CGFloat = 0.6
+
+        // Block quote
+        static let blockQuoteLineSpacing: CGFloat = 0.3
+        static let blockQuotePadding: CGFloat = 0.8
+        static let blockQuoteBarWidth: CGFloat = 4
+        static let blockQuoteBgOpacity: Double = 0.06
+        static let blockQuoteBarOpacity: Double = 0.3
+        static let blockQuoteCornerRadius: CGFloat = 4
+
+        // Code block
+        static let codeBlockFontScale: CGFloat = 1
+        static let codeBlockLineSpacing: CGFloat = 0.5
+        static let codeBlockPaddingVertical: CGFloat = 16
+        static let codeBlockPaddingHorizontal: CGFloat = 16
+        static let codeBlockBgOpacity: Double = 0.06
+        static let codeBlockCornerRadius: CGFloat = 6
+        static let codeBlockBlockSpacingTop: CGFloat = 0.8
+
+        // Inline code
+        static let inlineCodeBgOpacity: Double = 0.12
     }
 
     // MARK: - Selection

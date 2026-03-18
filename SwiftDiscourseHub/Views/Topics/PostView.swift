@@ -12,7 +12,7 @@ struct PostView: View {
     @State private var isLiking = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.postContentVertical) {
+        VStack(alignment: .leading, spacing: 0) {
             // Header: avatar + username + date
             HStack(spacing: Theme.Spacing.postHeaderHorizontal) {
                 CachedAsyncImage(
@@ -58,6 +58,8 @@ struct PostView: View {
                 }
             }
 
+            Spacer().frame(height: Theme.Spacing.postHeaderToBody)
+
             // Content
             if let md = markdown {
                 PostContentView(markdown: md, baseURL: baseURL)
@@ -76,6 +78,8 @@ struct PostView: View {
                 Text(cooked)
                     .font(Theme.Fonts.postBody)
             }
+
+            Spacer().frame(height: Theme.Spacing.postBodyToFooter)
 
             // Footer: likes + replies
             HStack(spacing: Theme.Spacing.postFooterHorizontal) {

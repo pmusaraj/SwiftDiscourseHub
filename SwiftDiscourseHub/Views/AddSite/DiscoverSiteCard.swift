@@ -41,18 +41,21 @@ struct DiscoverSiteCard: View {
                 }
             }
 
-            if !strippedExcerpt.isEmpty {
-                Text(strippedExcerpt)
-                    .font(Theme.Fonts.discoverSiteDescription)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-            }
+            Text(strippedExcerpt.isEmpty ? " " : strippedExcerpt)
+                .font(Theme.Fonts.discoverSiteDescription)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .opacity(strippedExcerpt.isEmpty ? 0 : 1)
 
-            if let users = site.activeUsers30Days, users > 0 {
-                Label("\(users) active users", systemImage: "person.2")
-                    .font(Theme.Fonts.discoverSiteStats)
-                    .foregroundStyle(.secondary)
+            Label {
+                Text(site.activeUsers30Days.map { "\($0) active users" } ?? " ")
+            } icon: {
+                Image(systemName: "person.2")
             }
+            .font(Theme.Fonts.discoverSiteStats)
+            .foregroundStyle(.secondary)
+            .opacity(site.activeUsers30Days != nil && site.activeUsers30Days! > 0 ? 1 : 0)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

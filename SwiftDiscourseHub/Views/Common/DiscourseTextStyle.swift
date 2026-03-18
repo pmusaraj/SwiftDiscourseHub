@@ -5,7 +5,7 @@ import Textual
 
 struct DiscourseStyle: StructuredText.Style {
     let inlineStyle: InlineStyle = InlineStyle()
-        .code(.monospaced, .backgroundColor(.secondary.opacity(0.12)))
+        .code(.monospaced, .backgroundColor(.secondary.opacity(Theme.PostBody.inlineCodeBgOpacity)))
         .strong(.fontWeight(.semibold))
         .link(.foregroundColor(.accentColor))
 
@@ -24,16 +24,14 @@ struct DiscourseStyle: StructuredText.Style {
 // MARK: - Heading
 
 struct DiscourseHeadingStyle: StructuredText.HeadingStyle {
-    private static let fontScales: [CGFloat] = [2.0, 1.6, 1.4, 1.2, 1.1, 1.0]
-
     func makeBody(configuration: Configuration) -> some View {
         let level = min(configuration.headingLevel, 6)
-        let scale = Self.fontScales[level - 1]
+        let scale = Theme.PostBody.headingFontScales[level - 1]
 
         configuration.label
             .textual.fontScale(scale)
-            .textual.lineSpacing(.fontScaled(0.15))
-            .textual.blockSpacing(.fontScaled(top: 1.4, bottom: 0.6))
+            .textual.lineSpacing(.fontScaled(Theme.PostBody.headingLineSpacing))
+            .textual.blockSpacing(.fontScaled(top: Theme.PostBody.headingBlockSpacingTop, bottom: Theme.PostBody.headingBlockSpacingBottom))
             .fontWeight(.bold)
     }
 }
@@ -43,9 +41,9 @@ struct DiscourseHeadingStyle: StructuredText.HeadingStyle {
 struct DiscourseParagraphStyle: StructuredText.ParagraphStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .textual.fontScale(1.2)
-            .textual.lineSpacing(.fontScaled(0.5))
-            .textual.blockSpacing(.fontScaled(top: 0.6))
+            .textual.fontScale(Theme.PostBody.paragraphFontScale)
+            .textual.lineSpacing(.fontScaled(Theme.PostBody.paragraphLineSpacing))
+            .textual.blockSpacing(.fontScaled(top: Theme.PostBody.paragraphBlockSpacingTop))
     }
 }
 
@@ -55,17 +53,17 @@ struct DiscourseBlockQuoteStyle: StructuredText.BlockQuoteStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity, alignment: .leading)
-            .textual.lineSpacing(.fontScaled(0.3))
-            .textual.padding(.fontScaled(0.8))
+            .textual.lineSpacing(.fontScaled(Theme.PostBody.blockQuoteLineSpacing))
+            .textual.padding(.fontScaled(Theme.PostBody.blockQuotePadding))
             .background {
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color.secondary.opacity(0.06))
+                        .fill(Color.secondary.opacity(Theme.PostBody.blockQuoteBgOpacity))
                     Rectangle()
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(width: 4, alignment: .leading)
+                        .fill(Color.secondary.opacity(Theme.PostBody.blockQuoteBarOpacity))
+                        .frame(width: Theme.PostBody.blockQuoteBarWidth, alignment: .leading)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.PostBody.blockQuoteCornerRadius))
             }
     }
 }
@@ -76,15 +74,15 @@ struct DiscourseCodeBlockStyle: StructuredText.CodeBlockStyle {
     func makeBody(configuration: Configuration) -> some View {
         Overflow {
             configuration.label
-                .textual.lineSpacing(.fontScaled(0.35))
-                .textual.fontScale(0.85)
+                .textual.lineSpacing(.fontScaled(Theme.PostBody.codeBlockLineSpacing))
+                .textual.fontScale(Theme.PostBody.codeBlockFontScale)
                 .fixedSize(horizontal: false, vertical: true)
                 .monospaced()
-                .padding(.vertical, 10)
-                .padding(.horizontal, 14)
+                .padding(.vertical, Theme.PostBody.codeBlockPaddingVertical)
+                .padding(.horizontal, Theme.PostBody.codeBlockPaddingHorizontal)
         }
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(.rect(cornerRadius: 6))
-        .textual.blockSpacing(.fontScaled(top: 0.8, bottom: 0))
+        .background(Color.secondary.opacity(Theme.PostBody.codeBlockBgOpacity))
+        .clipShape(.rect(cornerRadius: Theme.PostBody.codeBlockCornerRadius))
+        .textual.blockSpacing(.fontScaled(top: Theme.PostBody.codeBlockBlockSpacingTop, bottom: 0))
     }
 }

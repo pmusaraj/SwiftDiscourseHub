@@ -223,6 +223,29 @@ enum PreviewData {
 
     static let allTopics = [topic, topic2, topic3, topic4, topic5, topic6]
 
+    // MARK: - Discover Sites
+
+    static let discoverSites: [DiscoverSite] = [
+        DiscoverSite(id: 1, title: "Meta Discourse", featuredLink: "https://meta.discourse.org",
+                     excerpt: "<p>The official community for Discourse, the open-source discussion platform. Get help, share feedback, and discuss features.</p>",
+                     logoUrl: nil, activeUsers30Days: 2450, tags: ["open-source", "support"]),
+        DiscoverSite(id: 2, title: "Swift Forums", featuredLink: "https://forums.swift.org",
+                     excerpt: "<p>The Swift programming language community. Discuss proposals, share code, and collaborate on the future of Swift.</p>",
+                     logoUrl: nil, activeUsers30Days: 1800, tags: ["technology", "open-source"]),
+        DiscoverSite(id: 3, title: "Rust Users", featuredLink: "https://users.rust-lang.org",
+                     excerpt: nil,
+                     logoUrl: nil, activeUsers30Days: 950, tags: ["technology"]),
+        DiscoverSite(id: 4, title: "Elixir Forum", featuredLink: "https://elixirforum.com",
+                     excerpt: "<p>Pair programming with the Elixir community. Ask questions, share projects, and learn about Phoenix, LiveView, and more.</p>",
+                     logoUrl: nil, activeUsers30Days: 720, tags: ["technology"]),
+        DiscoverSite(id: 5, title: "NixOS Discourse", featuredLink: "https://discourse.nixos.org",
+                     excerpt: nil,
+                     logoUrl: nil, activeUsers30Days: nil, tags: ["open-source"]),
+        DiscoverSite(id: 6, title: "Keyboard Maestro", featuredLink: "https://forum.keyboardmaestro.com",
+                     excerpt: "<p>Community forum for Keyboard Maestro, the powerful macOS automation tool. Share macros and get help with workflows.</p>",
+                     logoUrl: nil, activeUsers30Days: 310, tags: ["interests"]),
+    ]
+
     static let users = [
         DiscourseUser(id: 1, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil),
         DiscourseUser(id: 2, username: "sam", name: "Sam Saffron", avatarTemplate: nil),
@@ -529,6 +552,59 @@ private struct TopicViewPreview: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 4)
         }
+    }
+}
+
+// MARK: - Discover Site Card
+
+#Preview("Discover Site Card") {
+    HStack(spacing: 16) {
+        DiscoverSiteCard(
+            site: PreviewData.discoverSites[0],
+            isAdded: false,
+            strippedExcerpt: "The official community for Discourse, the open-source discussion platform.",
+            onAdd: {}
+        )
+        DiscoverSiteCard(
+            site: PreviewData.discoverSites[2],
+            isAdded: true,
+            strippedExcerpt: "",
+            onAdd: {}
+        )
+    }
+    .padding()
+    .frame(width: 600)
+}
+
+// MARK: - Discover Grid
+
+#Preview("Discover Grid") {
+    DiscoverGridPreview()
+        .frame(width: 700, height: 600)
+}
+
+private struct DiscoverGridPreview: View {
+    private func stripHTML(_ html: String?) -> String {
+        guard let html else { return "" }
+        return html.replacing(/<[^>]+>/, with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 16)], spacing: 16) {
+                ForEach(PreviewData.discoverSites) { site in
+                    DiscoverSiteCard(
+                        site: site,
+                        isAdded: site.id == 3,
+                        strippedExcerpt: stripHTML(site.excerpt),
+                        onAdd: {}
+                    )
+                }
+            }
+            .padding(16)
+        }
+        .scrollIndicators(.never)
     }
 }
 
