@@ -291,9 +291,9 @@ enum PreviewData {
     ]
 
     static let categories = [
-        DiscourseCategory(id: 1, name: "Feature", slug: "feature", color: "25AAE2", textColor: "FFFFFF", topicCount: 100, postCount: 500, description: nil, descriptionText: nil, topicUrl: nil, subcategoryIds: nil, uploadedLogo: nil, parentCategoryId: nil, position: 0),
-        DiscourseCategory(id: 2, name: "General", slug: "general", color: "0088CC", textColor: "FFFFFF", topicCount: 200, postCount: 1000, description: nil, descriptionText: nil, topicUrl: nil, subcategoryIds: nil, uploadedLogo: nil, parentCategoryId: nil, position: 1),
-        DiscourseCategory(id: 3, name: "Bug", slug: "bug", color: "E45735", textColor: "FFFFFF", topicCount: 50, postCount: 300, description: nil, descriptionText: nil, topicUrl: nil, subcategoryIds: nil, uploadedLogo: nil, parentCategoryId: nil, position: 2),
+        DiscourseCategory(id: 1, name: "Feature", slug: "feature", color: "25AAE2", textColor: "FFFFFF", topicCount: 100, postCount: 500, description: nil, descriptionText: nil, topicUrl: nil, subcategoryIds: nil, uploadedLogo: nil, parentCategoryId: nil, position: 0, subcategoryList: nil),
+        DiscourseCategory(id: 2, name: "General", slug: "general", color: "0088CC", textColor: "FFFFFF", topicCount: 200, postCount: 1000, description: nil, descriptionText: nil, topicUrl: nil, subcategoryIds: nil, uploadedLogo: nil, parentCategoryId: nil, position: 1, subcategoryList: nil),
+        DiscourseCategory(id: 3, name: "Bug", slug: "bug", color: "E45735", textColor: "FFFFFF", topicCount: 50, postCount: 300, description: nil, descriptionText: nil, topicUrl: nil, subcategoryIds: nil, uploadedLogo: nil, parentCategoryId: nil, position: 2, subcategoryList: nil),
     ]
 
     static let post = Post(

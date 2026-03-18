@@ -136,7 +136,7 @@ actor DiscourseAPIClient {
     }
 
     func fetchCategories(baseURL: String) async throws -> CategoryListResponse {
-        let url = try buildURL(base: baseURL, path: "/categories.json")
+        let url = try buildURL(base: baseURL, path: "/categories.json?include_subcategories=true")
         return try await fetch(CategoryListResponse.self, from: url, baseURL: baseURL)
     }
 

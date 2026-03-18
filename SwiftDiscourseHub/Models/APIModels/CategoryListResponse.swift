@@ -25,6 +25,7 @@ struct DiscourseCategory: Codable, Identifiable {
     let uploadedLogo: CategoryLogo?
     let parentCategoryId: Int?
     let position: Int?
+    let subcategoryList: [DiscourseCategory]?
 }
 
 struct CategoryLogo: Codable {

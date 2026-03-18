@@ -14,7 +14,10 @@ final class CategoryListViewModel {
         error = nil
         do {
             let response = try await apiClient.fetchCategories(baseURL: site.baseURL)
-            categories = response.categoryList?.categories ?? []
+            let topLevel = response.categoryList?.categories ?? []
+            categories = topLevel.flatMap { cat in
+                [cat] + (cat.subcategoryList ?? [])
+            }
         } catch let apiError as DiscourseAPIError {
             error = apiError
         } catch {

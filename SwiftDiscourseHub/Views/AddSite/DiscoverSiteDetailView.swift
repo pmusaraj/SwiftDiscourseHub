@@ -256,7 +256,10 @@ struct DiscoverSiteDetailView: View {
             recentUsers = response.users ?? []
 
             let catResponse = try await apiClient.fetchCategories(baseURL: site.featuredLink)
-            recentCategories = catResponse.categoryList?.categories ?? []
+            let topLevel = catResponse.categoryList?.categories ?? []
+            recentCategories = topLevel.flatMap { cat in
+                [cat] + (cat.subcategoryList ?? [])
+            }
         } catch {
             // Non-fatal
         }
