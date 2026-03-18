@@ -17,6 +17,9 @@ struct ComposerView: View {
     @State private var isUploading = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showingFileImporter = false
+    @State private var mentionSuggestions: [DiscourseUser] = []
+    @State private var mentionSelectedIndex: Int = 0
+    @State private var mentionSearchTask: Task<Void, Never>?
     @FocusState private var isEditorFocused: Bool
     @Environment(\.apiClient) private var apiClient
 
@@ -61,6 +64,46 @@ struct ComposerView: View {
                 .padding(.horizontal, 8)
                 .scrollContentBackground(.hidden)
                 .onAppear { isEditorFocused = true }
+                .overlay(alignment: .topLeading) {
+                    if !mentionSuggestions.isEmpty {
+                        mentionSuggestionsView
+                            .offset(y: -CGFloat(min(mentionSuggestions.count, 6) * 36) - 8)
+                    }
+                }
+                .onKeyPress(.upArrow) {
+                    guard !mentionSuggestions.isEmpty else { return .ignored }
+                    mentionSelectedIndex = max(0, mentionSelectedIndex - 1)
+                    return .handled
+                }
+                .onKeyPress(.downArrow) {
+                    guard !mentionSuggestions.isEmpty else { return .ignored }
+                    mentionSelectedIndex = min(min(mentionSuggestions.count, 6) - 1, mentionSelectedIndex + 1)
+                    return .handled
+                }
+                .onKeyPress(.return) {
+                    guard !mentionSuggestions.isEmpty else { return .ignored }
+                    let index = mentionSelectedIndex
+                    let suggestions = Array(mentionSuggestions.prefix(6))
+                    guard index < suggestions.count else { return .ignored }
+                    insertMention(username: suggestions[index].username ?? "")
+                    return .handled
+                }
+                .onKeyPress(.tab) {
+                    guard !mentionSuggestions.isEmpty else { return .ignored }
+                    let index = mentionSelectedIndex
+                    let suggestions = Array(mentionSuggestions.prefix(6))
+                    guard index < suggestions.count else { return .ignored }
+                    insertMention(username: suggestions[index].username ?? "")
+                    return .handled
+                }
+                .onKeyPress(.escape) {
+                    guard !mentionSuggestions.isEmpty else { return .ignored }
+                    mentionSuggestions = []
+                    return .handled
+                }
+                .onChange(of: composerText) { _, _ in
+                    updateMentionSearch()
+                }
 
             // Thumbnail strip
             if !uploads.isEmpty || isUploading {
@@ -251,6 +294,123 @@ struct ComposerView: View {
         } catch {
             submitError = error.localizedDescription
         }
+    }
+
+    // MARK: - Mention Autocomplete
+
+    @ViewBuilder
+    private var mentionSuggestionsView: some View {
+        let visibleSuggestions = Array(mentionSuggestions.prefix(6))
+        VStack(spacing: 0) {
+            ForEach(Array(visibleSuggestions.enumerated()), id: \.element.id) { index, user in
+                Button {
+                    insertMention(username: user.username ?? "")
+                } label: {
+                    HStack(spacing: 8) {
+                        if let avatarTemplate = user.avatarTemplate {
+                            let avatarURL = avatarTemplate.hasPrefix("http")
+                                ? URL(string: avatarTemplate.replacingOccurrences(of: "{size}", with: "48"))
+                                : URL(string: site.baseURL + avatarTemplate.replacingOccurrences(of: "{size}", with: "48"))
+                            CachedAsyncImage(url: avatarURL) { image in
+                                image.resizable()
+                            } placeholder: {
+                                Circle().fill(.quaternary)
+                            }
+                            .frame(width: 24, height: 24)
+                            .clipShape(Circle())
+                        }
+                        Text(user.username ?? "")
+                            .fontWeight(.medium)
+                        if let name = user.name, !name.isEmpty {
+                            Text(name)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(index == mentionSelectedIndex ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                if index < visibleSuggestions.count - 1 {
+                    Divider()
+                }
+            }
+        }
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: -2)
+        .padding(.horizontal, 8)
+    }
+
+    private func extractMentionFragment() -> String? {
+        // Look for @fragment at the end of the text (simple heuristic when selection isn't easily usable)
+        let text = composerText
+        guard !text.isEmpty else { return nil }
+
+        // Find the last @ that starts a mention
+        var i = text.endIndex
+        while i > text.startIndex {
+            let prev = text.index(before: i)
+            let ch = text[prev]
+            if ch == "@" {
+                // Check that @ is at start of text or preceded by whitespace/newline
+                if prev == text.startIndex || text[text.index(before: prev)].isWhitespace || text[text.index(before: prev)].isNewline {
+                    let fragment = String(text[i...].prefix(while: { !$0.isWhitespace && !$0.isNewline }))
+                    // Only trigger if the fragment runs to the end (cursor is at end of mention)
+                    let endOfFragment = text.index(i, offsetBy: fragment.count)
+                    if endOfFragment == text.endIndex {
+                        return fragment.isEmpty ? nil : fragment
+                    }
+                }
+                return nil
+            }
+            if ch.isWhitespace || ch.isNewline {
+                return nil
+            }
+            i = prev
+        }
+        return nil
+    }
+
+    private func updateMentionSearch() {
+        mentionSearchTask?.cancel()
+
+        guard let fragment = extractMentionFragment(), fragment.count >= 1 else {
+            mentionSuggestions = []
+            mentionSelectedIndex = 0
+            return
+        }
+
+        mentionSearchTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            do {
+                let users = try await apiClient.searchUsers(baseURL: site.baseURL, term: fragment, topicId: topicId)
+                guard !Task.isCancelled else { return }
+                mentionSuggestions = users
+                mentionSelectedIndex = 0
+            } catch {
+                if !Task.isCancelled {
+                    mentionSuggestions = []
+                }
+            }
+        }
+    }
+
+    private func insertMention(username: String) {
+        guard !username.isEmpty else { return }
+        // Find the @fragment at the end and replace it
+        if let fragment = extractMentionFragment() {
+            let searchSuffix = "@" + fragment
+            if composerText.hasSuffix(searchSuffix) {
+                composerText = String(composerText.dropLast(searchSuffix.count)) + "@\(username) "
+                selection = .init(insertionPoint: composerText.endIndex)
+            }
+        }
+        mentionSuggestions = []
+        isEditorFocused = true
     }
 
     private func submit() async {

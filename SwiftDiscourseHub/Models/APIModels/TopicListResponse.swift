@@ -50,3 +50,7 @@ struct DiscourseUser: Codable, Identifiable {
     let name: String?
     let avatarTemplate: String?
 }
+
+struct UserSearchResponse: Codable {
+    let users: [DiscourseUser]
+}

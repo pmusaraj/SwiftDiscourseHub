@@ -81,7 +81,13 @@ struct TopicDetailView: View {
                                         markdown: postMarkdown[post.postNumber ?? 0],
                                         contentWidth: contentWidth,
                                         isLiked: likedPostIds.contains(post.id) || post.hasLiked,
-                                        onLike: post.canLike ? { await toggleLike(post: post) } : nil,
+                                        onLike: post.canLike ? {
+                                            guard site.isAuthenticated else {
+                                                toastManager.show("Please login to like this post", style: .info)
+                                                return
+                                            }
+                                            await toggleLike(post: post)
+                                        } : nil,
                                         onQuote: { selectedText in
                                             quoteText(selectedText, from: post)
                                         }

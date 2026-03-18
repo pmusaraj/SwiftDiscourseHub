@@ -274,6 +274,14 @@ actor DiscourseAPIClient {
         }
     }
 
+    func searchUsers(baseURL: String, term: String, topicId: Int? = nil) async throws -> [DiscourseUser] {
+        var path = "/u/search/users.json?term=\(term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? term)"
+        if let topicId { path += "&topic_id=\(topicId)" }
+        let url = try buildURL(base: baseURL, path: path)
+        let response = try await fetch(UserSearchResponse.self, from: url, baseURL: baseURL)
+        return response.users
+    }
+
     func revokeApiKey(baseURL: String) async throws {
         let url = try buildURL(base: baseURL, path: "/user-api-key/revoke.json")
         var request = URLRequest(url: url)

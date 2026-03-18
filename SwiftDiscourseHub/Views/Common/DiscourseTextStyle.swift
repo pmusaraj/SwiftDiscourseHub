@@ -5,7 +5,7 @@ import Textual
 
 struct DiscourseStyle: StructuredText.Style {
     let inlineStyle: InlineStyle = InlineStyle()
-        .code(.monospaced)
+        .code(.monospaced, .backgroundColor(.secondary.opacity(0.12)))
         .strong(.fontWeight(.semibold))
         .link(.foregroundColor(.accentColor))
 

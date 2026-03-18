@@ -5,6 +5,7 @@ struct DiscourseMarkdownPreprocessor {
 
     func process(_ markdown: String) -> String {
         var result = markdown
+        result = stripHTML(result)
         result = convertCheckboxes(result)
         result = resolveUploadURLs(result)
         result = cleanDiscourseImageSyntax(result)
@@ -13,6 +14,50 @@ struct DiscourseMarkdownPreprocessor {
         result = convertDetails(result)
         result = convertMentions(result)
         result = ensureHardBreaks(result)
+        return result
+    }
+
+    // MARK: - HTML Conversion
+
+    /// Rules for converting HTML elements to Markdown (or removing them).
+    /// Each entry is a (regex pattern, replacement template) pair.
+    /// Use `$1`, `$2`, etc. to reference capture groups in the replacement.
+    /// An empty replacement removes the match entirely.
+    /// Add new entries here to handle additional tags.
+    private static let htmlConversionRules: [(pattern: String, replacement: String)] = [
+        // HTML comments: <!-- ... -->
+        (#"<!--.*?-->"#, ""),
+        // <hr> / <hr /> → Markdown horizontal rule
+        (#"<hr\s*/?>"#, "\n---\n"),
+        // <br> / <br /> → hard line break
+        (#"<br\s*/?>"#, "  \n"),
+        // Matched pairs of tags with only whitespace content: <div ...> </div>
+        (#"<(\w+)\b[^>]*>\s*</\1>"#, ""),
+        // <strong>text</strong> / <b>text</b> → **text**
+        (#"<(strong|b)(?:\s[^>]*)?>([^<]*)</\1>"#, "**$2**"),
+        // <em>text</em> / <i>text</i> → *text*
+        (#"<(em|i)(?:\s[^>]*)?>([^<]*)</\1>"#, "*$2*"),
+        // <del>text</del> / <s>text</s> → ~~text~~
+        (#"<(del|s)(?:\s[^>]*)?>([^<]*)</\1>"#, "~~$2~~"),
+        // <code>text</code> → `text`
+        (#"<code(?:\s[^>]*)?>([^<]*)</code>"#, "`$1`"),
+        // Remaining inline tags: unwrap content
+        (#"<(small|sup|sub|big|u|mark|abbr|ins)(?:\s[^>]*)?>([^<]*)</\1>"#, "$2"),
+        // Self-closing tags with attributes not matched above: <div ... />
+        (#"<\w+\s[^>]*/>"#, ""),
+    ]
+
+    private func stripHTML(_ markdown: String) -> String {
+        var result = markdown
+        for rule in Self.htmlConversionRules {
+            guard let regex = try? NSRegularExpression(pattern: rule.pattern, options: [.dotMatchesLineSeparators]) else {
+                continue
+            }
+            let range = NSRange(result.startIndex..., in: result)
+            result = regex.stringByReplacingMatches(in: result, range: range, withTemplate: rule.replacement)
+        }
+        // Clean up leftover blank lines from removed block-level elements
+        result = result.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
         return result
     }
 

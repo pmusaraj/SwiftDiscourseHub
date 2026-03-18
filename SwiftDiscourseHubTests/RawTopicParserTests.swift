@@ -147,6 +147,99 @@ import Foundation
         #expect(result.contains("**@username**"))
     }
 
+    // MARK: - HTML stripping tests
+
+    @Test func htmlCommentsStripped() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Hello <!-- Describe this theme/component in one or two sentences --> world"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<!--"))
+        #expect(result.contains("Hello"))
+        #expect(result.contains("world"))
+    }
+
+    @Test func emptyDivTagsStripped() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Before\n<div data-theme-toc=\"true\"> </div>\nAfter"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<div"))
+        #expect(result.contains("Before"))
+        #expect(result.contains("After"))
+    }
+
+    @Test func smallTagsUnwrapped() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "This is <small>fine print</small> text"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<small>"))
+        #expect(result.contains("fine print"))
+    }
+
+    @Test func hrTagConvertedToMarkdownRule() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Above<hr>Below"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<hr>"))
+        #expect(result.contains("---"))
+    }
+
+    @Test func hrSelfClosingTagConverted() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Above\n<hr />\nBelow"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<hr"))
+        #expect(result.contains("---"))
+    }
+
+    @Test func brTagConvertedToHardBreak() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Line one<br>Line two"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<br>"))
+    }
+
+    @Test func strongTagConvertedToBold() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "This is <strong>important</strong> text"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<strong>"))
+        #expect(result.contains("**important**"))
+    }
+
+    @Test func emTagConvertedToItalic() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "This is <em>emphasized</em> text"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<em>"))
+        #expect(result.contains("*emphasized*"))
+    }
+
+    @Test func delTagConvertedToStrikethrough() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "This is <del>removed</del> text"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<del>"))
+        #expect(result.contains("~~removed~~"))
+    }
+
+    @Test func codeTagConvertedToBackticks() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Use <code>let x = 1</code> in Swift"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<code>"))
+        #expect(result.contains("`let x = 1`"))
+    }
+
+    @Test func nestedHTMLAndMarkdownPreserved() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "# Title\n<!-- comment -->\n<div class=\"foo\"> </div>\nSome **bold** text"
+        let result = preprocessor.process(input)
+        #expect(!result.contains("<!--"))
+        #expect(!result.contains("<div"))
+        #expect(result.contains("# Title"))
+        #expect(result.contains("**bold**"))
+    }
+
     @Test func absoluteImageURLsUnchanged() {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://meta.discourse.org")
         let input = "![photo](https://cdn.example.com/image.png)"
