@@ -9,6 +9,7 @@ struct TopicListView: View {
     @State private var topicVM = TopicListViewModel()
     @State private var categoryVM = CategoryListViewModel()
     @State private var contentWidth: CGFloat = 0
+    @State private var initialLoadComplete = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,7 +36,7 @@ struct TopicListView: View {
             }
 
             Group {
-                if topicVM.isLoading && topicVM.topics.isEmpty {
+                if !initialLoadComplete {
                     ProgressView("Loading topics...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = topicVM.error, topicVM.topics.isEmpty {
@@ -98,11 +99,13 @@ struct TopicListView: View {
             }
         }
         .task(id: site.baseURL) {
+            initialLoadComplete = false
             topicVM.apiClient = apiClient
             categoryVM.apiClient = apiClient
-            await topicVM.loadTopics(for: site)
             await categoryVM.loadCategories(for: site)
             topicCategories = categoryVM.categories
+            await topicVM.loadTopics(for: site)
+            initialLoadComplete = true
         }
         .onChange(of: topicVM.filter) {
             topicVM.clearCategory()
