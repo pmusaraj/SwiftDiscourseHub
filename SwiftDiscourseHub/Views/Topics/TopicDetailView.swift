@@ -69,10 +69,6 @@ struct TopicDetailView: View {
                 }
             } else if !loadedPosts.isEmpty {
                 VStack(spacing: 0) {
-                    if let topic {
-                        topicHeader(topic)
-                        Divider()
-                    }
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(alignment: .leading, spacing: 0) {
@@ -140,6 +136,11 @@ struct TopicDetailView: View {
                         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
                     #endif
+                        .safeAreaInset(edge: .top, spacing: 0) {
+                            if let topic {
+                                topicHeader(topic)
+                            }
+                        }
                         .onScrollGeometryChange(for: ScrollGeometryInfo.self) { geometry in
                             ScrollGeometryInfo(
                                 offset: geometry.contentOffset.y,
@@ -304,7 +305,7 @@ struct TopicDetailView: View {
         .padding(.bottom, Theme.Padding.postVertical)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.bar)
+        .background(.ultraThinMaterial)
     }
 
     // MARK: - Actions
