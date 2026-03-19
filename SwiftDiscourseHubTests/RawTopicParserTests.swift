@@ -133,6 +133,34 @@ import Foundation
         }
     }
 
+    @Test func plainQuoteWithoutAttribution() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        [quote]
+        ```
+        HINT: The plugin 'discourse-reactions' is now bundled with Discourse and should not be included in your container configuration.
+        Remove the line 'git clone https://github.com/discourse/discourse-reactions' from your containers/app.yml file, then try again.
+        For more information, see https://meta.discourse.org/t/373574
+        ```
+        [/quote]
+        """
+        let result = preprocessor.process(input)
+        let segments = DiscourseMarkdownPreprocessor.extractSegments(from: result)
+
+        // Should produce a single quote segment, not raw markdown with [quote] tags
+        #expect(segments.count == 1)
+        if case .quote(let info) = segments[0] {
+            #expect(info.username.isEmpty)
+            #expect(info.postNumber == nil)
+            #expect(info.topicId == nil)
+            #expect(info.content.contains("HINT:"))
+            #expect(!info.content.contains("[quote]"))
+            #expect(!info.content.contains("[/quote]"))
+        } else {
+            Issue.record("Expected a quote segment, got \(segments[0])")
+        }
+    }
+
     @Test func quoteSegmentsWithSurroundingText() {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
         let input = """

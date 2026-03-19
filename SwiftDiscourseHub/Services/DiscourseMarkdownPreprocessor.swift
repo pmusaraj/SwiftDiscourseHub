@@ -76,7 +76,7 @@ struct DiscourseMarkdownPreprocessor {
     }
 
     private static func extractQuoteSegments(from markdown: String) -> [PostContentSegment] {
-        let pattern = #"(?s)\[quote="([^"]*?)"\](.*?)\[/quote\]"#
+        let pattern = #"(?s)\[quote(?:="([^"]*?)")?\](.*?)\[/quote\]"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return [.markdown(markdown)]
         }
@@ -93,7 +93,6 @@ struct DiscourseMarkdownPreprocessor {
 
         for match in matches {
             guard let fullRange = Range(match.range, in: markdown),
-                  let metaRange = Range(match.range(at: 1), in: markdown),
                   let contentRange = Range(match.range(at: 2), in: markdown) else { continue }
 
             let textBefore = String(markdown[lastEnd..<fullRange.lowerBound])
@@ -102,7 +101,7 @@ struct DiscourseMarkdownPreprocessor {
                 segments.append(.markdown(textBefore))
             }
 
-            let meta = String(markdown[metaRange])
+            let meta = Range(match.range(at: 1), in: markdown).map { String(markdown[$0]) } ?? ""
             let content = String(markdown[contentRange]).trimmingCharacters(in: .whitespacesAndNewlines)
             segments.append(.quote(parseQuoteMeta(meta, content: content)))
 
