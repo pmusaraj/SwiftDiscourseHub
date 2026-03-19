@@ -2,27 +2,37 @@ import SwiftUI
 
 
 
+private let _isTablet: Bool = {
+    #if os(iOS)
+    MainActor.assumeIsolated { UIDevice.current.userInterfaceIdiom == .pad }
+    #else
+    false
+    #endif
+}()
+
 enum Theme {
 
+    static let isTablet: Bool = _isTablet
+
     // MARK: - Fonts
-    
+
     enum Fonts {
-        static let topicTitle: Font = .title3.bold()
-        static let topicExcerpt: Font = .body
-        static let postAuthorName: Font = .body.bold()
-        static let postBody: Font = .body
-        static let metadata: Font = .body
+        static let topicTitle: Font = isTablet ? .headline.bold() : .title3.bold()
+        static let topicExcerpt: Font = isTablet ? .subheadline : .body
+        static let postAuthorName: Font = isTablet ? .subheadline.bold() : .body.bold()
+        static let postBody: Font = isTablet ? .subheadline : .body
+        static let metadata: Font = isTablet ? .subheadline : .body
         static let metadataSmall: Font = .caption
-        static let statCount: Font = .subheadline
-        static let topicHeaderTitle: Font = .title2.bold()
+        static let statCount: Font = isTablet ? .caption : .subheadline
+        static let topicHeaderTitle: Font = isTablet ? .title3.bold() : .title2.bold()
         static let sidebarIcon: Font = .title3
         static let siteIconFallback: Font = .title2.bold()
-        static let discoverSiteTitle: Font = .title3.bold()
-        static let discoverSiteDescription: Font = .body
-        static let discoverSiteStats: Font = .body
-        static let discoverCategory: Font = .subheadline
-        static let categoryListTitle: Font = .headline
-        static let categoryListDescription: Font = .subheadline
+        static let discoverSiteTitle: Font = isTablet ? .headline.bold() : .title3.bold()
+        static let discoverSiteDescription: Font = isTablet ? .subheadline : .body
+        static let discoverSiteStats: Font = isTablet ? .subheadline : .body
+        static let discoverCategory: Font = isTablet ? .caption : .subheadline
+        static let categoryListTitle: Font = isTablet ? .subheadline.bold() : .headline
+        static let categoryListDescription: Font = isTablet ? .caption : .subheadline
         static let categoryListStats: Font = .caption
     }
 
@@ -120,12 +130,12 @@ enum Theme {
 
     enum PostBody {
         // Paragraph
-        static let paragraphFontScale: CGFloat = 1.2
+        static let paragraphFontScale: CGFloat = isTablet ? 1.0 : 1.2
         static let paragraphLineSpacing: CGFloat = 0.35
         static let paragraphBlockSpacingTop: CGFloat = 0.9
 
         // Headings
-        static let headingFontScales: [CGFloat] = [2.0, 1.6, 1.4, 1.2, 1.1, 1.0]
+        static let headingFontScales: [CGFloat] = isTablet ? [1.7, 1.4, 1.2, 1.0, 0.95, 0.9] : [2.0, 1.6, 1.4, 1.2, 1.1, 1.0]
         static let headingLineSpacing: CGFloat = 0.15
         static let headingBlockSpacingTop: CGFloat = 1.4
         static let headingBlockSpacingBottom: CGFloat = 0.6
