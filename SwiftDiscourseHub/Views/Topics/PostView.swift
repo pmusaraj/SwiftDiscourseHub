@@ -73,7 +73,8 @@ struct PostView: View {
             // Content
             if let md = markdown {
                 let oneboxes = DiscourseMarkdownPreprocessor.parseOneboxes(from: post.cooked)
-                let segments = DiscourseMarkdownPreprocessor.extractSegments(from: md, oneboxes: oneboxes)
+                let videoURLs = DiscourseMarkdownPreprocessor.parseVideoURLs(from: post.cooked, baseURL: baseURL)
+                let segments = DiscourseMarkdownPreprocessor.extractSegments(from: md, oneboxes: oneboxes, videoURLs: videoURLs)
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                         switch segment {
@@ -93,6 +94,8 @@ struct PostView: View {
                             )
                         case .richLink(let info):
                             RichLinkView(info: info)
+                        case .video(let url):
+                            PostVideoPlayerView(urlString: url)
                         }
                     }
                 }

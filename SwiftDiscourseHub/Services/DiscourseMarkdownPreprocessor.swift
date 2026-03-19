@@ -25,6 +25,7 @@ enum PostContentSegment {
     case markdown(String)
     case quote(QuoteInfo)
     case richLink(OneboxInfo)
+    case video(String)
 }
 
 struct LinkedTopicDestination: Hashable {
@@ -39,6 +40,7 @@ struct DiscourseMarkdownPreprocessor {
         result = stripHTML(result)
         result = convertCheckboxes(result)
         result = resolveUploadURLs(result)
+        result = extractVideoMarkers(result)
         result = cleanDiscourseImageSyntax(result)
         result = resolveRelativeImageURLs(result)
         result = convertDetails(result)
@@ -49,11 +51,20 @@ struct DiscourseMarkdownPreprocessor {
 
     // MARK: - Segment Extraction
 
-    static func extractSegments(from markdown: String, oneboxes: [String: OneboxInfo] = [:]) -> [PostContentSegment] {
+    static func extractSegments(from markdown: String, oneboxes: [String: OneboxInfo] = [:], videoURLs: [String] = []) -> [PostContentSegment] {
         // Pass 1: extract quotes
         var segments = extractQuoteSegments(from: markdown)
 
-        // Pass 2: extract rich links and convert bare URLs in markdown segments
+        // Pass 2: extract videos from markdown segments, substituting cooked URLs when available
+        var videoIndex = 0
+        segments = segments.flatMap { segment -> [PostContentSegment] in
+            if case .markdown(let text) = segment {
+                return extractVideoSegments(from: text, cookedURLs: videoURLs, videoIndex: &videoIndex)
+            }
+            return [segment]
+        }
+
+        // Pass 3: extract rich links and convert bare URLs in markdown segments
         segments = segments.flatMap { segment -> [PostContentSegment] in
             if case .markdown(let text) = segment {
                 return extractRichLinks(from: text, oneboxes: oneboxes)
@@ -104,6 +115,54 @@ struct DiscourseMarkdownPreprocessor {
         }
 
         return segments
+    }
+
+    // MARK: - Video Extraction
+
+    private static let videoMarkerPattern = #"%%DISCOURSE_VIDEO:(.*?)%%"#
+
+    private static func extractVideoSegments(from markdown: String, cookedURLs: [String], videoIndex: inout Int) -> [PostContentSegment] {
+        guard let regex = try? NSRegularExpression(pattern: videoMarkerPattern) else {
+            return [.markdown(markdown)]
+        }
+
+        let range = NSRange(markdown.startIndex..., in: markdown)
+        let matches = regex.matches(in: markdown, range: range)
+
+        if matches.isEmpty { return [.markdown(markdown)] }
+
+        var segments: [PostContentSegment] = []
+        var lastEnd = markdown.startIndex
+
+        for match in matches {
+            guard let fullRange = Range(match.range, in: markdown),
+                  let urlRange = Range(match.range(at: 1), in: markdown) else { continue }
+
+            let textBefore = String(markdown[lastEnd..<fullRange.lowerBound])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !textBefore.isEmpty {
+                segments.append(.markdown(textBefore))
+            }
+
+            // Prefer the direct URL from cooked HTML over the short-url redirect
+            let markerURL = String(markdown[urlRange])
+            let videoURL: String
+            if videoIndex < cookedURLs.count {
+                videoURL = cookedURLs[videoIndex]
+                videoIndex += 1
+            } else {
+                videoURL = markerURL
+            }
+            segments.append(.video(videoURL))
+            lastEnd = fullRange.upperBound
+        }
+
+        let remaining = String(markdown[lastEnd...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if !remaining.isEmpty {
+            segments.append(.markdown(remaining))
+        }
+
+        return segments.isEmpty ? [.markdown(markdown)] : segments
     }
 
     // MARK: - Rich Link Extraction
@@ -198,6 +257,24 @@ struct DiscourseMarkdownPreprocessor {
         }
 
         return result
+    }
+
+    static func parseVideoURLs(from cooked: String?, baseURL: String) -> [String] {
+        guard let cooked else { return [] }
+
+        let pattern = #"data-video-src="([^"]*)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+
+        let range = NSRange(cooked.startIndex..., in: cooked)
+        let matches = regex.matches(in: cooked, range: range)
+        let base = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
+
+        return matches.compactMap { match in
+            guard let captureRange = Range(match.range(at: 1), in: cooked) else { return nil }
+            let src = String(cooked[captureRange])
+            if src.hasPrefix("http") { return src }
+            return "\(base)\(src)"
+        }
     }
 
     private static func firstMatch(in html: String, pattern: String) -> String? {
@@ -327,6 +404,26 @@ struct DiscourseMarkdownPreprocessor {
             let hashAndExt = String(result[hashRange])
             let resolved = "\(base)/uploads/short-url/\(hashAndExt)"
             result.replaceSubrange(fullRange, with: resolved)
+        }
+
+        return result
+    }
+
+    private func extractVideoMarkers(_ markdown: String) -> String {
+        // Replace ![name|video](url) with a marker before cleanDiscourseImageSyntax strips |video
+        let pattern = #"!\[[^\]]*\|video\]\(([^)]+)\)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
+
+        let nsString = markdown as NSString
+        let range = NSRange(location: 0, length: nsString.length)
+        var result = markdown
+
+        let matches = regex.matches(in: markdown, range: range).reversed()
+        for match in matches {
+            guard let urlRange = Range(match.range(at: 1), in: result),
+                  let fullRange = Range(match.range, in: result) else { continue }
+            let url = String(result[urlRange])
+            result.replaceSubrange(fullRange, with: "\n%%DISCOURSE_VIDEO:\(url)%%\n")
         }
 
         return result

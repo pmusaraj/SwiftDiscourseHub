@@ -420,12 +420,24 @@ import Foundation
         #expect(result.contains("Before code  \n"), "Lines outside code blocks should get trailing spaces")
     }
 
-    @Test func videoSuffixCleaned() {
+    @Test func videoSuffixExtractedAsMarker() {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
         let input = "![clip|video](https://example.com/video.mp4)"
         let result = preprocessor.process(input)
-        #expect(result.contains("![clip](https://example.com/video.mp4)"),
-                "Video pipe suffix should be cleaned: \(result)")
+        #expect(result.contains("%%DISCOURSE_VIDEO:https://example.com/video.mp4%%"),
+                "Video should be converted to marker: \(result)")
+    }
+
+    @Test func videoSegmentExtraction() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "![clip|video](https://example.com/video.mp4)\n\nSome text after."
+        let processed = preprocessor.process(input)
+        let segments = DiscourseMarkdownPreprocessor.extractSegments(from: processed)
+        let videoSegments = segments.filter { if case .video = $0 { return true }; return false }
+        #expect(videoSegments.count == 1, "Should have one video segment")
+        if case .video(let url) = videoSegments.first {
+            #expect(url == "https://example.com/video.mp4")
+        }
     }
 
     // MARK: - Onebox parsing tests
