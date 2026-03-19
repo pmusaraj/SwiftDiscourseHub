@@ -387,6 +387,7 @@
 			packageProductDependencies = (
 				R10001 /* Textual */,
 				R10002 /* _CryptoExtras */,
+				R10003 /* FontAwesomeSwiftUI */,
 			);
 			productName = SwiftDiscourseHub;
 			productReference = C10001 /* SwiftDiscourseHub.app */;
@@ -431,6 +432,7 @@
 			packageReferences = (
 				S10001 /* XCRemoteSwiftPackageReference "textual" */,
 				S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */,
+				S10003 /* XCRemoteSwiftPackageReference "FontAwesomeSwiftUI" */,
 			);
 			productRefGroup = E10003 /* Products */;
 			projectDirPath = "";
@@ -806,6 +808,14 @@
 				minimumVersion = 4.0.0;
 			};
 		};
+		S10003 /* XCRemoteSwiftPackageReference "FontAwesomeSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onmyway133/FontAwesomeSwiftUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -818,6 +828,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */;
 			productName = _CryptoExtras;
+		};
+		R10003 /* FontAwesomeSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10003 /* XCRemoteSwiftPackageReference "FontAwesomeSwiftUI" */;
+			productName = FontAwesomeSwiftUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

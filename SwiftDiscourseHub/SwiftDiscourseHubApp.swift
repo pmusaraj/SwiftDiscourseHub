@@ -1,5 +1,6 @@
-import SwiftUI
+import FontAwesomeSwiftUI
 import SwiftData
+import SwiftUI
 
 #if os(macOS)
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -23,6 +24,10 @@ struct SwiftDiscourseHubApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     #endif
+
+    init() {
+        FontAwesome.register()
+    }
 
     var body: some Scene {
         WindowGroup {

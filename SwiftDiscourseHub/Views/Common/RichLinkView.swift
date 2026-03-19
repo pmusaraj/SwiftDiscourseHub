@@ -1,7 +1,9 @@
+import FontAwesomeSwiftUI
 import SwiftUI
 
 private enum WellKnownSite {
     case gitHub, wikipedia, amazon, reddit, hackerNews, google
+    case youtube, twitter, facebook, apple, stackOverflow, discord, slack, linkedin
 
     init?(domain: String) {
         if domain.hasSuffix("github.com") { self = .gitHub }
@@ -9,8 +11,35 @@ private enum WellKnownSite {
         else if domain.hasSuffix("amazon.com") || domain.hasSuffix("amazon.co.uk") { self = .amazon }
         else if domain.hasSuffix("reddit.com") { self = .reddit }
         else if domain == "news.ycombinator.com" { self = .hackerNews }
-        else if domain.hasSuffix("google.com") || domain.hasSuffix("docs.google.com") { self = .google }
+        else if domain.hasSuffix("google.com") { self = .google }
+        else if domain.hasSuffix("youtube.com") { self = .youtube }
+        else if domain.hasSuffix("twitter.com") || domain.hasSuffix("x.com") { self = .twitter }
+        else if domain.hasSuffix("facebook.com") { self = .facebook }
+        else if domain.hasSuffix("apple.com") { self = .apple }
+        else if domain.hasSuffix("stackoverflow.com") || domain.hasSuffix("stackexchange.com") { self = .stackOverflow }
+        else if domain.hasSuffix("discord.com") || domain.hasSuffix("discord.gg") { self = .discord }
+        else if domain.hasSuffix("slack.com") { self = .slack }
+        else if domain.hasSuffix("linkedin.com") { self = .linkedin }
         else { return nil }
+    }
+
+    var icon: AwesomeIcon {
+        switch self {
+        case .gitHub: .github
+        case .wikipedia: .wikipediaW
+        case .amazon: .amazon
+        case .reddit: .reddit
+        case .hackerNews: .hackerNews
+        case .google: .google
+        case .youtube: .youtube
+        case .twitter: .twitter
+        case .facebook: .facebookF
+        case .apple: .apple
+        case .stackOverflow: .stackOverflow
+        case .discord: .discord
+        case .slack: .slack
+        case .linkedin: .linkedinIn
+        }
     }
 }
 
@@ -90,47 +119,24 @@ struct RichLinkView: View {
 
     @ViewBuilder
     private var siteIcon: some View {
-        switch wellKnownSite {
-        case .gitHub:
-            Image("GitHubMark")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
+        if let site = wellKnownSite {
+            Text(site.icon.rawValue)
+                .font(.awesome(style: .brand, size: 14))
+                .foregroundStyle(.secondary)
                 .frame(width: 16, height: 16)
-        case .wikipedia:
-            Image(systemName: "book.closed.fill")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        case .amazon:
-            Image(systemName: "cart.fill")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        case .reddit:
-            Image(systemName: "bubble.left.and.text.bubble.right.fill")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        case .hackerNews:
-            Image(systemName: "y.square.fill")
-                .font(.caption2)
-                .foregroundStyle(.orange)
-        case .google:
-            Image(systemName: "doc.text.fill")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        case nil:
-            if let faviconURL = info.faviconURL, let url = URL(string: faviconURL) {
-                CachedAsyncImage(url: url) { image in
-                    image.resizable().aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    Image(systemName: "globe")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 16, height: 16)
-            } else {
+        } else if let faviconURL = info.faviconURL, let url = URL(string: faviconURL) {
+            CachedAsyncImage(url: url) { image in
+                image.resizable().aspectRatio(contentMode: .fit)
+            } placeholder: {
                 Image(systemName: "globe")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            .frame(width: 16, height: 16)
+        } else {
+            Image(systemName: "globe")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
 }
