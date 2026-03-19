@@ -19,8 +19,26 @@ final class TopicListViewModel {
     var hasMore = true
     var selectedCategoryId: Int?
     var selectedCategorySlug: String?
+    var pinnedCategories: [DiscourseCategory] = []
+    var hiddenBuiltInFilters: Set<TopicFilter> = []
 
     var apiClient = DiscourseAPIClient()
+
+    var isShowingCategory: Bool {
+        selectedCategorySlug != nil
+    }
+
+    func addPinnedCategory(_ category: DiscourseCategory) {
+        guard !pinnedCategories.contains(where: { $0.id == category.id }) else { return }
+        pinnedCategories.append(category)
+    }
+
+    func removePinnedCategory(_ categoryId: Int) {
+        pinnedCategories.removeAll { $0.id == categoryId }
+        if selectedCategoryId == categoryId {
+            clearCategory()
+        }
+    }
 
     func loadTopics(for site: DiscourseSite) async {
         isLoading = true

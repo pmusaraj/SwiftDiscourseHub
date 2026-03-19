@@ -26,6 +26,7 @@ struct DiscourseCategory: Codable, Identifiable {
     let parentCategoryId: Int?
     let position: Int?
     let subcategoryList: [DiscourseCategory]?
+    let notificationLevel: Int?
 }
 
 struct CategoryLogo: Codable {

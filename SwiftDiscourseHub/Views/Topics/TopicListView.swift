@@ -11,51 +11,54 @@ struct TopicListView: View {
     @State private var contentWidth: CGFloat = 0
     @State private var initialLoadComplete = false
 
+    private var topCategories: [DiscourseCategory] {
+        categoryVM.categories
+            .filter { $0.parentCategoryId == nil }
+            .sorted { ($0.topicCount ?? 0) > ($1.topicCount ?? 0) }
+            .prefix(10)
+            .map { $0 }
+    }
+
+    private var filterBar: some View {
+        HStack(spacing: 6) {
+            TopicFilterBar(
+                viewModel: topicVM,
+                isAuthenticated: site.isAuthenticated,
+                onBuiltInSelected: {
+                    Task { await topicVM.loadTopics(for: site) }
+                },
+                onCategorySelected: { cat in
+                    selectCategory(cat)
+                }
+            )
+        }
+        .padding(.vertical, Theme.Padding.topicFilterVertical)
+        .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+        .background(.ultraThinMaterial)
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 6) {
-                TopicFilterBar(viewModel: topicVM, isAuthenticated: site.isAuthenticated)
-
-                Spacer()
-
-                SiteIconView(site: site, isSelected: true)
-                    .frame(width: 28, height: 28)
-            }
-            .padding(.vertical, Theme.Padding.topicFilterVertical)
-            .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-
-            if let selectedSlug = topicVM.selectedCategorySlug,
-               let cat = categoryVM.categories.first(where: { $0.slug == selectedSlug }) {
-                HStack {
-                    CategoryBadgeView(name: cat.name ?? selectedSlug, color: cat.color)
-                    Button {
-                        topicVM.clearCategory()
-                        Task { await topicVM.loadTopics(for: site) }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
+        Group {
+            if !initialLoadComplete {
+                VStack {
+                    Spacer()
+                    ProgressView("Loading topics...")
                     Spacer()
                 }
-                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-                .padding(.bottom, Theme.Padding.categoryFilterBottom)
-            }
-
-            if !initialLoadComplete {
-                Spacer()
-                ProgressView("Loading topics...")
-                Spacer()
             } else if let error = topicVM.error, topicVM.topics.isEmpty {
-                Spacer()
-                ErrorStateView(title: "Failed to Load", message: error.localizedDescription) {
-                    Task { await topicVM.loadTopics(for: site) }
+                VStack {
+                    Spacer()
+                    ErrorStateView(title: "Failed to Load", message: error.localizedDescription) {
+                        Task { await topicVM.loadTopics(for: site) }
+                    }
+                    Spacer()
                 }
-                Spacer()
             } else if topicVM.topics.isEmpty {
-                Spacer()
-                ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
-                Spacer()
+                VStack {
+                    Spacer()
+                    ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
+                    Spacer()
+                }
             } else {
                 List {
                     ForEach(topicVM.topics) { topic in
@@ -117,6 +120,9 @@ struct TopicListView: View {
                 .refreshable {
                     await topicVM.loadTopics(for: site)
                 }
+                .safeAreaInset(edge: .top) {
+                    filterBar
+                }
             }
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -125,6 +131,11 @@ struct TopicListView: View {
             contentWidth = newWidth
         }
         .navigationTitle("")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                siteMenu
+            }
+        }
         #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
@@ -143,8 +154,9 @@ struct TopicListView: View {
             }
         }
         .onChange(of: topicVM.filter) {
-            topicVM.clearCategory()
-            Task { await topicVM.loadTopics(for: site) }
+            if !topicVM.isShowingCategory {
+                Task { await topicVM.loadTopics(for: site) }
+            }
         }
         .onChange(of: selectedTopicId) {
             selectedTopic = topicVM.topics.first { $0.id == selectedTopicId }
@@ -154,5 +166,54 @@ struct TopicListView: View {
                 topicVM.removeReadTopic(topicId)
             }
         }
+    }
+
+    // MARK: - Site Menu
+
+    private var siteMenu: some View {
+        Menu {
+            Section("Filters") {
+                ForEach(TopicFilter.allCases, id: \.self) { filter in
+                    if filter == .new && !site.isAuthenticated { } else {
+                        let isEnabled = !topicVM.hiddenBuiltInFilters.contains(filter)
+                        Button {
+                            if isEnabled {
+                                topicVM.hiddenBuiltInFilters.insert(filter)
+                            } else {
+                                topicVM.hiddenBuiltInFilters.remove(filter)
+                            }
+                        } label: {
+                            Label(filter.rawValue, systemImage: isEnabled ? "checkmark.circle.fill" : "circle")
+                        }
+                    }
+                }
+            }
+
+            Section("Categories") {
+                ForEach(topCategories) { cat in
+                    let isPinned = topicVM.pinnedCategories.contains { $0.id == cat.id }
+                    Button {
+                        if isPinned {
+                            topicVM.removePinnedCategory(cat.id)
+                        } else {
+                            topicVM.addPinnedCategory(cat)
+                            selectCategory(cat)
+                        }
+                    } label: {
+                        Label(cat.name ?? "Unknown", systemImage: isPinned ? "checkmark.circle.fill" : "circle")
+                    }
+                }
+            }
+        } label: {
+            SiteIconView(site: site, isSelected: true)
+                .frame(width: 24, height: 24)
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func selectCategory(_ cat: DiscourseCategory) {
+        topicVM.selectCategory(slug: cat.slug ?? "", id: cat.id)
+        Task { await topicVM.loadTopics(for: site) }
     }
 }

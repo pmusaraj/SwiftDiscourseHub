@@ -373,12 +373,15 @@ struct ContentView: View {
             resetGPrefix()
             switch chars {
             case "h":
+                topicVM.clearCategory()
                 topicVM.filter = .hot
                 return nil
             case "n" where selectedSite?.isAuthenticated == true:
+                topicVM.clearCategory()
                 topicVM.filter = .new
                 return nil
             case "l":
+                topicVM.clearCategory()
                 topicVM.filter = .latest
                 return nil
             default:
