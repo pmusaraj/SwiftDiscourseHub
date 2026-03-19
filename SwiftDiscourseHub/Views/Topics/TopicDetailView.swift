@@ -39,15 +39,7 @@ struct TopicDetailView: View {
         URLHelpers.resolveURL("/t/\(topicId)", baseURL: baseURL)
     }
 
-    private var avatarLookup: [String: String] {
-        var lookup: [String: String] = [:]
-        for post in loadedPosts {
-            if let username = post.username, let template = post.avatarTemplate {
-                lookup[username] = template
-            }
-        }
-        return lookup
-    }
+    @State private var avatarLookup: [String: String] = [:]
 
     private var hasMore: Bool {
         loadedPostIds.count < stream.count
@@ -185,19 +177,18 @@ struct TopicDetailView: View {
                             }
                         }
                     }
-                    .safeAreaInset(edge: .bottom) {
-                        if showFooter {
-                            AuthFooterBar(
-                                site: site,
-                                topicId: topicId,
-                                username: currentUsername,
-                                composerText: $composerText,
-                                showComposer: $showComposer
-                            ) {
-                                Task { await refreshAfterPost() }
-                            }
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .overlay(alignment: .bottom) {
+                        AuthFooterBar(
+                            site: site,
+                            topicId: topicId,
+                            username: currentUsername,
+                            composerText: $composerText,
+                            showComposer: $showComposer
+                        ) {
+                            Task { await refreshAfterPost() }
                         }
+                        .offset(y: showFooter ? 0 : 100)
+                        .opacity(showFooter ? 1 : 0)
                     }
                 }
                 .onGeometryChange(for: CGFloat.self) { proxy in
@@ -394,6 +385,7 @@ struct TopicDetailView: View {
         rawExhausted = false
         showFooter = true
         lastScrollOffset = 0
+        avatarLookup = [:]
 
         do {
             async let jsonResponse = apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
@@ -407,6 +399,9 @@ struct TopicDetailView: View {
             loadedPosts = initialPosts
             for post in initialPosts {
                 loadedPostIds.insert(post.id)
+                if let username = post.username, let template = post.avatarTemplate {
+                    avatarLookup[username] = template
+                }
             }
 
             let rawText = try await rawResponse
@@ -474,6 +469,9 @@ struct TopicDetailView: View {
         for post in newPosts where !loadedPostIds.contains(post.id) {
             loadedPostIds.insert(post.id)
             loadedPosts.append(post)
+            if let username = post.username, let template = post.avatarTemplate {
+                avatarLookup[username] = template
+            }
         }
     }
 
