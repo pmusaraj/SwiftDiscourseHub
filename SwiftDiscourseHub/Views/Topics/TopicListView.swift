@@ -79,6 +79,7 @@ struct TopicListView: View {
                                 ? Color.accentColor.opacity(Theme.Selection.highlightOpacity)
                                 : Color.clear
                         )
+                        .listRowSeparator(.hidden)
                         .swipeActions(edge: .trailing) {
                             if topicVM.filter == .new && site.isAuthenticated {
                                 Button {
