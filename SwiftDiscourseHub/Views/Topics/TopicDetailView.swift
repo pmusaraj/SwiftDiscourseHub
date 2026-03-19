@@ -21,6 +21,8 @@ struct TopicDetailView: View {
     @State private var likedPostIds: Set<Int> = []
     @State private var scrollTarget: Int?
     @State private var readTracker = TopicReadTracker()
+    @State private var showFooter = true
+    @State private var lastScrollOffset: CGFloat = 0
 
     // Pagination state
     @State private var stream: [Int] = []
@@ -136,9 +138,44 @@ struct TopicDetailView: View {
                                         .frame(maxWidth: .infinity)
                                         .padding()
                                 }
+
+                                Spacer().frame(height: 60)
                             }
                         }
                         .scrollIndicators(.never)
+                        .onScrollGeometryChange(for: ScrollGeometryInfo.self) { geometry in
+                            ScrollGeometryInfo(
+                                offset: geometry.contentOffset.y,
+                                contentHeight: geometry.contentSize.height,
+                                containerHeight: geometry.visibleRect.height
+                            )
+                        } action: { _, info in
+                            let newOffset = info.offset
+                            let delta = newOffset - lastScrollOffset
+                            // At top or bottom (with all posts loaded) — always show
+                            let atBottom = !hasMore && info.offset + info.containerHeight >= info.contentHeight - 20
+                            if newOffset <= 0 || atBottom {
+                                if !showFooter {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showFooter = true }
+                                }
+                                lastScrollOffset = newOffset
+                                return
+                            }
+                            // Scrolling down — hide
+                            if delta > 40 {
+                                if showFooter {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showFooter = false }
+                                }
+                                lastScrollOffset = newOffset
+                            }
+                            // Scrolling up at least 40pt — show
+                            else if delta < -40 {
+                                if !showFooter {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showFooter = true }
+                                }
+                                lastScrollOffset = newOffset
+                            }
+                        }
                         .onChange(of: scrollTarget) {
                             if let target = scrollTarget {
                                 withAnimation {
@@ -149,14 +186,17 @@ struct TopicDetailView: View {
                         }
                     }
                     .safeAreaInset(edge: .bottom) {
-                        AuthFooterBar(
-                            site: site,
-                            topicId: topicId,
-                            username: currentUsername,
-                            composerText: $composerText,
-                            showComposer: $showComposer
-                        ) {
-                            Task { await refreshAfterPost() }
+                        if showFooter {
+                            AuthFooterBar(
+                                site: site,
+                                topicId: topicId,
+                                username: currentUsername,
+                                composerText: $composerText,
+                                showComposer: $showComposer
+                            ) {
+                                Task { await refreshAfterPost() }
+                            }
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
                 }
@@ -352,6 +392,8 @@ struct TopicDetailView: View {
         loadedPostIds = []
         rawPage = 1
         rawExhausted = false
+        showFooter = true
+        lastScrollOffset = 0
 
         do {
             async let jsonResponse = apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
@@ -444,3 +486,8 @@ struct TopicDetailView: View {
     }
 }
 
+private struct ScrollGeometryInfo: Equatable {
+    let offset: CGFloat
+    let contentHeight: CGFloat
+    let containerHeight: CGFloat
+}
