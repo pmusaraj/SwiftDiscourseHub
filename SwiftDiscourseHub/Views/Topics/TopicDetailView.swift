@@ -171,29 +171,12 @@ struct TopicDetailView: View {
         }
         .navigationTitle("")
         #if os(macOS)
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .toolbar(.hidden)
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarVisibility(.hidden, for: .navigationBar)
         #endif
-        .toolbar {
-            if let url = topicURL {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Open in Safari", systemImage: "safari") {
-                        #if os(macOS)
-                        NSWorkspace.shared.open(url)
-                        #else
-                        UIApplication.shared.open(url)
-                        #endif
-                    }
-                    .labelStyle(.iconOnly)
-                    .help("Open in Safari")
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    ShareLink(item: url)
-                }
-            }
-        }
         .onReceive(NotificationCenter.default.publisher(for: .showReplyComposer)) { _ in
             guard site.hasApiKey, !showComposer else { return }
             showComposer = true
@@ -253,14 +236,34 @@ struct TopicDetailView: View {
                     }
                 }
 
+                Label("^[\(replyCount) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
+
                 Spacer()
 
-                Label("^[\(replyCount) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
+                if let url = topicURL {
+                    Button {
+                        #if os(macOS)
+                        NSWorkspace.shared.open(url)
+                        #else
+                        UIApplication.shared.open(url)
+                        #endif
+                    } label: {
+                        Image(systemName: "safari")
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open in Safari")
+
+                    ShareLink(item: url) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .font(Theme.Fonts.metadata)
             .foregroundStyle(.secondary)
         }
-        .padding(.vertical, Theme.Padding.postVertical)
+        .padding(.top, 0)
+        .padding(.bottom, Theme.Padding.postVertical)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.bar)

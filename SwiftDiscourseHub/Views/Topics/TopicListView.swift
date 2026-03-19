@@ -127,11 +127,6 @@ struct TopicListView: View {
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .navigationSplitViewColumnWidth(min: 320, ideal: 420, max: 600)
         #endif
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Color.clear.frame(width: 0, height: 0)
-            }
-        }
         .task(id: site.baseURL) {
             initialLoadComplete = false
             topicVM.apiClient = apiClient
