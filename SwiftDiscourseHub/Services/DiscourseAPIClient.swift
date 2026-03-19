@@ -288,6 +288,54 @@ actor DiscourseAPIClient {
         return response.users
     }
 
+    func postTimings(baseURL: String, topicId: Int, topicTime: Int, timings: [Int: Int]) async throws {
+        let url = try buildURL(base: baseURL, path: "/topics/timings")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
+        request.setValue("true", forHTTPHeaderField: "X-SILENCE-LOGGER")
+        request.setValue("true", forHTTPHeaderField: "Discourse-Background")
+        await addAuthHeaders(to: &request, baseURL: baseURL)
+
+        // Discourse expects timings as "timings[post_number]" = ms, but JSON body works too
+        let body: [String: Any] = [
+            "topic_id": topicId,
+            "topic_time": topicTime,
+            "timings": Dictionary(uniqueKeysWithValues: timings.map { ("\($0.key)", $0.value) })
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw DiscourseAPIError.httpError(code, extractErrors(from: data))
+        }
+    }
+
+    func dismissNewTopics(baseURL: String, topicIds: [Int]) async throws {
+        let url = try buildURL(base: baseURL, path: "/topics/reset-new")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
+        await addAuthHeaders(to: &request, baseURL: baseURL)
+
+        let body: [String: Any] = [
+            "dismiss_topics": true,
+            "dismiss_posts": true,
+            "topic_ids": topicIds
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw DiscourseAPIError.httpError(code, extractErrors(from: data))
+        }
+    }
+
     func revokeApiKey(baseURL: String) async throws {
         let url = try buildURL(base: baseURL, path: "/user-api-key/revoke.json")
         var request = URLRequest(url: url)

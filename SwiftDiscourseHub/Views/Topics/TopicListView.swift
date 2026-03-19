@@ -35,17 +35,21 @@ struct TopicListView: View {
                 .padding(.bottom, Theme.Padding.categoryFilterBottom)
             }
 
-            Group {
-                if !initialLoadComplete {
-                    ProgressView("Loading topics...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = topicVM.error, topicVM.topics.isEmpty {
-                    ErrorStateView(title: "Failed to Load", message: error.localizedDescription) {
-                        Task { await topicVM.loadTopics(for: site) }
-                    }
-                } else if topicVM.topics.isEmpty {
-                    ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
-                } else {
+            if !initialLoadComplete {
+                Spacer()
+                ProgressView("Loading topics...")
+                Spacer()
+            } else if let error = topicVM.error, topicVM.topics.isEmpty {
+                Spacer()
+                ErrorStateView(title: "Failed to Load", message: error.localizedDescription) {
+                    Task { await topicVM.loadTopics(for: site) }
+                }
+                Spacer()
+            } else if topicVM.topics.isEmpty {
+                Spacer()
+                ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
+                Spacer()
+            } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(topicVM.topics) { topic in
@@ -63,6 +67,27 @@ struct TopicListView: View {
                                     .background(selectedTopicId == topic.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
                                 }
                                 .buttonStyle(.plain)
+                                #if os(iOS)
+                                .swipeActions(edge: .trailing) {
+                                    if topicVM.filter == .new && site.isAuthenticated {
+                                        Button {
+                                            Task { await topicVM.dismissNewTopic(topic.id, site: site) }
+                                        } label: {
+                                            Label("Mark as Read", systemImage: "envelope.open")
+                                        }
+                                        .tint(.blue)
+                                    }
+                                }
+                                #endif
+                                .contextMenu {
+                                    if topicVM.filter == .new && site.isAuthenticated {
+                                        Button {
+                                            Task { await topicVM.dismissNewTopic(topic.id, site: site) }
+                                        } label: {
+                                            Label("Mark as Read", systemImage: "envelope.open")
+                                        }
+                                    }
+                                }
                                 .onAppear {
                                     if topic.id == topicVM.topics.last?.id {
                                         Task { await topicVM.loadMore(for: site) }
@@ -80,7 +105,6 @@ struct TopicListView: View {
                     .refreshable {
                         await topicVM.loadTopics(for: site)
                     }
-                }
             }
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -113,6 +137,11 @@ struct TopicListView: View {
         }
         .onChange(of: selectedTopicId) {
             selectedTopic = topicVM.topics.first { $0.id == selectedTopicId }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .topicWasRead)) { notification in
+            if let topicId = notification.userInfo?["topicId"] as? Int {
+                topicVM.removeReadTopic(topicId)
+            }
         }
     }
 }

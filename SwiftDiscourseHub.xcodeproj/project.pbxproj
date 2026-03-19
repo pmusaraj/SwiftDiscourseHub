@@ -61,6 +61,7 @@
 		A10055 /* DiscoverSiteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10055 /* DiscoverSiteCard.swift */; };
 		A10056 /* CurrentUserResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10056 /* CurrentUserResponse.swift */; };
 		A10057 /* SmallActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10057 /* SmallActionView.swift */; };
+		A10058 /* TopicReadTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10058 /* TopicReadTracker.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
@@ -134,6 +135,7 @@
 		B10055 /* DiscoverSiteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSiteCard.swift; sourceTree = "<group>"; };
 		B10056 /* CurrentUserResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserResponse.swift; sourceTree = "<group>"; };
 		B10057 /* SmallActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallActionView.swift; sourceTree = "<group>"; };
+		B10058 /* TopicReadTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicReadTracker.swift; sourceTree = "<group>"; };
 		B20001 /* DiscoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTests.swift; sourceTree = "<group>"; };
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
@@ -228,6 +230,7 @@
 				B10034 /* DiscourseMarkdownPreprocessor.swift */,
 				B10040 /* KeychainService.swift */,
 				B10041 /* AuthService.swift */,
+				B10058 /* TopicReadTracker.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -499,6 +502,7 @@
 				A10055 /* DiscoverSiteCard.swift in Sources */,
 				A10053 /* FlowLayout.swift in Sources */,
 				A10054 /* CategoryCardView.swift in Sources */,
+				A10058 /* TopicReadTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

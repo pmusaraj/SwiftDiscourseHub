@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum TopicFilter: String, CaseIterable {
     case latest = "Latest"
@@ -100,5 +101,29 @@ final class TopicListViewModel {
     func clearCategory() {
         selectedCategorySlug = nil
         selectedCategoryId = nil
+    }
+
+    func dismissNewTopic(_ topicId: Int, site: DiscourseSite) async {
+        guard filter == .new, site.isAuthenticated else { return }
+
+        do {
+            try await apiClient.dismissNewTopics(baseURL: site.baseURL, topicIds: [topicId])
+            try await Task.sleep(for: .seconds(1))
+            withAnimation(.easeInOut(duration: 0.3)) {
+                topics.removeAll { $0.id == topicId }
+            }
+        } catch {
+            // Silently fail — dismissal is best-effort
+        }
+    }
+
+    func removeReadTopic(_ topicId: Int) {
+        guard filter == .new else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            withAnimation(.easeInOut(duration: 0.3)) {
+                topics.removeAll { $0.id == topicId }
+            }
+        }
     }
 }

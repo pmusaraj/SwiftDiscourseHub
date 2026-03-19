@@ -20,6 +20,7 @@ struct TopicDetailView: View {
     @State private var showComposer = false
     @State private var likedPostIds: Set<Int> = []
     @State private var scrollTarget: Int?
+    @State private var readTracker = TopicReadTracker()
 
     // Pagination state
     @State private var stream: [Int] = []
@@ -119,8 +120,16 @@ struct TopicDetailView: View {
                                     Color.clear.frame(height: 0)
                                         .id(post.id)
                                         .onAppear {
+                                            if let pn = post.postNumber {
+                                                readTracker.postAppeared(pn)
+                                            }
                                             if post.id == loadedPosts.last?.id {
                                                 Task { await loadMorePosts() }
+                                            }
+                                        }
+                                        .onDisappear {
+                                            if let pn = post.postNumber {
+                                                readTracker.postDisappeared(pn)
                                             }
                                         }
                                 }
@@ -195,6 +204,12 @@ struct TopicDetailView: View {
         #endif
         .task(id: topicId) {
             await loadTopic()
+            if site.isAuthenticated {
+                readTracker.start(topicId: topicId, baseURL: baseURL, apiClient: apiClient)
+            }
+        }
+        .onDisappear {
+            readTracker.stop()
         }
         .navigationDestination(for: LinkedTopicDestination.self) { dest in
             TopicDetailView(topicId: dest.topicId, site: site, categories: categories)
