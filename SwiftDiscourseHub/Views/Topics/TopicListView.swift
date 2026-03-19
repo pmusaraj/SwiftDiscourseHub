@@ -57,61 +57,64 @@ struct TopicListView: View {
                 ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
                 Spacer()
             } else {
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(topicVM.topics) { topic in
+                List {
+                    ForEach(topicVM.topics) { topic in
+                        Button {
+                            selectedTopicId = topic.id
+                        } label: {
+                            TopicRowView(
+                                topic: topic,
+                                users: topicVM.users,
+                                categories: categoryVM.categories,
+                                baseURL: site.baseURL
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets(
+                            top: 0, leading: Theme.Padding.postHorizontal(for: contentWidth),
+                            bottom: 0, trailing: Theme.Padding.postHorizontal(for: contentWidth)
+                        ))
+                        .listRowBackground(
+                            selectedTopicId == topic.id
+                                ? Color.accentColor.opacity(Theme.Selection.highlightOpacity)
+                                : Color.clear
+                        )
+                        .swipeActions(edge: .trailing) {
+                            if topicVM.filter == .new && site.isAuthenticated {
                                 Button {
-                                    selectedTopicId = topic.id
+                                    Task { await topicVM.dismissNewTopic(topic.id, site: site) }
                                 } label: {
-                                    TopicRowView(
-                                        topic: topic,
-                                        users: topicVM.users,
-                                        categories: categoryVM.categories,
-                                        baseURL: site.baseURL
-                                    )
-                                    .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-                                    .contentShape(Rectangle())
-                                    .background(selectedTopicId == topic.id ? Color.accentColor.opacity(Theme.Selection.highlightOpacity) : .clear)
+                                    Label("Mark as Read", systemImage: "envelope.open")
                                 }
-                                .buttonStyle(.plain)
-                                #if os(iOS)
-                                .swipeActions(edge: .trailing) {
-                                    if topicVM.filter == .new && site.isAuthenticated {
-                                        Button {
-                                            Task { await topicVM.dismissNewTopic(topic.id, site: site) }
-                                        } label: {
-                                            Label("Mark as Read", systemImage: "envelope.open")
-                                        }
-                                        .tint(.blue)
-                                    }
-                                }
-                                #endif
-                                .contextMenu {
-                                    if topicVM.filter == .new && site.isAuthenticated {
-                                        Button {
-                                            Task { await topicVM.dismissNewTopic(topic.id, site: site) }
-                                        } label: {
-                                            Label("Mark as Read", systemImage: "envelope.open")
-                                        }
-                                    }
-                                }
-                                .onAppear {
-                                    if topic.id == topicVM.topics.last?.id {
-                                        Task { await topicVM.loadMore(for: site) }
-                                    }
+                                .tint(.blue)
+                            }
+                        }
+                        .contextMenu {
+                            if topicVM.filter == .new && site.isAuthenticated {
+                                Button {
+                                    Task { await topicVM.dismissNewTopic(topic.id, site: site) }
+                                } label: {
+                                    Label("Mark as Read", systemImage: "envelope.open")
                                 }
                             }
-                            if topicVM.isLoading && !topicVM.topics.isEmpty {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
+                        }
+                        .onAppear {
+                            if topic.id == topicVM.topics.last?.id {
+                                Task { await topicVM.loadMore(for: site) }
                             }
                         }
                     }
-                    .scrollIndicators(.never)
-                    .refreshable {
-                        await topicVM.loadTopics(for: site)
+                    if topicVM.isLoading && !topicVM.topics.isEmpty {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .listRowSeparator(.hidden)
                     }
+                }
+                .listStyle(.plain)
+                .scrollIndicators(.never)
+                .refreshable {
+                    await topicVM.loadTopics(for: site)
+                }
             }
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
