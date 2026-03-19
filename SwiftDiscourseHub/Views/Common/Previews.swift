@@ -777,6 +777,42 @@ private struct DiscoverGridPreview: View {
     }
 }
 
+// MARK: - Topic Filter Bar
+
+#Preview("Topic Filter Bar") {
+    TopicFilterBarPreview()
+        .padding()
+}
+
+private struct TopicFilterBarPreview: View {
+    @State private var filter: TopicFilter = .latest
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Picker("", selection: $filter) {
+                ForEach(TopicFilter.allCases, id: \.self) { f in
+                    Text(f.rawValue).tag(f)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 240)
+
+            Spacer()
+
+            ZStack {
+                RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius)
+                    .fill(Color(hex: "25AAE2").opacity(0.2))
+                Text("M")
+                    .font(Theme.Fonts.siteIconFallback)
+                    .foregroundStyle(Color(hex: "25AAE2"))
+            }
+            .frame(width: 28, height: 28)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius))
+        }
+    }
+}
+
 // MARK: - Sidebar
 
 #Preview("Sidebar") {
@@ -788,25 +824,60 @@ private struct SidebarPreview: View {
     @State private var selectedIndex = 0
 
     private let sites = [
-        ("Meta", "M", "25AAE2"),
-        ("Swift Forums", "S", "F05138"),
-        ("Rust Users", "R", "DEA584"),
-        ("Hacker News", "H", "FF6600"),
+        ("Meta", "M", "25AAE2", "pmusaraj"),
+        ("Swift Forums", "S", "F05138", nil as String?),
+        ("Rust Users", "R", "DEA584", nil as String?),
+        ("Hacker News", "H", "FF6600", "hn_user"),
     ]
 
     var body: some View {
         VStack(spacing: Theme.Sidebar.iconSpacing) {
             ForEach(Array(sites.enumerated()), id: \.offset) { index, site in
-                siteIcon(letter: site.1, color: site.2, isSelected: index == selectedIndex)
-                    .onTapGesture { selectedIndex = index }
+                let isSelected = index == selectedIndex
+                Button {
+                    selectedIndex = index
+                } label: {
+                    HStack(spacing: 8) {
+                        siteIcon(letter: site.1, color: site.2, isSelected: isSelected)
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(site.0)
+                                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                                .lineLimit(1)
+
+                            if let username = site.3 {
+                                Text("@\(username)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 4)
+                    .background(isSelected ? Color.accentColor.opacity(0.12) : .clear)
+                    .clipShape(.rect(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
             }
 
             Spacer()
 
-            Image(systemName: "globe")
-                .font(Theme.Fonts.sidebarIcon)
-                .foregroundStyle(.secondary)
-                .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
+            HStack(spacing: 8) {
+                Image(systemName: "globe")
+                    .font(.system(size: 16))
+                    .frame(width: Theme.Sidebar.discoverButtonSize, height: Theme.Sidebar.discoverButtonSize)
+
+                Text("Discover")
+                    .font(.subheadline)
+
+                Spacer()
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 4)
+            .foregroundStyle(.secondary)
         }
         .padding(.vertical, Theme.Sidebar.paddingVertical)
         .padding(.horizontal, Theme.Sidebar.paddingHorizontal)
@@ -823,11 +894,6 @@ private struct SidebarPreview: View {
         }
         .frame(width: Theme.Sidebar.iconSize, height: Theme.Sidebar.iconSize)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Sidebar.iconCornerRadius)
-                .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: Theme.Sidebar.iconBorderWidth)
-        )
-        .padding(Theme.Sidebar.iconPadding)
     }
 }
 #endif

@@ -10,7 +10,11 @@ struct ContentView: View {
     @State private var showingAddSite = false
     @State private var showingDiscover = false
     @State private var selectedDiscoverSite: DiscoverSite?
+    #if os(macOS)
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    #else
     @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
+    #endif
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
     @Environment(ToastManager.self) private var toastManager
@@ -45,7 +49,11 @@ struct ContentView: View {
             if !showingDiscover {
                 selectedDiscoverSite = nil
             }
+            #if os(macOS)
+            columnVisibility = showingDiscover ? .doubleColumn : .all
+            #else
             columnVisibility = showingDiscover ? .detailOnly : .doubleColumn
+            #endif
         }
         .onChange(of: authCoordinator.isAuthenticating) {
             // When auth finishes successfully, update the site's hasApiKey flag
@@ -127,7 +135,7 @@ struct ContentView: View {
     private var macOSLayout: some View {
         Group {
             if showingDiscover {
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } detail: {
                     NavigationStack {
@@ -138,7 +146,7 @@ struct ContentView: View {
                     }
                 }
             } else {
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } content: {
                     if let site = selectedSite {
@@ -167,11 +175,15 @@ struct ContentView: View {
     #endif
 
     #if os(iOS)
+    private func dismissiPadSidebar() {
+        withAnimation { columnVisibility = .doubleColumn }
+    }
+
     private var iPadLayout: some View {
         Group {
             if showingDiscover {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover, dismissSidebar: dismissiPadSidebar)
                 } detail: {
                     NavigationStack {
                         DiscoverSitesView(onSiteAdded: { site in
@@ -180,9 +192,11 @@ struct ContentView: View {
                         }, selectedDiscoverSite: $selectedDiscoverSite)
                     }
                 }
+                .toolbar(removing: .sidebarToggle)
+                .navigationSplitViewStyle(.prominentDetail)
             } else {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover, dismissSidebar: dismissiPadSidebar)
                 } content: {
                     if let site = selectedSite {
                         if site.loginRequired && !site.isAuthenticated {
@@ -203,7 +217,11 @@ struct ContentView: View {
                     }
                     .id(selectedTopicId)
                 }
+                .toolbar(removing: .sidebarToggle)
             }
+        }
+        .onChange(of: selectedSite?.baseURL) {
+            columnVisibility = .doubleColumn
         }
     }
     #endif

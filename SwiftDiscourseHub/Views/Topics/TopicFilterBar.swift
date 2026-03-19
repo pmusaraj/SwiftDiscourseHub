@@ -20,6 +20,5 @@ struct TopicFilterBar: View {
         }
         .labelsHidden()
         .pickerStyle(.segmented)
-        .padding(.horizontal)
     }
 }

@@ -6,6 +6,7 @@ struct SiteSidebarView: View {
     @Binding var selectedSite: DiscourseSite?
     @Binding var selectedTopicId: Int?
     @Binding var showingDiscover: Bool
+    var dismissSidebar: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
     @Environment(AuthCoordinator.self) private var authCoordinator
     @Environment(\.apiClient) private var apiClient
@@ -21,6 +22,7 @@ struct SiteSidebarView: View {
                         selectedSite = site
                     }
                     showingDiscover = false
+                    dismissSidebar?()
                 } label: {
                     HStack(spacing: 8) {
                         SiteIconView(site: site, isSelected: isSelected)
@@ -74,6 +76,7 @@ struct SiteSidebarView: View {
             Button {
                 selectedSite = nil
                 showingDiscover = true
+                dismissSidebar?()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "globe")
@@ -100,6 +103,14 @@ struct SiteSidebarView: View {
         .frame(maxHeight: .infinity)
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
+        .gesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    if value.translation.width < -30 {
+                        dismissSidebar?()
+                    }
+                }
+        )
         #endif
         .onAppear {
             if selectedSite == nil, let first = sites.first {
