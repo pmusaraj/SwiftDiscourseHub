@@ -661,7 +661,7 @@ private struct TopicViewPreview: View {
 #Preview("Rich Links") {
     ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-            Text("GitHub Repo").font(.caption).foregroundStyle(.secondary)
+            Text("GitHub").font(.caption).foregroundStyle(.secondary)
             RichLinkView(info: OneboxInfo(
                 url: "https://github.com/discourse/discourse",
                 title: "GitHub - discourse/discourse: A platform for community discussion",
@@ -671,29 +671,69 @@ private struct TopicViewPreview: View {
                 siteName: "GitHub"
             ))
 
+            Text("Wikipedia").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://en.wikipedia.org/wiki/Discourse_(software)",
+                title: "Discourse (software) - Wikipedia",
+                description: "Discourse is an open-source Internet forum and mailing list management software application.",
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "Wikipedia"
+            ))
+
+            Text("Amazon").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://www.amazon.com/dp/B0D1XD1ZV3",
+                title: "Apple iPad Pro 13-Inch (M4): Ultra Retina XDR Display, 256GB",
+                description: "Stunning Ultra Retina XDR display with tandem OLED technology.",
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "Amazon"
+            ))
+
+            Text("Google Docs").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://docs.google.com/document/d/1BxiMkBo/edit",
+                title: "Project Roadmap Q2 2026",
+                description: "Planning document for upcoming features and milestones.",
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "Google Docs"
+            ))
+
+            Text("Hacker News").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://news.ycombinator.com/item?id=12345",
+                title: "Show HN: A new open-source forum platform",
+                description: nil,
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "Hacker News"
+            ))
+
+            Text("Reddit").font(.caption).foregroundStyle(.secondary)
+            RichLinkView(info: OneboxInfo(
+                url: "https://www.reddit.com/r/swift/comments/abc123",
+                title: "What's new in Swift 6.2?",
+                description: "A roundup of all the new features and improvements in the latest Swift release.",
+                imageURL: nil,
+                faviconURL: nil,
+                siteName: "Reddit"
+            ))
+
             Text("Generic Website").font(.caption).foregroundStyle(.secondary)
             RichLinkView(info: OneboxInfo(
                 url: "https://discourse.org/",
                 title: "Discourse is the place to build civilized communities",
-                description: "Discourse is modern forum software for meaningful discussions, support, and teamwork that gives your online community everything it needs in one place.",
+                description: "Modern forum software for meaningful discussions and teamwork.",
                 imageURL: nil,
                 faviconURL: nil,
-                siteName: "Discourse - Civilized Discussion"
-            ))
-
-            Text("Minimal (title only)").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://www.google.com/",
-                title: "Google",
-                description: nil,
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: nil
+                siteName: "Discourse"
             ))
         }
         .padding()
     }
-    .frame(width: 500, height: 700)
+    .frame(width: 500, height: 900)
 }
 
 #Preview("Post with Rich Link") {
