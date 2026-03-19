@@ -5,8 +5,8 @@ struct TopicListView: View {
     @Binding var selectedTopicId: Int?
     @Binding var selectedTopic: Topic?
     @Binding var topicCategories: [DiscourseCategory]
+    @Bindable var topicVM: TopicListViewModel
     @Environment(\.apiClient) private var apiClient
-    @State private var topicVM = TopicListViewModel()
     @State private var categoryVM = CategoryListViewModel()
     @State private var contentWidth: CGFloat = 0
     @State private var initialLoadComplete = false

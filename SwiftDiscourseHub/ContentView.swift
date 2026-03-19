@@ -10,10 +10,13 @@ struct ContentView: View {
     @State private var showingAddSite = false
     @State private var showingDiscover = false
     @State private var selectedDiscoverSite: DiscoverSite?
+    @State private var topicVM = TopicListViewModel()
+    @State private var showKeyboardHelp = false
     #if os(macOS)
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    #else
-    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
+    @State private var keyMonitor: Any?
+    @State private var pendingGPrefix = false
+    @State private var gPrefixTask: Task<Void, Never>?
     #endif
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
@@ -41,6 +44,13 @@ struct ContentView: View {
         .sheet(isPresented: $showingAddSite) {
             AddSiteSheet()
         }
+        .sheet(isPresented: $showKeyboardHelp) {
+            KeyboardShortcutHelpView()
+        }
+        #if os(macOS)
+        .onAppear { installKeyMonitor() }
+        .onDisappear { removeKeyMonitor() }
+        #endif
         .onChange(of: selectedSite?.baseURL) {
             selectedTopicId = nil
             selectedTopic = nil
@@ -153,7 +163,7 @@ struct ContentView: View {
                         if site.loginRequired && !site.isAuthenticated {
                             LoginRequiredView(site: site)
                         } else {
-                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
                                 .id(site.baseURL)
                         }
                     } else {
@@ -196,7 +206,7 @@ struct ContentView: View {
                         if site.loginRequired && !site.isAuthenticated {
                             LoginRequiredView(site: site)
                         } else {
-                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
                         }
                     } else {
                         ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
@@ -229,4 +239,182 @@ struct ContentView: View {
                 }
         }
     }
+
+    // MARK: - Topic Navigation
+
+    private func selectNextTopic() {
+        guard !topicVM.topics.isEmpty else { return }
+        if let current = selectedTopicId,
+           let idx = topicVM.topics.firstIndex(where: { $0.id == current }),
+           idx + 1 < topicVM.topics.count {
+            selectedTopicId = topicVM.topics[idx + 1].id
+        } else {
+            selectedTopicId = topicVM.topics.first?.id
+        }
+    }
+
+    private func selectPreviousTopic() {
+        guard !topicVM.topics.isEmpty else { return }
+        if let current = selectedTopicId,
+           let idx = topicVM.topics.firstIndex(where: { $0.id == current }),
+           idx > 0 {
+            selectedTopicId = topicVM.topics[idx - 1].id
+        }
+    }
+
+    private func selectNextSite() {
+        guard !sites.isEmpty else { return }
+        if let current = selectedSite,
+           let idx = sites.firstIndex(where: { $0.id == current.id }),
+           idx + 1 < sites.count {
+            selectedSite = sites[idx + 1]
+        } else {
+            selectedSite = sites.first
+        }
+    }
+
+    private func selectPreviousSite() {
+        guard !sites.isEmpty else { return }
+        if let current = selectedSite,
+           let idx = sites.firstIndex(where: { $0.id == current.id }),
+           idx > 0 {
+            selectedSite = sites[idx - 1]
+        }
+    }
+
+    // MARK: - Key Monitor (macOS)
+
+    #if os(macOS)
+    private func installKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            handleKeyEvent(event)
+        }
+    }
+
+    private func removeKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+    }
+
+    private func isFirstResponderTextInput() -> Bool {
+        guard let firstResponder = NSApp.keyWindow?.firstResponder else { return false }
+        return firstResponder is NSTextView || firstResponder is NSTextField
+    }
+
+    private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        guard !isFirstResponderTextInput() else {
+            resetGPrefix()
+            return event
+        }
+
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let chars = event.charactersIgnoringModifiers ?? ""
+
+        // Arrow keys also set .numericPad and .function flags, so check .contains
+        // Command + Arrow Down/Up: navigate topics
+        if flags.contains(.command), !flags.contains(.shift), !flags.contains(.option), !flags.contains(.control) {
+            if event.keyCode == 125 { // arrow down
+                selectNextTopic()
+                return nil
+            } else if event.keyCode == 126 { // arrow up
+                selectPreviousTopic()
+                return nil
+            }
+        }
+
+        // Option + Arrow Down/Up: navigate sites
+        if flags.contains(.option), !flags.contains(.shift), !flags.contains(.command), !flags.contains(.control) {
+            if event.keyCode == 125 { // arrow down
+                selectNextSite()
+                return nil
+            } else if event.keyCode == 126 { // arrow up
+                selectPreviousSite()
+                return nil
+            }
+        }
+
+        // Space / Shift+Space: scroll detail view
+        if chars == " " && (flags == [] || flags == .shift) {
+            if let scrollView = findDetailScrollView() {
+                if flags.contains(.shift) {
+                    scrollView.pageUp(nil)
+                } else {
+                    scrollView.pageDown(nil)
+                }
+            }
+            return nil
+        }
+
+        // All remaining shortcuts require no modifiers (except shift for ?)
+        guard flags == [] || (flags == .shift && chars == "?") else {
+            resetGPrefix()
+            return event
+        }
+
+        // Handle g-prefix second key
+        if pendingGPrefix {
+            resetGPrefix()
+            switch chars {
+            case "h":
+                topicVM.filter = .hot
+                return nil
+            case "n" where selectedSite?.isAuthenticated == true:
+                topicVM.filter = .new
+                return nil
+            case "l":
+                topicVM.filter = .latest
+                return nil
+            default:
+                return event
+            }
+        }
+
+        switch chars {
+        case "g":
+            pendingGPrefix = true
+            gPrefixTask?.cancel()
+            gPrefixTask = Task {
+                try? await Task.sleep(for: .seconds(1))
+                if !Task.isCancelled { pendingGPrefix = false }
+            }
+            return nil
+        case "r":
+            guard selectedSite?.hasApiKey == true, selectedTopicId != nil else { return event }
+            NotificationCenter.default.post(name: .showReplyComposer, object: nil)
+            return nil
+        case "?":
+            showKeyboardHelp.toggle()
+            return nil
+        default:
+            return event
+        }
+    }
+
+    private func findDetailScrollView() -> NSScrollView? {
+        guard let contentView = NSApp.keyWindow?.contentView else { return nil }
+        var scrollViews: [NSScrollView] = []
+        collectScrollViews(in: contentView, into: &scrollViews)
+        // The detail column's scroll view is the rightmost large one
+        return scrollViews
+            .filter { $0.frame.width > 200 && $0.frame.height > 200 }
+            .max(by: { $0.convert($0.bounds.origin, to: nil).x < $1.convert($1.bounds.origin, to: nil).x })
+    }
+
+    private func collectScrollViews(in view: NSView, into result: inout [NSScrollView]) {
+        if let sv = view as? NSScrollView {
+            result.append(sv)
+        }
+        for subview in view.subviews {
+            collectScrollViews(in: subview, into: &result)
+        }
+    }
+
+    private func resetGPrefix() {
+        pendingGPrefix = false
+        gPrefixTask?.cancel()
+        gPrefixTask = nil
+    }
+    #endif
 }

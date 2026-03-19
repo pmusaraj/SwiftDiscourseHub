@@ -30,9 +30,6 @@ struct TopicDetailView: View {
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
-    #if os(macOS)
-    @State private var keyMonitor: Any?
-    #endif
     private let rawPageSize = 100
     private let jsonChunkSize = 20
 
@@ -197,11 +194,10 @@ struct TopicDetailView: View {
                 }
             }
         }
-        #if os(macOS)
-        .onAppear { installKeyMonitor() }
-        .onDisappear { removeKeyMonitor() }
-        .onChange(of: topicId) { removeKeyMonitor(); installKeyMonitor() }
-        #endif
+        .onReceive(NotificationCenter.default.publisher(for: .showReplyComposer)) { _ in
+            guard site.hasApiKey, !showComposer else { return }
+            showComposer = true
+        }
         .task(id: topicId) {
             await loadTopic()
             if site.isAuthenticated {
@@ -269,38 +265,6 @@ struct TopicDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.bar)
     }
-
-    // MARK: - Key Monitor
-
-    #if os(macOS)
-    private func installKeyMonitor() {
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // Only handle "r" with no modifiers, and only when composer is hidden
-            // and the first responder is not a text input field
-            guard event.characters == "r",
-                  event.modifierFlags.intersection(.deviceIndependentFlagsMask) == [],
-                  site.hasApiKey,
-                  !showComposer,
-                  !isFirstResponderTextInput() else {
-                return event
-            }
-            showComposer = true
-            return nil
-        }
-    }
-
-    private func removeKeyMonitor() {
-        if let monitor = keyMonitor {
-            NSEvent.removeMonitor(monitor)
-            keyMonitor = nil
-        }
-    }
-
-    private func isFirstResponderTextInput() -> Bool {
-        guard let firstResponder = NSApp.keyWindow?.firstResponder else { return false }
-        return firstResponder is NSTextView || firstResponder is NSTextField
-    }
-    #endif
 
     // MARK: - Actions
 

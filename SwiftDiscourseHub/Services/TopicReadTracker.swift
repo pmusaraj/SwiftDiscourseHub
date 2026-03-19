@@ -3,6 +3,7 @@ import os.log
 
 extension Notification.Name {
     static let topicWasRead = Notification.Name("topicWasRead")
+    static let showReplyComposer = Notification.Name("showReplyComposer")
 }
 
 private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "ReadTracker")

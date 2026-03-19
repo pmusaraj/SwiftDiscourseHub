@@ -139,26 +139,28 @@ struct QuoteBlockView: View {
 
     private var quoteContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                CachedAsyncImage(url: avatarURL) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 20, height: 20)
-                .clipShape(Circle())
+            if !quote.username.isEmpty {
+                HStack(spacing: 6) {
+                    CachedAsyncImage(url: avatarURL) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Image(systemName: "person.circle.fill")
+                            .resizable()
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(width: 20, height: 20)
+                    .clipShape(Circle())
 
-                Text("\(quote.username):")
-                    .font(.subheadline.bold())
+                    Text("\(quote.username):")
+                        .font(.subheadline.bold())
 
-                Spacer()
+                    Spacer()
 
-                if isCrossTopic || quote.postNumber != nil {
-                    Image(systemName: isCrossTopic ? "arrow.up.right" : "arrow.up")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if isCrossTopic || quote.postNumber != nil {
+                        Image(systemName: isCrossTopic ? "arrow.up.right" : "arrow.up")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
