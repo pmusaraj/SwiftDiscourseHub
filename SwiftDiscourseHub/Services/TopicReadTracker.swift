@@ -18,6 +18,8 @@ final class TopicReadTracker {
     private var apiClient: DiscourseAPIClient?
 
     private var visiblePostNumbers: Set<Int> = []
+    private var allSeenPostNumbers: Set<Int> = []
+    private var highestPostNumber: Int = 0
     private var timings: [Int: Int] = [:]  // post_number -> accumulated ms
     private var topicTime: Int = 0         // total ms spent on this topic
     private var timer: Timer?
@@ -26,14 +28,16 @@ final class TopicReadTracker {
     private static let tickInterval: TimeInterval = 1.0
     private static let flushThresholdMs = 5_000
 
-    func start(topicId: Int, baseURL: String, apiClient: DiscourseAPIClient) {
+    func start(topicId: Int, baseURL: String, apiClient: DiscourseAPIClient, highestPostNumber: Int) {
         // Flush any accumulated data from the previous topic
         flush()
 
         self.topicId = topicId
         self.baseURL = baseURL
         self.apiClient = apiClient
+        self.highestPostNumber = highestPostNumber
         visiblePostNumbers = []
+        allSeenPostNumbers = []
         timings = [:]
         topicTime = 0
         hasNotifiedRead = false
@@ -54,6 +58,7 @@ final class TopicReadTracker {
 
     func postAppeared(_ postNumber: Int) {
         visiblePostNumbers.insert(postNumber)
+        allSeenPostNumbers.insert(postNumber)
     }
 
     func postDisappeared(_ postNumber: Int) {
@@ -81,8 +86,9 @@ final class TopicReadTracker {
         let time = topicTime
         let tid = topicId
         let base = baseURL
-        let shouldNotify = !hasNotifiedRead
-        hasNotifiedRead = true
+        let hasSeenLastPost = highestPostNumber > 0 && allSeenPostNumbers.contains(highestPostNumber)
+        let shouldNotify = !hasNotifiedRead && hasSeenLastPost
+        if shouldNotify { hasNotifiedRead = true }
 
         // Reset accumulators
         timings = [:]

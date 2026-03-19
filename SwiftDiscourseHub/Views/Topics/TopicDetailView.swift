@@ -205,7 +205,8 @@ struct TopicDetailView: View {
         .task(id: topicId) {
             await loadTopic()
             if site.isAuthenticated {
-                readTracker.start(topicId: topicId, baseURL: baseURL, apiClient: apiClient)
+                let highest = topic?.highestPostNumber ?? loadedPosts.compactMap(\.postNumber).max() ?? 0
+                readTracker.start(topicId: topicId, baseURL: baseURL, apiClient: apiClient, highestPostNumber: highest)
             }
         }
         .onDisappear {
