@@ -5,6 +5,7 @@ struct TopicRowView: View {
     let users: [DiscourseUser]
     let categories: [DiscourseCategory]
     let baseURL: String
+    var contentWidth: CGFloat = .infinity
 
     private var originalPoster: DiscourseUser? {
         guard let poster = topic.posters?.first(where: { $0.extras?.contains("Original") == true }) ?? topic.posters?.first,
@@ -29,18 +30,20 @@ struct TopicRowView: View {
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.topicRowHorizontal) {
             // Avatar
-            CachedAsyncImage(
-                url: URLHelpers.avatarURL(template: originalPoster?.avatarTemplate, size: Theme.Avatar.topicListFetch, baseURL: baseURL)
-            ) { image in
-                image.resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .foregroundStyle(.secondary)
+            if contentWidth >= 250 {
+                CachedAsyncImage(
+                    url: URLHelpers.avatarURL(template: originalPoster?.avatarTemplate, size: Theme.Avatar.topicListFetch, baseURL: baseURL)
+                ) { image in
+                    image.resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: Theme.Avatar.topicListDisplay, height: Theme.Avatar.topicListDisplay)
+                .clipShape(Circle())
             }
-            .frame(width: Theme.Avatar.topicListDisplay, height: Theme.Avatar.topicListDisplay)
-            .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: Theme.Spacing.topicRowVertical) {
                 // Title + status icons
@@ -75,8 +78,10 @@ struct TopicRowView: View {
                     if let cat = category, let name = cat.name {
                         CategoryBadgeView(name: name, color: cat.color)
                     }
-                    RelativeTimeText(dateString: topic.lastPostedAt ?? topic.createdAt)
-                        .font(Theme.Fonts.metadata)
+                    if contentWidth >= 250 {
+                        RelativeTimeText(dateString: topic.lastPostedAt ?? topic.createdAt)
+                            .font(Theme.Fonts.metadata)
+                    }
                 }
 
                 // Excerpt
@@ -90,21 +95,28 @@ struct TopicRowView: View {
                 // Stats
                 HStack(spacing: Theme.Spacing.topicRowStats) {
                     if let posts = formatCount(topic.postsCount) {
-                        Label(posts, systemImage: "bubble.left")
+                        statLabel(posts, systemImage: "bubble.left")
                     }
-                    if let views = formatCount(topic.views) {
-                        Label(views, systemImage: "eye")
+                    if contentWidth >= 250, let views = formatCount(topic.views) {
+                        statLabel(views, systemImage: "eye")
                     }
                     if let likes = formatCount(topic.likeCount) {
-                        Label(likes, systemImage: "heart")
+                        statLabel(likes, systemImage: "heart")
                     }
                 }
                 .font(Theme.Fonts.statCount)
-                .imageScale(.large)
                 .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, Theme.Padding.topicRowVertical)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func statLabel(_ text: String, systemImage: String) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: systemImage)
+                .imageScale(.small)
+            Text(text)
+        }
     }
 }

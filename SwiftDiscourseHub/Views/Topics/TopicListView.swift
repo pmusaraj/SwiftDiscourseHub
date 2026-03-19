@@ -66,7 +66,8 @@ struct TopicListView: View {
                                 topic: topic,
                                 users: topicVM.users,
                                 categories: categoryVM.categories,
-                                baseURL: site.baseURL
+                                baseURL: site.baseURL,
+                                contentWidth: contentWidth
                             )
                         }
                         .buttonStyle(.plain)
