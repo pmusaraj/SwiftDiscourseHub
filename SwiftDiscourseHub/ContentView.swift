@@ -175,15 +175,11 @@ struct ContentView: View {
     #endif
 
     #if os(iOS)
-    private func dismissiPadSidebar() {
-        withAnimation { columnVisibility = .doubleColumn }
-    }
-
     private var iPadLayout: some View {
         Group {
             if showingDiscover {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover, dismissSidebar: dismissiPadSidebar)
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } detail: {
                     NavigationStack {
                         DiscoverSitesView(onSiteAdded: { site in
@@ -192,11 +188,9 @@ struct ContentView: View {
                         }, selectedDiscoverSite: $selectedDiscoverSite)
                     }
                 }
-                .toolbar(removing: .sidebarToggle)
-                .navigationSplitViewStyle(.prominentDetail)
             } else {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover, dismissSidebar: dismissiPadSidebar)
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } content: {
                     if let site = selectedSite {
                         if site.loginRequired && !site.isAuthenticated {
@@ -217,11 +211,7 @@ struct ContentView: View {
                     }
                     .id(selectedTopicId)
                 }
-                .toolbar(removing: .sidebarToggle)
             }
-        }
-        .onChange(of: selectedSite?.baseURL) {
-            columnVisibility = .doubleColumn
         }
     }
     #endif
