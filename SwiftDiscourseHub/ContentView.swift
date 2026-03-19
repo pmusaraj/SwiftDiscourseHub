@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var gPrefixTask: Task<Void, Never>?
     #else
     @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
+    @State private var preComposerVisibility: NavigationSplitViewVisibility?
     #endif
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
@@ -89,6 +90,18 @@ struct ContentView: View {
                 toastManager.show(error, style: .error, duration: 6.0)
             }
         }
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: .composerDidShow)) { _ in
+            preComposerVisibility = columnVisibility
+            withAnimation { columnVisibility = .detailOnly }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .composerDidHide)) { _ in
+            if let saved = preComposerVisibility {
+                withAnimation { columnVisibility = saved }
+                preComposerVisibility = nil
+            }
+        }
+        #endif
     }
 
     // MARK: - Welcome (no sites)

@@ -7,10 +7,12 @@ struct ComposerView: View {
     let topicId: Int
     @Binding var composerText: String
     var onPostCreated: (() -> Void)?
+    var onCancel: (() -> Void)?
 
     @State private var isSubmitting = false
     @State private var submitError: String?
-    @State private var editorHeight: CGFloat = 52
+    @State private var editorHeight: CGFloat?
+    @State private var manualHeightOffset: CGFloat = 0
     @State private var uploads: [UploadResponse] = []
     @State private var uploadThumbnails: [Int: Image] = [:]
     @State private var isUploading = false
@@ -21,6 +23,20 @@ struct ComposerView: View {
     @State private var mentionSearchTask: Task<Void, Never>?
     @FocusState private var isEditorFocused: Bool
     @Environment(\.apiClient) private var apiClient
+
+    private let lineHeight: CGFloat = 20
+    private let maxAutoLines = 18
+    private let minHeight: CGFloat = 32
+
+    private var autoHeight: CGFloat {
+        let lineCount = max(1, composerText.components(separatedBy: .newlines).count)
+        let clampedLines = min(lineCount, maxAutoLines)
+        return CGFloat(clampedLines) * lineHeight + 12 // 12 for vertical padding
+    }
+
+    private var effectiveHeight: CGFloat {
+        max(minHeight, autoHeight + manualHeightOffset)
+    }
 
     private var canSubmit: Bool {
         !composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSubmitting
@@ -41,7 +57,12 @@ struct ComposerView: View {
             .gesture(
                 DragGesture(minimumDistance: 1)
                     .onChanged { value in
-                        editorHeight = max(32, editorHeight - value.translation.height)
+                        manualHeightOffset = max(minHeight - autoHeight, manualHeightOffset - value.translation.height)
+                    }
+                    .onEnded { value in
+                        if value.translation.height > 60 {
+                            onCancel?()
+                        }
                     }
             )
             #if os(macOS)
@@ -56,7 +77,7 @@ struct ComposerView: View {
 
             TextEditor(text: $composerText)
                 .focused($isEditorFocused)
-                .frame(height: editorHeight)
+                .frame(height: effectiveHeight)
                 .font(.body)
                 .padding(.horizontal, 8)
                 .scrollContentBackground(.hidden)
@@ -172,8 +193,9 @@ struct ComposerView: View {
             }
             .padding(8)
         }
-        .background(.ultraThinMaterial)
+        .background(.background)
         .clipShape(.rect(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: -2)
         .padding(.horizontal, 8)
         .padding(.bottom, 4)
         .onChange(of: selectedPhotoItem) { _, newItem in

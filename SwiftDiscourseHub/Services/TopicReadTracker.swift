@@ -4,6 +4,8 @@ import os.log
 extension Notification.Name {
     static let topicWasRead = Notification.Name("topicWasRead")
     static let showReplyComposer = Notification.Name("showReplyComposer")
+    static let composerDidShow = Notification.Name("composerDidShow")
+    static let composerDidHide = Notification.Name("composerDidHide")
 }
 
 private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "ReadTracker")

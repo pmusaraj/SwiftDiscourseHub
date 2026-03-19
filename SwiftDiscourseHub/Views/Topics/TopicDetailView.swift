@@ -135,6 +135,11 @@ struct TopicDetailView: View {
                             }
                         }
                         .scrollIndicators(.never)
+                    #if os(iOS)
+                    .onTapGesture {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    #endif
                         .onScrollGeometryChange(for: ScrollGeometryInfo.self) { geometry in
                             ScrollGeometryInfo(
                                 offset: geometry.contentOffset.y,
@@ -178,6 +183,7 @@ struct TopicDetailView: View {
                         }
                     }
                     .overlay(alignment: .bottom) {
+                        let hideFooter = !showFooter && !showComposer
                         AuthFooterBar(
                             site: site,
                             topicId: topicId,
@@ -187,8 +193,8 @@ struct TopicDetailView: View {
                         ) {
                             Task { await refreshAfterPost() }
                         }
-                        .offset(y: showFooter ? 0 : 100)
-                        .opacity(showFooter ? 1 : 0)
+                        .offset(y: hideFooter ? 100 : 0)
+                        .opacity(hideFooter ? 0 : 1)
                     }
                 }
                 .onGeometryChange(for: CGFloat.self) { proxy in
@@ -202,7 +208,8 @@ struct TopicDetailView: View {
         }
         .navigationTitle("")
         #if os(macOS)
-        .toolbar(.hidden)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .toolbar(removing: .title)
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -211,6 +218,15 @@ struct TopicDetailView: View {
         .onReceive(NotificationCenter.default.publisher(for: .showReplyComposer)) { _ in
             guard site.hasApiKey, !showComposer else { return }
             showComposer = true
+        }
+        .onChange(of: showComposer) {
+            #if !os(macOS)
+            if showComposer {
+                NotificationCenter.default.post(name: .composerDidShow, object: nil)
+            } else {
+                NotificationCenter.default.post(name: .composerDidHide, object: nil)
+            }
+            #endif
         }
         .task(id: topicId) {
             await loadTopic()

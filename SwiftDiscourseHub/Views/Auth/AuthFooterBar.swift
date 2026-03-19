@@ -15,8 +15,12 @@ struct AuthFooterBar: View {
                 ComposerView(site: site, topicId: topicId, composerText: $composerText) {
                     showComposer = false
                     onPostCreated?()
+                } onCancel: {
+                    composerText = ""
+                    showComposer = false
                 }
                 .onKeyPress(.escape) {
+                    composerText = ""
                     showComposer = false
                     return .handled
                 }
@@ -42,18 +46,19 @@ struct AuthFooterBar: View {
 
             Spacer()
 
-            Button {
-                showComposer = true
-            } label: {
-                Label("Reply", systemImage: "arrowshape.turn.up.left")
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
+            Label("Reply", systemImage: "arrowshape.turn.up.left")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.tint, in: .rect(cornerRadius: 6))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .clipShape(.rect(cornerRadius: 12))
+        .contentShape(.rect(cornerRadius: 12))
+        .onTapGesture { showComposer = true }
         .padding(.horizontal, 8)
         .padding(.bottom, 4)
     }
@@ -82,17 +87,22 @@ struct AuthFooterBar: View {
                     .controlSize(.small)
             }
 
-            Button("Log In") {
-                Task { await authCoordinator.startAuth(for: site.baseURL) }
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .disabled(authCoordinator.isAuthenticating)
+            Text("Log In")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.tint, in: .rect(cornerRadius: 6))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(.ultraThinMaterial)
         .clipShape(.rect(cornerRadius: 12))
+        .contentShape(.rect(cornerRadius: 12))
+        .onTapGesture {
+            guard !authCoordinator.isAuthenticating else { return }
+            Task { await authCoordinator.startAuth(for: site.baseURL) }
+        }
         .padding(.horizontal, 8)
         .padding(.bottom, 4)
     }

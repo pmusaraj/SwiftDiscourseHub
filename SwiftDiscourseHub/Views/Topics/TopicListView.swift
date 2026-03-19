@@ -126,6 +126,7 @@ struct TopicListView: View {
         .navigationTitle("")
         #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .toolbar(removing: .title)
         .navigationSplitViewColumnWidth(min: 320, ideal: 420, max: 600)
         #endif
         .task(id: site.baseURL) {
