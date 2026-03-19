@@ -7,6 +7,12 @@ enum TopicFilter: String, CaseIterable {
     case hot = "Hot"
 }
 
+private struct SiteFilterConfig {
+    var pinnedCategories: [DiscourseCategory]
+    var hiddenBuiltInFilters: Set<TopicFilter>
+    var filter: TopicFilter
+}
+
 @Observable
 @MainActor
 final class TopicListViewModel {
@@ -22,10 +28,37 @@ final class TopicListViewModel {
     var pinnedCategories: [DiscourseCategory] = []
     var hiddenBuiltInFilters: Set<TopicFilter> = []
 
+    // Per-site storage
+    private var siteConfigs: [String: SiteFilterConfig] = [:]
+    private var currentBaseURL: String?
+
     var apiClient = DiscourseAPIClient()
 
     var isShowingCategory: Bool {
         selectedCategorySlug != nil
+    }
+
+    func switchSite(to baseURL: String) {
+        // Save current config
+        if let current = currentBaseURL {
+            siteConfigs[current] = SiteFilterConfig(
+                pinnedCategories: pinnedCategories,
+                hiddenBuiltInFilters: hiddenBuiltInFilters,
+                filter: filter
+            )
+        }
+        // Restore config for new site
+        currentBaseURL = baseURL
+        if let config = siteConfigs[baseURL] {
+            pinnedCategories = config.pinnedCategories
+            hiddenBuiltInFilters = config.hiddenBuiltInFilters
+            filter = config.filter
+        } else {
+            pinnedCategories = []
+            hiddenBuiltInFilters = []
+            filter = .latest
+        }
+        clearCategory()
     }
 
     func addPinnedCategory(_ category: DiscourseCategory) {

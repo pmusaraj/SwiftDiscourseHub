@@ -31,6 +31,11 @@ struct TopicListView: View {
                     selectCategory(cat)
                 }
             )
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            #if os(macOS)
+            siteMenu
+            #endif
         }
         .padding(.vertical, Theme.Padding.topicFilterVertical)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
@@ -54,10 +59,12 @@ struct TopicListView: View {
                     Spacer()
                 }
             } else if topicVM.topics.isEmpty {
-                VStack {
-                    Spacer()
+                ScrollView {
+                    Spacer().frame(height: 100)
                     ContentUnavailableView("No Topics", systemImage: "text.bubble", description: Text("No topics found"))
-                    Spacer()
+                }
+                .safeAreaInset(edge: .top) {
+                    filterBar
                 }
             } else {
                 List {
@@ -131,11 +138,13 @@ struct TopicListView: View {
             contentWidth = newWidth
         }
         .navigationTitle("")
+        #if os(iOS)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 siteMenu
             }
         }
+        #endif
         #if os(macOS)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
@@ -144,6 +153,7 @@ struct TopicListView: View {
         .task(id: site.baseURL) {
             initialLoadComplete = false
             topicVM.apiClient = apiClient
+            topicVM.switchSite(to: site.baseURL)
             categoryVM.apiClient = apiClient
             await categoryVM.loadCategories(for: site)
             topicCategories = categoryVM.categories
@@ -205,9 +215,17 @@ struct TopicListView: View {
                 }
             }
         } label: {
+            #if os(macOS)
+            Image(systemName: "line.3.horizontal.decrease.circle")
+            #else
             SiteIconView(site: site, isSelected: true)
                 .frame(width: 24, height: 24)
+            #endif
         }
+        #if os(macOS)
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        #endif
     }
 
     // MARK: - Helpers
