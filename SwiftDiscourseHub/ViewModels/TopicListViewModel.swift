@@ -108,7 +108,7 @@ final class TopicListViewModel {
 
         do {
             try await apiClient.dismissNewTopics(baseURL: site.baseURL, topicIds: [topicId])
-            try await Task.sleep(for: .seconds(1))
+            try await Task.sleep(for: .seconds(0.3))
             withAnimation(.easeInOut(duration: 0.3)) {
                 topics.removeAll { $0.id == topicId }
             }
