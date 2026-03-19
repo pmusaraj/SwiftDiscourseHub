@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var showingAddSite = false
     @State private var showingDiscover = false
     @State private var selectedDiscoverSite: DiscoverSite?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
     @Environment(ToastManager.self) private var toastManager
@@ -44,6 +45,7 @@ struct ContentView: View {
             if !showingDiscover {
                 selectedDiscoverSite = nil
             }
+            columnVisibility = .detailOnly
         }
         .onChange(of: authCoordinator.isAuthenticating) {
             // When auth finishes successfully, update the site's hasApiKey flag
@@ -166,37 +168,42 @@ struct ContentView: View {
 
     #if os(iOS)
     private var iPadLayout: some View {
-        NavigationSplitView {
-            SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
-        } content: {
+        Group {
             if showingDiscover {
-                DiscoverSitesView(onSiteAdded: { site in
-                    selectedSite = site
-                    showingDiscover = false
-                }, selectedDiscoverSite: $selectedDiscoverSite)
-            } else if let site = selectedSite {
-                if site.loginRequired && !site.isAuthenticated {
-                    LoginRequiredView(site: site)
-                } else {
-                    TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                } detail: {
+                    NavigationStack {
+                        DiscoverSitesView(onSiteAdded: { site in
+                            selectedSite = site
+                            showingDiscover = false
+                        }, selectedDiscoverSite: $selectedDiscoverSite)
+                    }
                 }
             } else {
-                ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
-            }
-        } detail: {
-            NavigationStack {
-                if let topicId = selectedTopicId, let site = selectedSite {
-                    TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
-                } else if showingDiscover, let discoverSite = selectedDiscoverSite {
-                    DiscoverSiteDetailView(site: discoverSite, onSiteAdded: { site in
-                        selectedSite = site
-                        showingDiscover = false
-                    })
-                } else {
-                    ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
+                } content: {
+                    if let site = selectedSite {
+                        if site.loginRequired && !site.isAuthenticated {
+                            LoginRequiredView(site: site)
+                        } else {
+                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories)
+                        }
+                    } else {
+                        ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
+                    }
+                } detail: {
+                    NavigationStack {
+                        if let topicId = selectedTopicId, let site = selectedSite {
+                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+                        } else {
+                            ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                        }
+                    }
+                    .id(selectedTopicId)
                 }
             }
-            .id(selectedTopicId)
         }
     }
     #endif
