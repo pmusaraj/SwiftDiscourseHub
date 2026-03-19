@@ -13,6 +13,20 @@ struct TopicListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                SiteIconView(site: site, isSelected: true)
+                    .frame(width: 28, height: 28)
+
+                Text(site.title)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                Spacer()
+            }
+            .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+
             TopicFilterBar(viewModel: topicVM, isAuthenticated: site.isAuthenticated)
                 .padding(.vertical, Theme.Padding.topicFilterVertical)
                 .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
@@ -130,6 +144,9 @@ struct TopicListView: View {
             topicCategories = categoryVM.categories
             await topicVM.loadTopics(for: site)
             initialLoadComplete = true
+            if selectedTopicId == nil, let first = topicVM.topics.first {
+                selectedTopicId = first.id
+            }
         }
         .onChange(of: topicVM.filter) {
             topicVM.clearCategory()

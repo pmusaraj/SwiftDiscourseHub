@@ -10,7 +10,7 @@ struct ContentView: View {
     @State private var showingAddSite = false
     @State private var showingDiscover = false
     @State private var selectedDiscoverSite: DiscoverSite?
-    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
+    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
     @Environment(ToastManager.self) private var toastManager
@@ -45,7 +45,7 @@ struct ContentView: View {
             if !showingDiscover {
                 selectedDiscoverSite = nil
             }
-            columnVisibility = .detailOnly
+            columnVisibility = showingDiscover ? .detailOnly : .doubleColumn
         }
         .onChange(of: authCoordinator.isAuthenticating) {
             // When auth finishes successfully, update the site's hasApiKey flag
@@ -156,7 +156,7 @@ struct ContentView: View {
                         if let topicId = selectedTopicId, let site = selectedSite {
                             TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
                         } else {
-                            ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                            Color.clear
                         }
                     }
                     .id(selectedTopicId)
@@ -198,7 +198,7 @@ struct ContentView: View {
                         if let topicId = selectedTopicId, let site = selectedSite {
                             TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
                         } else {
-                            ContentUnavailableView("Select a Topic", systemImage: "text.bubble", description: Text("Choose a topic from the list"))
+                            Color.clear
                         }
                     }
                     .id(selectedTopicId)
