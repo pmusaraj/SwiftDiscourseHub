@@ -17,6 +17,8 @@ struct ContentView: View {
     @State private var keyMonitor: Any?
     @State private var pendingGPrefix = false
     @State private var gPrefixTask: Task<Void, Never>?
+    #else
+    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
     #endif
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(AuthCoordinator.self) private var authCoordinator
