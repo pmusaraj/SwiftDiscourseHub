@@ -41,16 +41,10 @@ struct PostView: View {
                                 .foregroundStyle(.blue)
                         }
                     }
-                    HStack(spacing: Theme.Spacing.postNameItems) {
-                        if let username = post.username {
-                            Text("@\(username)")
-                                .font(Theme.Fonts.metadata)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text("·")
-                            .foregroundStyle(.secondary)
-                        RelativeTimeText(dateString: post.createdAt)
+                    if let username = post.username {
+                        Text("@\(username)")
                             .font(Theme.Fonts.metadata)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
@@ -61,11 +55,8 @@ struct PostView: View {
                         .foregroundStyle(.orange)
                 }
 
-                if let postNumber = post.postNumber {
-                    Text("#\(postNumber)")
-                        .font(Theme.Fonts.metadata)
-                        .foregroundStyle(.tertiary)
-                }
+                RelativeTimeText(dateString: post.createdAt)
+                    .font(Theme.Fonts.metadata)
             }
 
             Spacer().frame(height: Theme.Spacing.postHeaderToBody)

@@ -420,15 +420,21 @@ private struct TopicHeaderPreview: View {
             HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
                 CategoryBadgeView(name: "Feature", color: "25AAE2")
 
-                Label {
-                    RelativeTimeText(dateString: PreviewData.topic.createdAt)
-                } icon: {
-                    Image(systemName: "calendar")
-                }
+                Label("^[\(41) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
 
                 Spacer()
 
-                Label("41 replies", systemImage: "bubble.left.and.bubble.right")
+                Menu {
+                    Button { } label: {
+                        Label("Open in Safari", systemImage: "safari")
+                    }
+                    Button { } label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .buttonStyle(.plain)
             }
             .font(Theme.Fonts.metadata)
             .foregroundStyle(.secondary)
@@ -529,15 +535,21 @@ private struct TopicViewPreview: View {
                 HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
                     CategoryBadgeView(name: "Feature", color: "25AAE2")
 
-                    Label {
-                        RelativeTimeText(dateString: PreviewData.topic.createdAt)
-                    } icon: {
-                        Image(systemName: "calendar")
-                    }
+                    Label("^[\(41) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
 
                     Spacer()
 
-                    Label("^[\(41) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
+                    Menu {
+                        Button { } label: {
+                            Label("Open in Safari", systemImage: "safari")
+                        }
+                        Button { } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .buttonStyle(.plain)
                 }
                 .font(Theme.Fonts.metadata)
                 .foregroundStyle(.secondary)

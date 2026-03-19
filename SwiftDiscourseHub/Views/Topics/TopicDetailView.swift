@@ -275,33 +275,24 @@ struct TopicDetailView: View {
                     CategoryBadgeView(name: cat.name ?? "Unknown", color: cat.color)
                 }
 
-                if let createdAt = topic.createdAt {
-                    Label {
-                        RelativeTimeText(dateString: createdAt)
-                    } icon: {
-                        Image(systemName: "calendar")
-                    }
-                }
-
                 Label("^[\(replyCount) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
 
                 Spacer()
 
                 if let url = topicURL {
-                    Button {
-                        #if os(macOS)
-                        NSWorkspace.shared.open(url)
-                        #else
-                        UIApplication.shared.open(url)
-                        #endif
+                    Menu {
+                        Button {
+                            #if os(macOS)
+                            NSWorkspace.shared.open(url)
+                            #else
+                            UIApplication.shared.open(url)
+                            #endif
+                        } label: {
+                            Label("Open in Safari", systemImage: "safari")
+                        }
+                        ShareLink(item: url)
                     } label: {
-                        Image(systemName: "safari")
-                    }
-                    .buttonStyle(.plain)
-                    .help("Open in Safari")
-
-                    ShareLink(item: url) {
-                        Image(systemName: "square.and.arrow.up")
+                        Image(systemName: "ellipsis.circle")
                     }
                     .buttonStyle(.plain)
                 }

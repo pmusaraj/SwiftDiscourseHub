@@ -26,8 +26,11 @@ struct RelativeTimeText: View {
             if date.timeIntervalSinceNow > -7 * 86400 {
                 Text(date, format: .relative(presentation: .named))
                     .foregroundStyle(.secondary)
-            } else {
+            } else if Calendar.current.component(.year, from: date) == Calendar.current.component(.year, from: .now) {
                 Text(date, format: .dateTime.month(.abbreviated).day())
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(date, format: .dateTime.month(.abbreviated).day().year())
                     .foregroundStyle(.secondary)
             }
         }
