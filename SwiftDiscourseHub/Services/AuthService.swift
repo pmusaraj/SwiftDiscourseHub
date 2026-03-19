@@ -215,6 +215,17 @@ actor AuthService {
 
 // MARK: - AuthCoordinator
 
+#if os(iOS)
+private class AuthPresentationContext: NSObject, ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: \.isKeyWindow) ?? ASPresentationAnchor()
+    }
+}
+#endif
+
 @Observable
 @MainActor
 final class AuthCoordinator {
@@ -224,6 +235,9 @@ final class AuthCoordinator {
 
     private let authService: AuthService
     private var pendingNonce: String?
+    #if os(iOS)
+    private let presentationContext = AuthPresentationContext()
+    #endif
 
     init(authService: AuthService = AuthService()) {
         self.authService = authService
@@ -257,6 +271,7 @@ final class AuthCoordinator {
                     }
                 }
             }
+            session.presentationContextProvider = presentationContext
             session.prefersEphemeralWebBrowserSession = false
             session.start()
         } catch {
