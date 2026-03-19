@@ -64,6 +64,7 @@
 		A10058 /* TopicReadTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10058 /* TopicReadTracker.swift */; };
 		A10059 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10059 /* PrivacyInfo.xcprivacy */; };
 		A10060 /* KeyboardShortcutHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060 /* KeyboardShortcutHelpView.swift */; };
+		A10061 /* RichLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061 /* RichLinkView.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
@@ -113,6 +114,7 @@
 		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
 		B10029 /* TopicDetailResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailResponse.swift; sourceTree = "<group>"; };
 		B10031 /* PostContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentView.swift; sourceTree = "<group>"; };
+		B10061 /* RichLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichLinkView.swift; sourceTree = "<group>"; };
 		B10033 /* RawTopicParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParser.swift; sourceTree = "<group>"; };
 		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 		B10035 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -328,6 +330,7 @@
 				B10023 /* RelativeTimeText.swift */,
 				B10024 /* ErrorStateView.swift */,
 				B10031 /* PostContentView.swift */,
+				B10061 /* RichLinkView.swift */,
 				B10046 /* ToastOverlay.swift */,
 				B10037 /* DiscourseTextStyle.swift */,
 				B10038 /* Previews.swift */,
@@ -486,6 +489,7 @@
 				A10028 /* TopicDetailView.swift in Sources */,
 				A10029 /* TopicDetailResponse.swift in Sources */,
 				A10031 /* PostContentView.swift in Sources */,
+				A10061 /* RichLinkView.swift in Sources */,
 				A10033 /* RawTopicParser.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
