@@ -55,8 +55,15 @@ struct PostView: View {
                         .foregroundStyle(.orange)
                 }
 
-                RelativeTimeText(dateString: post.createdAt)
-                    .font(Theme.Fonts.metadata)
+                HStack(spacing: 4) {
+                    RelativeTimeText(dateString: post.createdAt)
+                    if let pn = post.postNumber {
+                        Text("·")
+                        Text("#\(pn)")
+                    }
+                }
+                .font(Theme.Fonts.metadata)
+                .foregroundStyle(.secondary)
             }
 
             Spacer().frame(height: Theme.Spacing.postHeaderToBody)

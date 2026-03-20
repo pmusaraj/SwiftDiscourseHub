@@ -94,8 +94,8 @@ struct TopicRowView: View {
 
                 // Stats
                 HStack(spacing: Theme.Spacing.topicRowStats) {
-                    if let posts = formatCount(topic.postsCount) {
-                        statLabel(posts, systemImage: "bubble.left")
+                    if let replies = formatCount((topic.postsCount ?? 0) - 1) {
+                        statLabel(replies, systemImage: "bubble.left")
                     }
                     if contentWidth >= 250, let views = formatCount(topic.views) {
                         statLabel(views, systemImage: "eye")
@@ -113,9 +113,10 @@ struct TopicRowView: View {
     }
 
     private func statLabel(_ text: String, systemImage: String) -> some View {
-        HStack(spacing: 2) {
+        HStack(alignment: .center, spacing: 4) {
             Image(systemName: systemImage)
-                .imageScale(.small)
+                .font(Theme.Fonts.statCount.weight(.regular).leading(.tight))
+                .scaleEffect(1.2)
             Text(text)
         }
     }

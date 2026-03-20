@@ -32,6 +32,8 @@
 		A10023 /* RelativeTimeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* RelativeTimeText.swift */; };
 		A10024 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* ErrorStateView.swift */; };
 		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* URLHelpers.swift */; };
+		A10063 /* JumpToEndHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10063 /* JumpToEndHelper.swift */; };
+		A10064 /* DiscourseImageAttachmentLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10064 /* DiscourseImageAttachmentLoader.swift */; };
 		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* Color+Hex.swift */; };
 		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027 /* Assets.xcassets */; };
 		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028 /* TopicDetailView.swift */; };
@@ -70,6 +72,7 @@
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
 		A20004 /* ComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* ComposerTests.swift */; };
+		A20005 /* JumpToEndTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20005 /* JumpToEndTests.swift */; };
 		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
 		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
 /* End PBXBuildFile section */
@@ -110,6 +113,8 @@
 		B10023 /* RelativeTimeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelativeTimeText.swift; sourceTree = "<group>"; };
 		B10024 /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
 		B10025 /* URLHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHelpers.swift; sourceTree = "<group>"; };
+		B10063 /* JumpToEndHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpToEndHelper.swift; sourceTree = "<group>"; };
+		B10064 /* DiscourseImageAttachmentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseImageAttachmentLoader.swift; sourceTree = "<group>"; };
 		B10026 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
@@ -148,6 +153,7 @@
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
 		B20004 /* ComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerTests.swift; sourceTree = "<group>"; };
+		B20005 /* JumpToEndTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpToEndTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -240,6 +246,7 @@
 				B10040 /* KeychainService.swift */,
 				B10041 /* AuthService.swift */,
 				B10062 /* FaviconCache.swift */,
+				B10064 /* DiscourseImageAttachmentLoader.swift */,
 				B10058 /* TopicReadTracker.swift */,
 			);
 			path = Services;
@@ -320,6 +327,7 @@
 			isa = PBXGroup;
 			children = (
 				B10025 /* URLHelpers.swift */,
+				B10063 /* JumpToEndHelper.swift */,
 				B10026 /* Color+Hex.swift */,
 				B10053 /* FlowLayout.swift */,
 			);
@@ -367,6 +375,7 @@
 				B20002 /* RawTopicParserTests.swift */,
 				B20003 /* AuthTests.swift */,
 				B20004 /* ComposerTests.swift */,
+				B20005 /* JumpToEndTests.swift */,
 			);
 			path = SwiftDiscourseHubTests;
 			sourceTree = "<group>";
@@ -488,6 +497,7 @@
 				A10023 /* RelativeTimeText.swift in Sources */,
 				A10024 /* ErrorStateView.swift in Sources */,
 				A10025 /* URLHelpers.swift in Sources */,
+				A10063 /* JumpToEndHelper.swift in Sources */,
 				A10026 /* Color+Hex.swift in Sources */,
 				A10028 /* TopicDetailView.swift in Sources */,
 				A10029 /* TopicDetailResponse.swift in Sources */,
@@ -495,6 +505,7 @@
 				A10061 /* RichLinkView.swift in Sources */,
 				A10033 /* RawTopicParser.swift in Sources */,
 				A10062 /* FaviconCache.swift in Sources */,
+				A10064 /* DiscourseImageAttachmentLoader.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
 				A10037 /* DiscourseTextStyle.swift in Sources */,
@@ -530,6 +541,7 @@
 				A20002 /* RawTopicParserTests.swift in Sources */,
 				A20003 /* AuthTests.swift in Sources */,
 				A20004 /* ComposerTests.swift in Sources */,
+				A20005 /* JumpToEndTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

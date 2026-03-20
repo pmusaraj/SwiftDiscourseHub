@@ -430,20 +430,39 @@ struct DiscourseMarkdownPreprocessor {
 
     private func cleanDiscourseImageSyntax(_ markdown: String) -> String {
         // Discourse uses ![name|WxH](url) and ![name|video](url) — the pipe breaks
-        // standard Markdown image parsing. Clean to ![name](url).
-        let pattern = #"!\[([^\]\|]*)\|[^\]]*\]"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
-
-        let nsString = markdown as NSString
-        let range = NSRange(location: 0, length: nsString.length)
+        // standard Markdown image parsing.
         var result = markdown
 
-        let matches = regex.matches(in: markdown, range: range).reversed()
-        for match in matches {
-            guard let nameRange = Range(match.range(at: 1), in: result),
-                  let fullRange = Range(match.range, in: result) else { continue }
-            let name = String(result[nameRange])
-            result.replaceSubrange(fullRange, with: "![\(name)]")
+        // Step 1: Extract WxH dimensions and encode as URL fragment for space reservation
+        let dimPattern = #"!\[([^\]\|]*)\|(\d+)x(\d+)[^\]]*\]\(([^)]+)\)"#
+        if let dimRegex = try? NSRegularExpression(pattern: dimPattern) {
+            let range = NSRange(result.startIndex..., in: result)
+            let matches = dimRegex.matches(in: result, range: range).reversed()
+            for match in matches {
+                guard let nameRange = Range(match.range(at: 1), in: result),
+                      let wRange = Range(match.range(at: 2), in: result),
+                      let hRange = Range(match.range(at: 3), in: result),
+                      let urlRange = Range(match.range(at: 4), in: result),
+                      let fullRange = Range(match.range, in: result) else { continue }
+                let name = String(result[nameRange])
+                let w = String(result[wRange])
+                let h = String(result[hRange])
+                let url = String(result[urlRange])
+                result.replaceSubrange(fullRange, with: "![\(name)](\(url)#dim=\(w)x\(h))")
+            }
+        }
+
+        // Step 2: Strip remaining pipe suffixes (non-dimension patterns)
+        let pipePattern = #"!\[([^\]\|]*)\|[^\]]*\]"#
+        if let pipeRegex = try? NSRegularExpression(pattern: pipePattern) {
+            let range = NSRange(result.startIndex..., in: result)
+            let matches = pipeRegex.matches(in: result, range: range).reversed()
+            for match in matches {
+                guard let nameRange = Range(match.range(at: 1), in: result),
+                      let fullRange = Range(match.range, in: result) else { continue }
+                let name = String(result[nameRange])
+                result.replaceSubrange(fullRange, with: "![\(name)]")
+            }
         }
 
         return result
