@@ -109,8 +109,9 @@ struct SiteSidebarView: View {
         }
         .task {
             for site in sites where site.isAuthenticated && site.username == nil {
-                if let username = try? await apiClient.fetchCurrentUsername(baseURL: site.baseURL) {
-                    site.username = username
+                if let user = try? await apiClient.fetchCurrentUser(baseURL: site.baseURL) {
+                    site.username = user.username
+                    site.avatarTemplate = user.avatarTemplate
                 }
             }
         }

@@ -3,7 +3,6 @@ import SwiftUI
 struct AuthFooterBar: View {
     let site: DiscourseSite
     let topicId: Int
-    let username: String?
     @Binding var composerText: String
     @Binding var showComposer: Bool
     var onPostCreated: (() -> Void)?
@@ -32,17 +31,27 @@ struct AuthFooterBar: View {
         }
     }
 
+    private var avatarURL: URL? {
+        URLHelpers.avatarURL(template: site.avatarTemplate, size: 48, baseURL: site.baseURL)
+    }
+
     private var statusBar: some View {
-        HStack {
-            Group {
-                if let username {
-                    Label("Logged in as **\(username)**", systemImage: "person.crop.circle")
-                } else {
-                    Label("Logged in", systemImage: "person.crop.circle")
+        HStack(spacing: 6) {
+            if let username = site.username {
+                CachedAsyncImage(url: avatarURL) { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .foregroundStyle(.secondary)
                 }
+                .frame(width: 20, height: 20)
+                .clipShape(Circle())
+
+                Text(username)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
 
             Spacer()
 

@@ -13,6 +13,7 @@ final class DiscourseSite {
     var loginRequired: Bool = false
     var hasApiKey: Bool = false
     var username: String?
+    var avatarTemplate: String?
 
     var isAuthenticated: Bool { hasApiKey }
 

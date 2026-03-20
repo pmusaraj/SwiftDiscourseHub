@@ -155,10 +155,10 @@ actor DiscourseAPIClient {
         return try await fetch(TopicListResponse.self, from: url, baseURL: baseURL)
     }
 
-    func fetchCurrentUsername(baseURL: String) async throws -> String {
+    func fetchCurrentUser(baseURL: String) async throws -> CurrentUserResponse.CurrentUser {
         let url = try buildURL(base: baseURL, path: "/session/current.json")
         let response = try await fetch(CurrentUserResponse.self, from: url, baseURL: baseURL)
-        return response.currentUser.username
+        return response.currentUser
     }
 
     func fetchTopic(baseURL: String, topicId: Int) async throws -> TopicDetailResponse {

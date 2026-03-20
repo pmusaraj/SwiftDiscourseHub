@@ -54,10 +54,6 @@ struct TopicDetailView: View {
         max((topic?.postsCount ?? 1) - 1, 0)
     }
 
-    private var currentUsername: String? {
-        loadedPosts.first(where: { $0.yours == true })?.username
-    }
-
     var body: some View {
         Group {
             if isLoading {
@@ -188,7 +184,6 @@ struct TopicDetailView: View {
                         AuthFooterBar(
                             site: site,
                             topicId: topicId,
-                            username: currentUsername,
                             composerText: $composerText,
                             showComposer: $showComposer
                         ) {

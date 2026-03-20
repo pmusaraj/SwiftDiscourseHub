@@ -78,8 +78,9 @@ struct ContentView: View {
                     if await authCoordinator.apiKey(for: baseURL) != nil {
                         site.hasApiKey = true
                         toastManager.show("Logged in to \(site.title)", style: .success)
-                        if let username = try? await apiClient.fetchCurrentUsername(baseURL: baseURL) {
-                            site.username = username
+                        if let user = try? await apiClient.fetchCurrentUser(baseURL: baseURL) {
+                            site.username = user.username
+                            site.avatarTemplate = user.avatarTemplate
                         }
                     }
                 }

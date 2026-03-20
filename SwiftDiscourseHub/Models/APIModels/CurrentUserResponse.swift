@@ -5,5 +5,6 @@ struct CurrentUserResponse: Decodable {
 
     struct CurrentUser: Decodable {
         let username: String
+        let avatarTemplate: String?
     }
 }
