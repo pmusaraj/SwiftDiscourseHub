@@ -73,6 +73,8 @@
 		A20004 /* ComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* ComposerTests.swift */; };
 		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
 		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
+		A30003 /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = R10003 /* Nuke */; };
+		A30004 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = R10004 /* NukeUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,6 +163,8 @@
 			files = (
 				A30001 /* Textual in Frameworks */,
 				A30002 /* _CryptoExtras in Frameworks */,
+				A30003 /* Nuke in Frameworks */,
+				A30004 /* NukeUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,6 +397,8 @@
 			packageProductDependencies = (
 				R10001 /* Textual */,
 				R10002 /* _CryptoExtras */,
+				R10003 /* Nuke */,
+				R10004 /* NukeUI */,
 			);
 			productName = SwiftDiscourseHub;
 			productReference = C10001 /* SwiftDiscourseHub.app */;
@@ -437,6 +443,7 @@
 			packageReferences = (
 				S10001 /* XCRemoteSwiftPackageReference "textual" */,
 				S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */,
+				S10003 /* XCRemoteSwiftPackageReference "Nuke" */,
 			);
 			productRefGroup = E10003 /* Products */;
 			projectDirPath = "";
@@ -814,6 +821,14 @@
 				minimumVersion = 4.0.0;
 			};
 		};
+		S10003 /* XCRemoteSwiftPackageReference "Nuke" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kean/Nuke.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -826,6 +841,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */;
 			productName = _CryptoExtras;
+		};
+		R10003 /* Nuke */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10003 /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = Nuke;
+		};
+		R10004 /* NukeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10003 /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = NukeUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

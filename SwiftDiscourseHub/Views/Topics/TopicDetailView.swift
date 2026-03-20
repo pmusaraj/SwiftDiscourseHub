@@ -1,4 +1,5 @@
 import SwiftUI
+import Nuke
 
 /// Represents an item in the displayed post stream.
 enum StreamItem: Identifiable, Equatable {
@@ -58,6 +59,7 @@ struct TopicDetailView: View {
     }
 
     @State private var avatarLookup: [String: String] = [:]
+    private let prefetcher = ImagePrefetcher(destination: .diskCache)
 
     private var hasMore: Bool {
         loadedPostIds.count < stream.count
@@ -216,6 +218,7 @@ struct TopicDetailView: View {
         }
         .onDisappear {
             readTracker.stop()
+            prefetcher.stopPrefetching()
         }
         .navigationDestination(for: LinkedTopicDestination.self) { dest in
             TopicDetailView(topicId: dest.topicId, site: site, categories: categories)
@@ -532,11 +535,18 @@ struct TopicDetailView: View {
     // MARK: - Helpers
 
     private func registerPosts(_ posts: [Post]) {
+        var urls: [URL] = []
         for post in posts {
             loadedPostIds.insert(post.id)
             if let username = post.username, let template = post.avatarTemplate {
                 avatarLookup[username] = template
+                if let url = URLHelpers.avatarURL(template: template, size: 80, baseURL: baseURL) {
+                    urls.append(url)
+                }
             }
+        }
+        if !urls.isEmpty {
+            prefetcher.startPrefetching(with: urls)
         }
     }
 
@@ -648,8 +658,32 @@ struct TopicDetailView: View {
     private func processRawText(_ rawText: String) {
         let rawPosts = RawTopicParser.parse(rawText)
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
+        var imageURLs: [URL] = []
         for rawPost in rawPosts {
-            postMarkdown[rawPost.postNumber] = preprocessor.process(rawPost.markdown)
+            let processed = preprocessor.process(rawPost.markdown)
+            postMarkdown[rawPost.postNumber] = processed
+            imageURLs.append(contentsOf: Self.extractImageURLs(from: processed, baseURL: baseURL))
+        }
+        if !imageURLs.isEmpty {
+            prefetcher.startPrefetching(with: imageURLs)
+        }
+    }
+
+    private static func extractImageURLs(from markdown: String, baseURL: String) -> [URL] {
+        // Match ![alt](url) or ![alt](url#dim=WxH)
+        guard let regex = try? NSRegularExpression(pattern: #"!\[[^\]]*\]\(([^)]+)\)"#) else { return [] }
+        let range = NSRange(markdown.startIndex..., in: markdown)
+        return regex.matches(in: markdown, range: range).compactMap { match in
+            guard let urlRange = Range(match.range(at: 1), in: markdown) else { return nil }
+            var urlString = String(markdown[urlRange])
+            // Strip #dim=WxH fragment for prefetching the actual image
+            if let fragmentIdx = urlString.firstIndex(of: "#") {
+                urlString = String(urlString[..<fragmentIdx])
+            }
+            if urlString.hasPrefix("http") {
+                return URL(string: urlString)
+            }
+            return URL(string: urlString, relativeTo: URL(string: baseURL))?.absoluteURL
         }
     }
 }

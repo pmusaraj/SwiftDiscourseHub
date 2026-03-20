@@ -1,4 +1,5 @@
 import SwiftUI
+import NukeUI
 import Textual
 
 struct PreSizedImageAttachment: Attachment, Hashable, Sendable {
@@ -9,14 +10,13 @@ struct PreSizedImageAttachment: Attachment, Hashable, Sendable {
     var description: String { url.absoluteString }
 
     @MainActor var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
+        LazyImage(url: url) { state in
+            if let image = state.image {
                 image.resizable().aspectRatio(contentMode: .fit)
-            case .failure:
+            } else if state.error != nil {
                 Image(systemName: "photo")
                     .foregroundStyle(.secondary)
-            default:
+            } else {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(.quaternary)
             }
@@ -52,20 +52,8 @@ struct DiscourseImageAttachmentLoader: AttachmentLoader {
             return PreSizedImageAttachment(url: cleanURL, knownWidth: dims.width, knownHeight: dims.height)
         }
 
-        // No dimension hints — load image to determine size
-        let (data, _) = try await URLSession.shared.data(from: resolvedURL)
-        #if os(macOS)
-        guard let platformImage = NSImage(data: data) else {
-            throw URLError(.cannotDecodeContentData)
-        }
-        let size = platformImage.size
-        #else
-        guard let platformImage = UIImage(data: data) else {
-            throw URLError(.cannotDecodeContentData)
-        }
-        let size = platformImage.size
-        #endif
-        return PreSizedImageAttachment(url: resolvedURL, knownWidth: size.width, knownHeight: size.height)
+        // No dimension hints — use a default size to avoid layout shifts
+        return PreSizedImageAttachment(url: resolvedURL, knownWidth: 400, knownHeight: 300)
     }
 
     private static func parseDimensions(from fragment: String) -> CGSize? {
