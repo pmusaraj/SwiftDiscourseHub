@@ -200,15 +200,16 @@ struct TopicDetailView: View {
             guard site.hasApiKey, !showComposer else { return }
             showComposer = true
         }
-        .onChange(of: showComposer) {
-            #if !os(macOS)
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             if showComposer {
                 NotificationCenter.default.post(name: .composerDidShow, object: nil)
-            } else {
-                NotificationCenter.default.post(name: .composerDidHide, object: nil)
             }
-            #endif
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            NotificationCenter.default.post(name: .composerDidHide, object: nil)
+        }
+        #endif
         .task(id: topicId) {
             await loadTopic()
             if site.isAuthenticated {
