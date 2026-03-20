@@ -101,6 +101,7 @@ struct TopicRowView: View {
         }
         .padding(.vertical, Theme.Padding.topicRowVertical)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
     private func statLabel(_ text: String, systemImage: String) -> some View {

@@ -10,6 +10,7 @@ struct TopicListView: View {
     @State private var categoryVM = CategoryListViewModel()
     @State private var contentWidth: CGFloat = 0
     @State private var initialLoadComplete = false
+    @State private var listScrollProxy: ScrollViewProxy?
 
     private var topCategories: [DiscourseCategory] {
         categoryVM.categories
@@ -25,7 +26,10 @@ struct TopicListView: View {
                 viewModel: topicVM,
                 isAuthenticated: site.isAuthenticated,
                 onBuiltInSelected: {
-                    Task { await topicVM.loadTopics(for: site) }
+                    Task {
+                        await topicVM.loadTopics(for: site)
+                        scrollToTopOfList()
+                    }
                 },
                 onCategorySelected: { cat in
                     selectCategory(cat)
@@ -67,6 +71,7 @@ struct TopicListView: View {
                     filterBar
                 }
             } else {
+                ScrollViewReader { listProxy in
                 List {
                     ForEach(topicVM.topics) { topic in
                         Button {
@@ -130,6 +135,8 @@ struct TopicListView: View {
                 .safeAreaInset(edge: .top) {
                     filterBar
                 }
+                .onAppear { listScrollProxy = listProxy }
+                } // ScrollViewReader
             }
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -165,7 +172,10 @@ struct TopicListView: View {
         }
         .onChange(of: topicVM.filter) {
             if !topicVM.isShowingCategory {
-                Task { await topicVM.loadTopics(for: site) }
+                Task {
+                    await topicVM.loadTopics(for: site)
+                    scrollToTopOfList()
+                }
             }
         }
         .onChange(of: selectedTopicId) {
@@ -233,6 +243,15 @@ struct TopicListView: View {
 
     private func selectCategory(_ cat: DiscourseCategory) {
         topicVM.selectCategory(slug: cat.slug ?? "", id: cat.id)
-        Task { await topicVM.loadTopics(for: site) }
+        Task {
+            await topicVM.loadTopics(for: site)
+            scrollToTopOfList()
+        }
+    }
+
+    private func scrollToTopOfList() {
+        if let firstId = topicVM.topics.first?.id {
+            listScrollProxy?.scrollTo(firstId, anchor: .top)
+        }
     }
 }

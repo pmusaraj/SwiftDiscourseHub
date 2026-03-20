@@ -111,6 +111,7 @@ struct PostView: View {
             } else if let cooked = post.cooked, !cooked.isEmpty {
                 Text(cooked)
                     .font(Theme.Fonts.postBody)
+                    .textSelection(.enabled)
             }
 
             Spacer().frame(height: Theme.Spacing.postBodyToFooter)

@@ -46,6 +46,7 @@ enum Theme {
         static let postContentVertical: CGFloat = 8
         static let postHeaderToBody: CGFloat = 16
         static let postBodyToFooter: CGFloat = 16
+        static let placeholderVertical: CGFloat = 20
         static let postHeaderHorizontal: CGFloat = 8
         static let postAuthorVertical: CGFloat = 1
         static let postNameItems: CGFloat = 4

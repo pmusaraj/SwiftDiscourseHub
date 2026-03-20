@@ -356,15 +356,19 @@ struct TopicDetailView: View {
     }
 
     private func placeholderRow(count: Int) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "ellipsis")
-                .foregroundStyle(.tertiary)
-            Text("^[\(count) earlier post](inflect: true)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "ellipsis")
+                    .foregroundStyle(.secondary)
+                Text("^[\(count) earlier post](inflect: true)")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Theme.Spacing.placeholderVertical)
+            .background(Color.blue.opacity(0.07))
+            Divider()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
     }
 
     // MARK: - Actions
