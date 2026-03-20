@@ -39,9 +39,8 @@ struct TopicDetailView: View {
     @State private var readTracker = TopicReadTracker()
     @State private var showFooter = true
     @State private var lastScrollOffset: CGFloat = 0
-    // Cooldowns to avoid rapid re-fetching (Signal uses 2s, we use 1s)
+    // Cooldown to avoid rapid re-fetching when loading older posts
     @State private var olderLoadCooldown = false
-    @State private var newerLoadCooldown = false
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
@@ -203,7 +202,6 @@ struct TopicDetailView: View {
 
     private func checkBidirectionalLoad(_ info: ScrollGeometryInfo) {
         let distanceFromTop = info.offset
-        let distanceFromBottom = info.contentHeight - (info.offset + info.containerHeight)
 
         // Load older posts when scrolling near the top
         if distanceFromTop < loadThreshold, dataSource.canLoadOlder, !olderLoadCooldown {
@@ -220,19 +218,9 @@ struct TopicDetailView: View {
                         scrollTarget = postId
                     }
                 }
-                // Cooldown to prevent rapid re-fetching
-                try? await Task.sleep(for: .seconds(1))
+                // Cooldown to prevent rapid re-fetching (Signal uses 2s)
+                try? await Task.sleep(for: .seconds(2))
                 olderLoadCooldown = false
-            }
-        }
-
-        // Load newer posts when scrolling near the bottom
-        if distanceFromBottom < loadThreshold, dataSource.canLoadNewer, !newerLoadCooldown {
-            newerLoadCooldown = true
-            Task {
-                await dataSource.loadNewer()
-                try? await Task.sleep(for: .seconds(1))
-                newerLoadCooldown = false
             }
         }
     }
@@ -382,6 +370,10 @@ struct TopicDetailView: View {
             .onAppear {
                 if let pn = post.postNumber {
                     readTracker.postAppeared(pn)
+                }
+                // Trigger loading newer posts when the last post appears
+                if case .post(let lastPost) = dataSource.items.last, lastPost.id == post.id {
+                    Task { await dataSource.loadNewer() }
                 }
             }
             .onDisappear {
