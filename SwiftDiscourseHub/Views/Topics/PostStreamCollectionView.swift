@@ -69,6 +69,7 @@ struct PostStreamCollectionView: UIViewRepresentable {
             guard let coordinator else { return }
             cell.contentConfiguration = UIHostingConfiguration {
                 coordinator.cellContent(for: item)
+                    .transaction { $0.animation = nil }
             }
             .margins(.all, 0)
         }
@@ -98,37 +99,38 @@ struct PostStreamCollectionView: UIViewRepresentable {
 
         coordinator.updateFrom(self)
 
-        if structureChanged {
-            // Detect prepend: first item changed and old items are still present
-            let isPrepend: Bool = {
-                guard let oldFirst = oldItemIds.first,
-                      let newFirst = newItemIds.first,
-                      oldFirst != newFirst else { return false }
-                // Old first item should still be in the new list (it wasn't removed, items were added before it)
-                return newItemIds.contains(oldFirst)
-            }()
+        UIView.performWithoutAnimation {
+            if structureChanged {
+                // Detect prepend: first item changed and old items are still present
+                let isPrepend: Bool = {
+                    guard let oldFirst = oldItemIds.first,
+                          let newFirst = newItemIds.first,
+                          oldFirst != newFirst else { return false }
+                    return newItemIds.contains(oldFirst)
+                }()
 
-            if isPrepend {
-                log.info("[cv] prepend detected, adjusting offset")
-                let heightBefore = cv.contentSize.height
+                if isPrepend {
+                    log.info("[cv] prepend detected, adjusting offset")
+                    let heightBefore = cv.contentSize.height
 
-                applySnapshot(coordinator: coordinator, isPrepend: true)
-                cv.layoutIfNeeded()
+                    applySnapshot(coordinator: coordinator, isPrepend: true)
+                    cv.layoutIfNeeded()
 
-                let heightAfter = cv.contentSize.height
-                let delta = heightAfter - heightBefore
-                if delta > 0 {
-                    cv.contentOffset.y += delta
-                    log.info("[cv] offset adjusted by \(delta)pt (before=\(heightBefore), after=\(heightAfter))")
+                    let heightAfter = cv.contentSize.height
+                    let delta = heightAfter - heightBefore
+                    if delta > 0 {
+                        cv.contentOffset.y += delta
+                        log.info("[cv] offset adjusted by \(delta)pt (before=\(heightBefore), after=\(heightAfter))")
+                    }
+                } else {
+                    applySnapshot(coordinator: coordinator, isPrepend: false)
                 }
-            } else {
-                applySnapshot(coordinator: coordinator, isPrepend: false)
-            }
 
-            coordinator.currentItemIds = newItemIds
-        } else {
-            // Structure unchanged — reconfigure visible cells for data updates (markdown loaded, likes, etc.)
-            reconfigureVisibleCells(coordinator: coordinator)
+                coordinator.currentItemIds = newItemIds
+            } else {
+                // Structure unchanged — reconfigure visible cells for data updates (markdown loaded, likes, etc.)
+                reconfigureVisibleCells(coordinator: coordinator)
+            }
         }
 
         // Handle scroll-to request
