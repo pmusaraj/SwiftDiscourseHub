@@ -1,5 +1,8 @@
 import SwiftUI
 import Nuke
+import os.log
+
+private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "TopicDetail")
 
 /// Represents an item in the displayed post stream.
 enum StreamItem: Identifiable, Equatable {
@@ -360,15 +363,17 @@ struct TopicDetailView: View {
         // Near the bottom — load newer
         if idx >= postCount - threshold {
             if case .post(let lastPost) = dataSource.items.last, lastPost.id == post.id {
+                log.info("[appear] last post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadNewer")
                 Task { await dataSource.loadNewer() }
             } else if idx >= postCount - 3 {
-                // Within last 3 posts, always trigger
+                log.info("[appear] near-last post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadNewer")
                 Task { await dataSource.loadNewer() }
             }
         }
 
         // Near the top — front-load older (Signal-style prefetch)
         if idx < threshold, dataSource.canLoadOlder, !dataSource.isLoadingOlder {
+            log.info("[appear] near-top post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadOlder, pinning scroll")
             Task {
                 // Pin scroll to the current item before prepending
                 scrollPosition.scrollTo(id: "post-\(post.id)", anchor: .top)

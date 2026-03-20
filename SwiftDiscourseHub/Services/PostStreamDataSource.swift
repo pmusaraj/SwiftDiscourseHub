@@ -1,5 +1,8 @@
 import SwiftUI
 import Nuke
+import os.log
+
+private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "PostStream")
 
 /// Signal-inspired windowed data source for bidirectional post stream loading.
 /// Maintains a sliding window of up to `maxWindowSize` posts, trimming from
@@ -94,6 +97,7 @@ final class PostStreamDataSource {
 
     func loadInitial() async throws {
         reset()
+        log.info("[loadInitial] topic=\(self.topicId)")
 
         async let jsonResponse = apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
         async let rawResponse = apiClient.fetchTopicRaw(baseURL: baseURL, topicId: topicId, page: 1)
@@ -131,20 +135,23 @@ final class PostStreamDataSource {
                 canLoadNewer = false
                 return
             }
+            log.info("[loadNewer] fetching \(batch.count) posts, window=[\(self.windowStart)..\(self.windowEnd)]/\(self.stream.count)")
 
             let posts = try await fetchPostsWithRaw(ids: batch)
             let filtered = posts.filter { !loadedPostIds.contains($0.id) }
             registerPosts(filtered)
             items.append(contentsOf: filtered.map { .post($0) })
 
-            // Advance window end
             if let lastId = filtered.last?.id, let idx = stream.firstIndex(of: lastId) {
                 windowEnd = idx + 1
             }
             canLoadNewer = windowEnd < stream.count
+            log.info("[loadNewer] done, \(filtered.count) added, window=[\(self.windowStart)..\(self.windowEnd)]")
 
             trimOlder()
-        } catch {}
+        } catch {
+            log.error("[loadNewer] error: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Load Older (upward / prepending)
@@ -156,7 +163,6 @@ final class PostStreamDataSource {
         defer { isLoadingOlder = false }
 
         do {
-            // Gather IDs before the window, in chronological order
             let olderIds = stream[0..<windowStart]
                 .filter { !loadedPostIds.contains($0) }
             let batch = Array(olderIds.suffix(loadChunkSize))
@@ -164,6 +170,7 @@ final class PostStreamDataSource {
                 canLoadOlder = false
                 return
             }
+            log.info("[loadOlder] fetching \(batch.count) posts, window=[\(self.windowStart)..\(self.windowEnd)]/\(self.stream.count)")
 
             let posts = try await fetchPostsWithRaw(ids: batch)
             let filtered = posts
@@ -171,18 +178,19 @@ final class PostStreamDataSource {
                 .sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
             registerPosts(filtered)
 
-            // Prepend new posts (no placeholder)
             let newItems = filtered.map { StreamItem.post($0) }
             items.insert(contentsOf: newItems, at: 0)
 
-            // Update window start
             if let firstId = filtered.first?.id, let idx = stream.firstIndex(of: firstId) {
                 windowStart = idx
             }
             canLoadOlder = windowStart > 0
+            log.info("[loadOlder] done, \(filtered.count) prepended, window=[\(self.windowStart)..\(self.windowEnd)]")
 
             trimNewer()
-        } catch {}
+        } catch {
+            log.error("[loadOlder] error: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Jump to Post
@@ -307,6 +315,8 @@ final class PostStreamDataSource {
     // MARK: - Raw + JSON Fetching
 
     private func fetchPostsWithRaw(ids: [Int]) async throws -> [Post] {
+        log.info("[fetch] POST /t/\(self.topicId)/posts.json post_ids=\(ids)")
+
         // Start JSON fetch
         async let postsResponse = apiClient.fetchTopicPosts(
             baseURL: baseURL, topicId: topicId, postIds: ids
@@ -320,10 +330,16 @@ final class PostStreamDataSource {
         })
         let pagesToFetch = neededPages.subtracting(loadedRawPages)
 
+        if !pagesToFetch.isEmpty {
+            log.info("[fetch] raw pages needed=\(pagesToFetch.sorted()), already loaded=\(self.loadedRawPages.sorted())")
+        }
+
         // Fetch raw pages in parallel
+        let tid = topicId
         await withTaskGroup(of: (Int, String?).self) { group in
             for page in pagesToFetch {
                 group.addTask {
+                    log.info("[fetch] GET /raw/\(tid)?page=\(page)")
                     let text = try? await self.apiClient.fetchTopicRaw(
                         baseURL: self.baseURL, topicId: self.topicId, page: page
                     )
@@ -334,11 +350,14 @@ final class PostStreamDataSource {
                 if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     loadedRawPages.insert(page)
                     processRawText(text)
+                    log.info("[fetch] raw page \(page) processed")
                 }
             }
         }
 
-        return try await postsResponse.postStream.posts
+        let posts = try await postsResponse.postStream.posts
+        log.info("[fetch] got \(posts.count) posts from JSON")
+        return posts
     }
 
     // MARK: - Helpers
