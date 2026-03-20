@@ -32,7 +32,6 @@
 		A10023 /* RelativeTimeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* RelativeTimeText.swift */; };
 		A10024 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* ErrorStateView.swift */; };
 		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* URLHelpers.swift */; };
-		A10063 /* JumpToEndHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10063 /* JumpToEndHelper.swift */; };
 		A10064 /* DiscourseImageAttachmentLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10064 /* DiscourseImageAttachmentLoader.swift */; };
 		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* Color+Hex.swift */; };
 		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027 /* Assets.xcassets */; };
@@ -113,7 +112,6 @@
 		B10023 /* RelativeTimeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelativeTimeText.swift; sourceTree = "<group>"; };
 		B10024 /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
 		B10025 /* URLHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHelpers.swift; sourceTree = "<group>"; };
-		B10063 /* JumpToEndHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpToEndHelper.swift; sourceTree = "<group>"; };
 		B10064 /* DiscourseImageAttachmentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseImageAttachmentLoader.swift; sourceTree = "<group>"; };
 		B10026 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -327,7 +325,6 @@
 			isa = PBXGroup;
 			children = (
 				B10025 /* URLHelpers.swift */,
-				B10063 /* JumpToEndHelper.swift */,
 				B10026 /* Color+Hex.swift */,
 				B10053 /* FlowLayout.swift */,
 			);
@@ -497,7 +494,6 @@
 				A10023 /* RelativeTimeText.swift in Sources */,
 				A10024 /* ErrorStateView.swift in Sources */,
 				A10025 /* URLHelpers.swift in Sources */,
-				A10063 /* JumpToEndHelper.swift in Sources */,
 				A10026 /* Color+Hex.swift in Sources */,
 				A10028 /* TopicDetailView.swift in Sources */,
 				A10029 /* TopicDetailResponse.swift in Sources */,
