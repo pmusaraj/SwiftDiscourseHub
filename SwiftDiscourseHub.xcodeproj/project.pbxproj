@@ -71,7 +71,6 @@
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
 		A20004 /* ComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* ComposerTests.swift */; };
-		A20005 /* JumpToEndTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20005 /* JumpToEndTests.swift */; };
 		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
 		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
 /* End PBXBuildFile section */
@@ -151,7 +150,6 @@
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
 		B20004 /* ComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerTests.swift; sourceTree = "<group>"; };
-		B20005 /* JumpToEndTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpToEndTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -372,7 +370,6 @@
 				B20002 /* RawTopicParserTests.swift */,
 				B20003 /* AuthTests.swift */,
 				B20004 /* ComposerTests.swift */,
-				B20005 /* JumpToEndTests.swift */,
 			);
 			path = SwiftDiscourseHubTests;
 			sourceTree = "<group>";
@@ -537,7 +534,6 @@
 				A20002 /* RawTopicParserTests.swift in Sources */,
 				A20003 /* AuthTests.swift in Sources */,
 				A20004 /* ComposerTests.swift in Sources */,
-				A20005 /* JumpToEndTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

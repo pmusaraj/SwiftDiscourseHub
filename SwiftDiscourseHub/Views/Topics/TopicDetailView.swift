@@ -1,5 +1,22 @@
 import SwiftUI
 
+/// Represents an item in the displayed post stream.
+enum StreamItem: Identifiable, Equatable {
+    case post(Post)
+    case placeholder(id: String, count: Int)
+
+    var id: String {
+        switch self {
+        case .post(let post): "post-\(post.id)"
+        case .placeholder(let id, _): id
+        }
+    }
+
+    static func == (lhs: StreamItem, rhs: StreamItem) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 struct TopicDetailView: View {
     let topicId: Int
     let site: DiscourseSite
@@ -8,18 +25,19 @@ struct TopicDetailView: View {
 
     private var baseURL: String { site.baseURL }
 
-
     @State private var topicDetail: TopicDetailResponse?
-    @State private var loadedPosts: [Post] = []
+    @State private var streamItems: [StreamItem] = []
     @State private var postMarkdown: [Int: String] = [:]
     @State private var isLoading = true
     @State private var isLoadingMore = false
+    @State private var isJumping = false
     @State private var error: String?
     @State private var contentWidth: CGFloat = 0
     @State private var composerText = ""
     @State private var showComposer = false
     @State private var likedPostIds: Set<Int> = []
     @State private var scrollTarget: Int?
+    @State private var scrollAnchor: UnitPoint = .bottom
     @State private var readTracker = TopicReadTracker()
     @State private var showFooter = true
     @State private var lastScrollOffset: CGFloat = 0
@@ -45,6 +63,10 @@ struct TopicDetailView: View {
         loadedPostIds.count < stream.count
     }
 
+    private var lastReadPostNumber: Int? {
+        topicDetail?.currentPostNumber
+    }
+
     private var category: DiscourseCategory? {
         guard let id = topic?.categoryId else { return nil }
         return categories.first { $0.id == id }
@@ -63,58 +85,18 @@ struct TopicDetailView: View {
                 ErrorStateView(title: "Failed to Load", message: error) {
                     Task { await loadTopic() }
                 }
-            } else if !loadedPosts.isEmpty {
+            } else if !streamItems.isEmpty {
                 VStack(spacing: 0) {
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(alignment: .leading, spacing: 0) {
-                                ForEach(loadedPosts) { post in
-                                    if post.isSmallAction {
-                                        SmallActionView(post: post)
-                                            .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-                                    } else {
-                                        PostView(
-                                            post: post,
-                                            baseURL: baseURL,
-                                            markdown: postMarkdown[post.postNumber ?? 0],
-                                            contentWidth: contentWidth,
-                                            isLiked: likedPostIds.contains(post.id) || post.hasLiked,
-                                            isWhisper: post.isWhisper,
-                                            currentTopicId: topicId,
-                                            avatarLookup: avatarLookup,
-                                            onLike: post.canLike ? {
-                                                guard site.isAuthenticated else {
-                                                    toastManager.show("Please login to like this post", style: .info)
-                                                    return
-                                                }
-                                                await toggleLike(post: post)
-                                            } : nil,
-                                            onQuote: { selectedText in
-                                                quoteText(selectedText, from: post)
-                                            },
-                                            onScrollToPost: { postNumber in
-                                                scrollToPostNumber(postNumber)
-                                            }
-                                        )
+                                ForEach(streamItems) { item in
+                                    switch item {
+                                    case .post(let post):
+                                        postRow(post)
+                                    case .placeholder(_, let count):
+                                        placeholderRow(count: count)
                                     }
-                                    if post.id != loadedPosts.last?.id {
-                                        Divider()
-                                    }
-                                    Color.clear.frame(height: 0)
-                                        .id(post.id)
-                                        .onAppear {
-                                            if let pn = post.postNumber {
-                                                readTracker.postAppeared(pn)
-                                            }
-                                            if post.id == loadedPosts.last?.id {
-                                                Task { await loadMorePosts() }
-                                            }
-                                        }
-                                        .onDisappear {
-                                            if let pn = post.postNumber {
-                                                readTracker.postDisappeared(pn)
-                                            }
-                                        }
                                 }
 
                                 if isLoadingMore {
@@ -123,7 +105,7 @@ struct TopicDetailView: View {
                                         .padding()
                                 }
 
-                                Spacer().frame(height: 60)
+                                Spacer().frame(height: 100)
                             }
                         }
                         .scrollIndicators(.never)
@@ -173,9 +155,10 @@ struct TopicDetailView: View {
                         .onChange(of: scrollTarget) {
                             if let target = scrollTarget {
                                 withAnimation {
-                                    proxy.scrollTo(target, anchor: .bottom)
+                                    proxy.scrollTo(target, anchor: scrollAnchor)
                                 }
                                 scrollTarget = nil
+                                scrollAnchor = .bottom
                             }
                         }
                     }
@@ -227,7 +210,7 @@ struct TopicDetailView: View {
         .task(id: topicId) {
             await loadTopic()
             if site.isAuthenticated {
-                let highest = topic?.highestPostNumber ?? loadedPosts.compactMap(\.postNumber).max() ?? 0
+                let highest = topic?.highestPostNumber ?? topicDetail?.highestPostNumber ?? 0
                 readTracker.start(topicId: topicId, baseURL: baseURL, apiClient: apiClient, highestPostNumber: highest)
             }
         }
@@ -277,6 +260,21 @@ struct TopicDetailView: View {
 
                 if let url = topicURL {
                     Menu {
+                        if site.isAuthenticated, let postNum = lastReadPostNumber, postNum > 1 {
+                            Button {
+                                Task { await jumpToPost(number: postNum) }
+                            } label: {
+                                Label("Jump to Post #\(postNum)", systemImage: "bookmark")
+                            }
+                        }
+                        if let lastPostNum = topicDetail?.highestPostNumber, lastPostNum > 1 {
+                            Button {
+                                Task { await jumpToPost(number: lastPostNum) }
+                            } label: {
+                                Label("Jump to Last Post", systemImage: "arrow.down.to.line")
+                            }
+                        }
+                        Divider()
                         Button {
                             #if os(macOS)
                             NSWorkspace.shared.open(url)
@@ -304,6 +302,68 @@ struct TopicDetailView: View {
         .background(.ultraThinMaterial)
     }
 
+    // MARK: - Post Row
+
+    @ViewBuilder
+    private func postRow(_ post: Post) -> some View {
+        if post.isSmallAction {
+            SmallActionView(post: post)
+                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+        } else {
+            PostView(
+                post: post,
+                baseURL: baseURL,
+                markdown: postMarkdown[post.postNumber ?? 0],
+                contentWidth: contentWidth,
+                isLiked: likedPostIds.contains(post.id) || post.hasLiked,
+                isWhisper: post.isWhisper,
+                currentTopicId: topicId,
+                avatarLookup: avatarLookup,
+                onLike: post.canLike ? {
+                    guard site.isAuthenticated else {
+                        toastManager.show("Please login to like this post", style: .info)
+                        return
+                    }
+                    await toggleLike(post: post)
+                } : nil,
+                onQuote: { selectedText in
+                    quoteText(selectedText, from: post)
+                },
+                onScrollToPost: { postNumber in
+                    scrollToPostNumber(postNumber)
+                }
+            )
+        }
+        Divider()
+        Color.clear.frame(height: 0)
+            .id(post.id)
+            .onAppear {
+                if let pn = post.postNumber {
+                    readTracker.postAppeared(pn)
+                }
+                if case .post(let lastPost) = streamItems.last, lastPost.id == post.id {
+                    Task { await loadMorePosts() }
+                }
+            }
+            .onDisappear {
+                if let pn = post.postNumber {
+                    readTracker.postDisappeared(pn)
+                }
+            }
+    }
+
+    private func placeholderRow(count: Int) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "ellipsis")
+                .foregroundStyle(.tertiary)
+            Text("^[\(count) earlier post](inflect: true)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+    }
+
     // MARK: - Actions
 
     private func toggleLike(post: Post) async {
@@ -322,7 +382,11 @@ struct TopicDetailView: View {
     }
 
     private func scrollToPostNumber(_ postNumber: Int) {
-        if let post = loadedPosts.first(where: { $0.postNumber == postNumber }) {
+        if let item = streamItems.first(where: {
+            if case .post(let p) = $0 { return p.postNumber == postNumber }
+            return false
+        }), case .post(let post) = item {
+            scrollAnchor = .center
             scrollTarget = post.id
         }
     }
@@ -342,22 +406,18 @@ struct TopicDetailView: View {
 
     private func refreshAfterPost() async {
         do {
-            // Re-fetch topic to get updated stream with the new post
             let detail = try await apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
             topicDetail = detail
             stream = detail.postStream?.stream ?? []
 
-            // Find post IDs we don't have yet
             let missingIds = stream.filter { !loadedPostIds.contains($0) }
             guard !missingIds.isEmpty else { return }
 
-            // Fetch the new posts
             let response = try await apiClient.fetchTopicPosts(
                 baseURL: baseURL, topicId: topicId, postIds: missingIds
             )
             appendPosts(response.postStream.posts)
 
-            // Fetch raw markdown for new posts
             if let lastNewPost = response.postStream.posts.last,
                let postNumber = lastNewPost.postNumber {
                 let rawText = try await apiClient.fetchTopicRaw(
@@ -367,12 +427,10 @@ struct TopicDetailView: View {
                 postMarkdown[postNumber] = preprocessor.process(rawText)
             }
 
-            // Scroll to the newly added post
-            if let lastId = loadedPosts.last?.id {
-                scrollTarget = lastId
+            if case .post(let lastPost) = streamItems.last {
+                scrollTarget = lastPost.id
             }
         } catch {
-            // Fall back to full reload if incremental refresh fails
             await loadTopic()
         }
     }
@@ -382,7 +440,7 @@ struct TopicDetailView: View {
     private func loadTopic() async {
         isLoading = true
         error = nil
-        loadedPosts = []
+        streamItems = []
         postMarkdown = [:]
         loadedPostIds = []
         rawPage = 1
@@ -400,13 +458,8 @@ struct TopicDetailView: View {
             stream = detail.postStream?.stream ?? []
 
             let initialPosts = detail.postStream?.posts ?? []
-            loadedPosts = initialPosts
-            for post in initialPosts {
-                loadedPostIds.insert(post.id)
-                if let username = post.username, let template = post.avatarTemplate {
-                    avatarLookup[username] = template
-                }
-            }
+            registerPosts(initialPosts)
+            streamItems = initialPosts.map { .post($0) }
 
             let rawText = try await rawResponse
             processRawText(rawText)
@@ -420,11 +473,17 @@ struct TopicDetailView: View {
     // MARK: - Load more
 
     private func loadMorePosts() async {
-        guard hasMore, !isLoadingMore else { return }
+        guard hasMore, !isLoadingMore, !isJumping else { return }
         isLoadingMore = true
 
         do {
-            let nextIds = stream.filter { !loadedPostIds.contains($0) }
+            // Find next unloaded IDs in stream order after the last loaded post
+            let lastLoadedIndex = streamItems.compactMap { item -> Int? in
+                if case .post(let p) = item { return stream.firstIndex(of: p.id) }
+                return nil
+            }.max() ?? -1
+            let nextIds = Array(stream.suffix(from: min(lastLoadedIndex + 1, stream.count)))
+                .filter { !loadedPostIds.contains($0) }
             let batch = Array(nextIds.prefix(jsonChunkSize))
 
             guard !batch.isEmpty else {
@@ -438,7 +497,10 @@ struct TopicDetailView: View {
 
             let needsMoreRaw: Bool = {
                 guard !rawExhausted else { return false }
-                let highestLoadedPostNumber = loadedPosts.last?.postNumber ?? 0
+                let highestLoadedPostNumber = streamItems.compactMap {
+                    if case .post(let p) = $0 { return p.postNumber }
+                    return nil
+                }.max() ?? 0
                 let rawCoverage = rawPage * rawPageSize
                 return highestLoadedPostNumber + jsonChunkSize > rawCoverage - 20
             }()
@@ -469,14 +531,118 @@ struct TopicDetailView: View {
 
     // MARK: - Helpers
 
-    private func appendPosts(_ newPosts: [Post]) {
-        for post in newPosts where !loadedPostIds.contains(post.id) {
+    private func registerPosts(_ posts: [Post]) {
+        for post in posts {
             loadedPostIds.insert(post.id)
-            loadedPosts.append(post)
             if let username = post.username, let template = post.avatarTemplate {
                 avatarLookup[username] = template
             }
         }
+    }
+
+    private func appendPosts(_ newPosts: [Post]) {
+        let filtered = newPosts.filter { !loadedPostIds.contains($0.id) }
+        registerPosts(filtered)
+        streamItems.append(contentsOf: filtered.map { .post($0) })
+    }
+
+    // MARK: - Jump to Post
+
+    private func jumpToPost(number targetPostNumber: Int) async {
+        // If already loaded, just scroll to it
+        if let item = streamItems.first(where: {
+            if case .post(let p) = $0 { return p.postNumber == targetPostNumber }
+            return false
+        }), case .post(let post) = item {
+            scrollAnchor = .center
+            scrollTarget = post.id
+            return
+        }
+
+        guard !isJumping else { return }
+        isJumping = true
+
+        do {
+            // Find the target post's position in the stream
+            // Post numbers roughly correspond to stream indices (1-indexed),
+            // but deletions can cause gaps. Estimate the index.
+            let estimatedIdx = min(max(targetPostNumber - 1, 0), stream.count - 1)
+
+            // Gather post IDs: up to 10 before target, the target area, up to 10 after
+            let startIdx = max(0, estimatedIdx - 10)
+            let endIdx = min(stream.count, estimatedIdx + 11)
+            let postIdsToFetch = Array(stream[startIdx..<endIdx])
+                .filter { !loadedPostIds.contains($0) }
+
+            guard !postIdsToFetch.isEmpty else {
+                isJumping = false
+                return
+            }
+
+            // Fetch posts and raw markdown in parallel
+            async let postsResponse = apiClient.fetchTopicPosts(
+                baseURL: baseURL, topicId: topicId, postIds: postIdsToFetch
+            )
+            let rawPage = (targetPostNumber - 1) / rawPageSize + 1
+            async let rawResponse = apiClient.fetchTopicRaw(
+                baseURL: baseURL, topicId: topicId, page: rawPage
+            )
+
+            let fetchedPosts = try await postsResponse.postStream.posts
+            let rawText = try await rawResponse
+            processRawText(rawText)
+
+            // Register the new posts
+            registerPosts(fetchedPosts)
+
+            // Build the new stream items:
+            // 1. Existing items (initial posts)
+            // 2. Placeholder for the gap
+            // 3. Fetched posts around the target
+            let existingPostIds = Set(streamItems.compactMap { item -> Int? in
+                if case .post(let p) = item { return p.id }
+                return nil
+            })
+            let newPosts = fetchedPosts.filter { !existingPostIds.contains($0.id) }
+                .sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
+
+            guard !newPosts.isEmpty else {
+                isJumping = false
+                return
+            }
+
+            // Calculate how many posts are in the gap between existing and new
+            let lastExistingPostNumber = streamItems.compactMap { item -> Int? in
+                if case .post(let p) = item { return p.postNumber }
+                return nil
+            }.max() ?? 0
+            let firstNewPostNumber = newPosts.first?.postNumber ?? 0
+            let gapCount = max(0, firstNewPostNumber - lastExistingPostNumber - 1)
+
+            // Insert placeholder + new posts
+            if gapCount > 0 {
+                streamItems.append(.placeholder(
+                    id: "gap-\(lastExistingPostNumber)-\(firstNewPostNumber)",
+                    count: gapCount
+                ))
+            }
+            streamItems.append(contentsOf: newPosts.map { .post($0) })
+
+            // Wait for layout, then scroll to the target post
+            try? await Task.sleep(for: .milliseconds(500))
+            scrollAnchor = .center
+            if let targetPost = newPosts.first(where: { $0.postNumber == targetPostNumber }) {
+                scrollTarget = targetPost.id
+            } else if let closest = newPosts.min(by: {
+                abs(($0.postNumber ?? 0) - targetPostNumber) < abs(($1.postNumber ?? 0) - targetPostNumber)
+            }) {
+                scrollTarget = closest.id
+            }
+        } catch {
+            toastManager.show("Failed to jump to post", style: .error)
+        }
+
+        isJumping = false
     }
 
     private func processRawText(_ rawText: String) {

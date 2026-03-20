@@ -11,6 +11,8 @@ struct TopicDetailResponse: Codable {
     let likeCount: Int?
     let categoryId: Int?
     let slug: String?
+    let currentPostNumber: Int?
+    let highestPostNumber: Int?
 }
 
 struct PostStream: Codable {
