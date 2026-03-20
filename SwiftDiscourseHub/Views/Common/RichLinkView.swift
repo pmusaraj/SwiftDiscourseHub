@@ -1,54 +1,7 @@
-import FontAwesomeSwiftUI
 import SwiftUI
-
-private enum WellKnownSite {
-    case gitHub, wikipedia, amazon, reddit, hackerNews, google
-    case youtube, twitter, facebook, apple, stackOverflow, discord, slack, linkedin
-
-    init?(domain: String) {
-        if domain.hasSuffix("github.com") { self = .gitHub }
-        else if domain.hasSuffix("wikipedia.org") { self = .wikipedia }
-        else if domain.hasSuffix("amazon.com") || domain.hasSuffix("amazon.co.uk") { self = .amazon }
-        else if domain.hasSuffix("reddit.com") { self = .reddit }
-        else if domain == "news.ycombinator.com" { self = .hackerNews }
-        else if domain.hasSuffix("google.com") { self = .google }
-        else if domain.hasSuffix("youtube.com") { self = .youtube }
-        else if domain.hasSuffix("twitter.com") || domain.hasSuffix("x.com") { self = .twitter }
-        else if domain.hasSuffix("facebook.com") { self = .facebook }
-        else if domain.hasSuffix("apple.com") { self = .apple }
-        else if domain.hasSuffix("stackoverflow.com") || domain.hasSuffix("stackexchange.com") { self = .stackOverflow }
-        else if domain.hasSuffix("discord.com") || domain.hasSuffix("discord.gg") { self = .discord }
-        else if domain.hasSuffix("slack.com") { self = .slack }
-        else if domain.hasSuffix("linkedin.com") { self = .linkedin }
-        else { return nil }
-    }
-
-    var icon: AwesomeIcon {
-        switch self {
-        case .gitHub: .github
-        case .wikipedia: .wikipediaW
-        case .amazon: .amazon
-        case .reddit: .reddit
-        case .hackerNews: .hackerNews
-        case .google: .google
-        case .youtube: .youtube
-        case .twitter: .twitter
-        case .facebook: .facebookF
-        case .apple: .apple
-        case .stackOverflow: .stackOverflow
-        case .discord: .discord
-        case .slack: .slack
-        case .linkedin: .linkedinIn
-        }
-    }
-}
 
 struct RichLinkView: View {
     let info: OneboxInfo
-
-    private var wellKnownSite: WellKnownSite? {
-        WellKnownSite(domain: info.domain)
-    }
 
     var body: some View {
         Button {
@@ -74,7 +27,8 @@ struct RichLinkView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 4) {
-                        siteIcon
+                        FaviconView(domain: info.domain)
+                            .frame(width: 16, height: 16)
 
                         Text(info.siteName ?? info.domain)
                             .font(.caption)
@@ -116,27 +70,39 @@ struct RichLinkView: View {
         }
         #endif
     }
+}
 
-    @ViewBuilder
-    private var siteIcon: some View {
-        if let site = wellKnownSite {
-            Text(site.icon.rawValue)
-                .font(.awesome(style: .brand, size: 14))
-                .foregroundStyle(.secondary)
-                .frame(width: 16, height: 16)
-        } else if let faviconURL = info.faviconURL, let url = URL(string: faviconURL) {
-            CachedAsyncImage(url: url) { image in
-                image.resizable().aspectRatio(contentMode: .fit)
-            } placeholder: {
+private struct FaviconView: View {
+    let domain: String
+    @State private var imageData: Data?
+    @State private var loaded = false
+
+    var body: some View {
+        Group {
+            if let imageData, let image = platformImage(from: imageData) {
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
                 Image(systemName: "globe")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            .frame(width: 16, height: 16)
-        } else {
-            Image(systemName: "globe")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         }
+        .task(id: domain) {
+            guard !loaded else { return }
+            imageData = await FaviconCache.shared.favicon(for: domain)
+            loaded = true
+        }
+    }
+
+    private func platformImage(from data: Data) -> Image? {
+        #if os(macOS)
+        guard let nsImage = NSImage(data: data) else { return nil }
+        return Image(nsImage: nsImage)
+        #else
+        guard let uiImage = UIImage(data: data) else { return nil }
+        return Image(uiImage: uiImage)
+        #endif
     }
 }

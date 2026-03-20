@@ -38,6 +38,7 @@
 		A10029 /* TopicDetailResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029 /* TopicDetailResponse.swift */; };
 		A10031 /* PostContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031 /* PostContentView.swift */; };
 		A10033 /* RawTopicParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* RawTopicParser.swift */; };
+		A10062 /* FaviconCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10062 /* FaviconCache.swift */; };
 		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* DiscourseMarkdownPreprocessor.swift */; };
 		A10035 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* Theme.swift */; };
 		A10037 /* DiscourseTextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037 /* DiscourseTextStyle.swift */; };
@@ -116,6 +117,7 @@
 		B10031 /* PostContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentView.swift; sourceTree = "<group>"; };
 		B10061 /* RichLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichLinkView.swift; sourceTree = "<group>"; };
 		B10033 /* RawTopicParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParser.swift; sourceTree = "<group>"; };
+		B10062 /* FaviconCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconCache.swift; sourceTree = "<group>"; };
 		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 		B10035 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B10037 /* DiscourseTextStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseTextStyle.swift; sourceTree = "<group>"; };
@@ -237,6 +239,7 @@
 				B10034 /* DiscourseMarkdownPreprocessor.swift */,
 				B10040 /* KeychainService.swift */,
 				B10041 /* AuthService.swift */,
+				B10062 /* FaviconCache.swift */,
 				B10058 /* TopicReadTracker.swift */,
 			);
 			path = Services;
@@ -387,7 +390,6 @@
 			packageProductDependencies = (
 				R10001 /* Textual */,
 				R10002 /* _CryptoExtras */,
-				R10003 /* FontAwesomeSwiftUI */,
 			);
 			productName = SwiftDiscourseHub;
 			productReference = C10001 /* SwiftDiscourseHub.app */;
@@ -432,7 +434,6 @@
 			packageReferences = (
 				S10001 /* XCRemoteSwiftPackageReference "textual" */,
 				S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */,
-				S10003 /* XCRemoteSwiftPackageReference "FontAwesomeSwiftUI" */,
 			);
 			productRefGroup = E10003 /* Products */;
 			projectDirPath = "";
@@ -493,6 +494,7 @@
 				A10031 /* PostContentView.swift in Sources */,
 				A10061 /* RichLinkView.swift in Sources */,
 				A10033 /* RawTopicParser.swift in Sources */,
+				A10062 /* FaviconCache.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
 				A10037 /* DiscourseTextStyle.swift in Sources */,
@@ -808,14 +810,6 @@
 				minimumVersion = 4.0.0;
 			};
 		};
-		S10003 /* XCRemoteSwiftPackageReference "FontAwesomeSwiftUI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onmyway133/FontAwesomeSwiftUI.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.4;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -828,11 +822,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */;
 			productName = _CryptoExtras;
-		};
-		R10003 /* FontAwesomeSwiftUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = S10003 /* XCRemoteSwiftPackageReference "FontAwesomeSwiftUI" */;
-			productName = FontAwesomeSwiftUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
