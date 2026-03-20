@@ -34,13 +34,15 @@ struct TopicDetailView: View {
     @State private var composerText = ""
     @State private var showComposer = false
     @State private var likedPostIds: Set<Int> = []
-    @State private var scrollTarget: Int?
-    @State private var scrollAnchor: UnitPoint = .bottom
     @State private var readTracker = TopicReadTracker()
     @State private var showFooter = true
     @State private var lastScrollOffset: CGFloat = 0
-    // Cooldown to avoid rapid re-fetching when loading older posts
-    @State private var olderLoadCooldown = false
+
+    // Scroll position tracking — used to pin position during prepends
+    @State private var scrollPosition = ScrollPosition(idType: String.self)
+    // For explicit scrollTo after jump
+    @State private var scrollTarget: Int?
+    @State private var scrollAnchor: UnitPoint = .bottom
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
@@ -62,9 +64,6 @@ struct TopicDetailView: View {
         max((topic?.postsCount ?? 1) - 1, 0)
     }
 
-    // Distance threshold for triggering loads (roughly 2x screen height)
-    private let loadThreshold: CGFloat = 1500
-
     var body: some View {
         Group {
             if isLoading {
@@ -79,7 +78,6 @@ struct TopicDetailView: View {
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(alignment: .leading, spacing: 0) {
-                                // Older loading indicator
                                 if dataSource.isLoadingOlder {
                                     ProgressView()
                                         .frame(maxWidth: .infinity)
@@ -95,7 +93,6 @@ struct TopicDetailView: View {
                                     }
                                 }
 
-                                // Newer loading indicator
                                 if dataSource.isLoadingNewer {
                                     ProgressView()
                                         .frame(maxWidth: .infinity)
@@ -104,7 +101,9 @@ struct TopicDetailView: View {
 
                                 Spacer().frame(height: 100)
                             }
+                            .scrollTargetLayout()
                         }
+                        .scrollPosition($scrollPosition)
                         .scrollIndicators(.never)
                     #if os(iOS)
                     .onTapGesture {
@@ -124,7 +123,6 @@ struct TopicDetailView: View {
                             )
                         } action: { _, info in
                             handleScrollChange(info)
-                            checkBidirectionalLoad(info)
                         }
                         .onChange(of: scrollTarget) {
                             if let target = scrollTarget {
@@ -195,33 +193,6 @@ struct TopicDetailView: View {
         }
         .navigationDestination(for: LinkedTopicDestination.self) { dest in
             TopicDetailView(topicId: dest.topicId, site: site, categories: categories)
-        }
-    }
-
-    // MARK: - Bidirectional Load Trigger
-
-    private func checkBidirectionalLoad(_ info: ScrollGeometryInfo) {
-        let distanceFromTop = info.offset
-
-        // Load older posts when scrolling near the top
-        if distanceFromTop < loadThreshold, dataSource.canLoadOlder, !olderLoadCooldown {
-            olderLoadCooldown = true
-            Task {
-                let anchorId = await dataSource.loadOlder()
-                // Restore scroll position to the item that was at the top
-                if let anchorId {
-                    // Small delay for layout to settle after prepend
-                    try? await Task.sleep(for: .milliseconds(50))
-                    scrollAnchor = .top
-                    // Extract the post ID from the StreamItem id format "post-123"
-                    if let postId = Int(anchorId.replacingOccurrences(of: "post-", with: "")) {
-                        scrollTarget = postId
-                    }
-                }
-                // Cooldown to prevent rapid re-fetching (Signal uses 2s)
-                try? await Task.sleep(for: .seconds(2))
-                olderLoadCooldown = false
-            }
         }
     }
 
@@ -371,16 +342,39 @@ struct TopicDetailView: View {
                 if let pn = post.postNumber {
                     readTracker.postAppeared(pn)
                 }
-                // Trigger loading newer posts when the last post appears
-                if case .post(let lastPost) = dataSource.items.last, lastPost.id == post.id {
-                    Task { await dataSource.loadNewer() }
-                }
+                handlePostAppeared(post)
             }
             .onDisappear {
                 if let pn = post.postNumber {
                     readTracker.postDisappeared(pn)
                 }
             }
+    }
+
+    /// Triggers front-loading when a post near the window edge appears.
+    private func handlePostAppeared(_ post: Post) {
+        guard let idx = dataSource.postIndex(of: post.id) else { return }
+        let postCount = dataSource.postCount
+        let threshold = PostStreamDataSource.prefetchThreshold
+
+        // Near the bottom — load newer
+        if idx >= postCount - threshold {
+            if case .post(let lastPost) = dataSource.items.last, lastPost.id == post.id {
+                Task { await dataSource.loadNewer() }
+            } else if idx >= postCount - 3 {
+                // Within last 3 posts, always trigger
+                Task { await dataSource.loadNewer() }
+            }
+        }
+
+        // Near the top — front-load older (Signal-style prefetch)
+        if idx < threshold, dataSource.canLoadOlder, !dataSource.isLoadingOlder {
+            Task {
+                // Pin scroll to the current item before prepending
+                scrollPosition.scrollTo(id: "post-\(post.id)", anchor: .top)
+                await dataSource.loadOlder()
+            }
+        }
     }
 
     private func placeholderRow(count: Int) -> some View {

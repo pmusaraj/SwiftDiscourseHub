@@ -13,6 +13,8 @@ final class PostStreamDataSource {
     static let maxWindowSize = 400
     private let loadChunkSize = 20
     private let rawPageSize = 100
+    /// Number of posts from the window edge that triggers pre-loading.
+    static let prefetchThreshold = 10
 
     // MARK: - Public State
 
@@ -48,6 +50,23 @@ final class PostStreamDataSource {
     // MARK: - Computed
 
     var hasMore: Bool { loadedPostIds.count < stream.count }
+
+    /// Returns the index of a post within the items array (posts only, ignoring placeholders).
+    func postIndex(of postId: Int) -> Int? {
+        var idx = 0
+        for item in items {
+            if case .post(let p) = item {
+                if p.id == postId { return idx }
+                idx += 1
+            }
+        }
+        return nil
+    }
+
+    /// Number of post items (not placeholders) in the window.
+    var postCount: Int {
+        items.count(where: { if case .post = $0 { return true }; return false })
+    }
 
     // MARK: - Setup
 
@@ -129,14 +148,12 @@ final class PostStreamDataSource {
     }
 
     // MARK: - Load Older (upward / prepending)
-    // Returns the ID of the first item before prepending, for scroll restoration.
+    // Prepends older posts. The caller must handle scroll position restoration.
 
-    func loadOlder() async -> String? {
-        guard canLoadOlder, !isLoadingOlder else { return nil }
+    func loadOlder() async {
+        guard canLoadOlder, !isLoadingOlder else { return }
         isLoadingOlder = true
         defer { isLoadingOlder = false }
-
-        let anchorId = items.first(where: { if case .post = $0 { return true }; return false })?.id
 
         do {
             // Gather IDs before the window, in chronological order
@@ -145,7 +162,7 @@ final class PostStreamDataSource {
             let batch = Array(olderIds.suffix(loadChunkSize))
             guard !batch.isEmpty else {
                 canLoadOlder = false
-                return anchorId
+                return
             }
 
             let posts = try await fetchPostsWithRaw(ids: batch)
@@ -154,12 +171,7 @@ final class PostStreamDataSource {
                 .sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
             registerPosts(filtered)
 
-            // Remove existing older placeholder
-            if case .placeholder = items.first {
-                items.removeFirst()
-            }
-
-            // Prepend new posts
+            // Prepend new posts (no placeholder)
             let newItems = filtered.map { StreamItem.post($0) }
             items.insert(contentsOf: newItems, at: 0)
 
@@ -169,16 +181,8 @@ final class PostStreamDataSource {
             }
             canLoadOlder = windowStart > 0
 
-            // Re-insert placeholder if still more older posts
-            if canLoadOlder {
-                items.insert(.placeholder(id: "gap-older", count: windowStart), at: 0)
-            }
-
             trimNewer()
-            return anchorId
-        } catch {
-            return anchorId
-        }
+        } catch {}
     }
 
     // MARK: - Jump to Post
@@ -206,17 +210,12 @@ final class PostStreamDataSource {
             let sorted = posts.sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
             registerPosts(sorted)
 
-            // Rebuild window centered on target
-            items = []
+            // Rebuild window centered on target — no placeholders
+            items = sorted.map { .post($0) }
             windowStart = startIdx
             windowEnd = endIdx
             canLoadOlder = windowStart > 0
             canLoadNewer = windowEnd < stream.count
-
-            if canLoadOlder {
-                items.append(.placeholder(id: "gap-older", count: windowStart))
-            }
-            items.append(contentsOf: sorted.map { .post($0) })
 
             return sorted.first(where: { $0.postNumber == targetPostNumber })?.id
                 ?? sorted.min(by: {
@@ -264,52 +263,41 @@ final class PostStreamDataSource {
     // MARK: - Trimming
 
     private func trimOlder() {
-        let postCount = items.count(where: { if case .post = $0 { return true }; return false })
-        guard postCount > Self.maxWindowSize else { return }
+        let count = postCount
+        guard count > Self.maxWindowSize else { return }
 
-        let excess = postCount - Self.maxWindowSize
+        let excess = count - Self.maxWindowSize
         var removed = 0
         while removed < excess, !items.isEmpty {
-            switch items.first {
-            case .post(let p):
+            if case .post(let p) = items.first {
                 loadedPostIds.remove(p.id)
                 if let idx = stream.firstIndex(of: p.id) {
                     windowStart = idx + 1
                 }
                 items.removeFirst()
                 removed += 1
-            case .placeholder, .none:
+            } else {
                 items.removeFirst()
             }
         }
         canLoadOlder = windowStart > 0
-
-        // Update or insert older placeholder
-        if canLoadOlder {
-            if case .placeholder = items.first {
-                items[0] = .placeholder(id: "gap-older", count: windowStart)
-            } else {
-                items.insert(.placeholder(id: "gap-older", count: windowStart), at: 0)
-            }
-        }
     }
 
     private func trimNewer() {
-        let postCount = items.count(where: { if case .post = $0 { return true }; return false })
-        guard postCount > Self.maxWindowSize else { return }
+        let count = postCount
+        guard count > Self.maxWindowSize else { return }
 
-        let excess = postCount - Self.maxWindowSize
+        let excess = count - Self.maxWindowSize
         var removed = 0
         while removed < excess, !items.isEmpty {
-            switch items.last {
-            case .post(let p):
+            if case .post(let p) = items.last {
                 loadedPostIds.remove(p.id)
                 if let idx = stream.firstIndex(of: p.id) {
                     windowEnd = idx
                 }
                 items.removeLast()
                 removed += 1
-            case .placeholder, .none:
+            } else {
                 items.removeLast()
             }
         }
