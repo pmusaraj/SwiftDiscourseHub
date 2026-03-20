@@ -42,6 +42,7 @@ struct TopicDetailView: View {
     @State private var lastScrollOffset: CGFloat = 0
     @State private var scrollToPostId: Int?
     @State private var scrollAnchor: UnitPoint = .bottom
+    @State private var headerHeight: CGFloat = 0
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
@@ -76,7 +77,6 @@ struct TopicDetailView: View {
                 VStack(spacing: 0) {
                     ZStack(alignment: .top) {
                         postStreamContent
-                            .padding(.top, 1) // prevent content from underlapping header
 
                         if let topic {
                             topicHeader(topic)
@@ -160,6 +160,7 @@ struct TopicDetailView: View {
             isAuthenticated: site.isAuthenticated,
             isLoadingOlder: dataSource.isLoadingOlder,
             isLoadingNewer: dataSource.isLoadingNewer,
+            topInset: headerHeight,
             scrollToPostId: scrollToPostId,
             scrollAnchor: scrollAnchor == .center ? .centeredVertically : .bottom,
             onLike: { post in
@@ -184,6 +185,10 @@ struct TopicDetailView: View {
             },
             onScrollChange: { offset, contentHeight, containerHeight in
                 handleScrollChange(offset: offset, contentHeight: contentHeight, containerHeight: containerHeight)
+            },
+            onScrollConsumed: {
+                scrollToPostId = nil
+                scrollAnchor = .bottom
             }
         )
         #else
@@ -403,6 +408,11 @@ struct TopicDetailView: View {
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.ultraThinMaterial)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { newHeight in
+            headerHeight = newHeight
+        }
     }
 
     private func placeholderRow(count: Int) -> some View {

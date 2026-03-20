@@ -21,6 +21,7 @@ struct PostStreamCollectionView: UIViewRepresentable {
     let isAuthenticated: Bool
     let isLoadingOlder: Bool
     let isLoadingNewer: Bool
+    var topInset: CGFloat = 0
 
     // MARK: - Scroll request (set externally, consumed once)
 
@@ -35,7 +36,7 @@ struct PostStreamCollectionView: UIViewRepresentable {
     var onPostAppeared: ((Post) -> Void)?
     var onPostDisappeared: ((Post) -> Void)?
     var onScrollChange: ((_ offset: CGFloat, _ contentHeight: CGFloat, _ containerHeight: CGFloat) -> Void)?
-    var onScrollDidComplete: (() -> Void)?
+    var onScrollConsumed: (() -> Void)?
 
     // MARK: - UIViewRepresentable
 
@@ -59,7 +60,7 @@ struct PostStreamCollectionView: UIViewRepresentable {
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .clear
         cv.delegate = context.coordinator
-        cv.contentInset.bottom = 100
+        cv.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 100, right: 0)
         cv.scrollIndicatorInsets = .zero
         cv.showsVerticalScrollIndicator = false
 
@@ -99,6 +100,10 @@ struct PostStreamCollectionView: UIViewRepresentable {
 
         coordinator.updateFrom(self)
 
+        if cv.contentInset.top != topInset {
+            cv.contentInset.top = topInset
+        }
+
         UIView.performWithoutAnimation {
             if structureChanged {
                 // Detect prepend: first item changed and old items are still present
@@ -133,10 +138,11 @@ struct PostStreamCollectionView: UIViewRepresentable {
             }
         }
 
-        // Handle scroll-to request
+        // Handle scroll-to request (consume once)
         if let targetId = scrollToPostId, targetId != coordinator.lastScrolledToId {
             let targetItemId = "post-\(targetId)"
             if let idx = items.firstIndex(where: { $0.id == targetItemId }) {
+                cv.layoutIfNeeded()
                 cv.scrollToItem(
                     at: IndexPath(item: idx, section: 0),
                     at: scrollAnchor,
@@ -144,6 +150,10 @@ struct PostStreamCollectionView: UIViewRepresentable {
                 )
                 coordinator.lastScrolledToId = targetId
                 log.info("[cv] scrolled to post \(targetId) at index \(idx)")
+
+                DispatchQueue.main.async { [onScrollConsumed] in
+                    onScrollConsumed?()
+                }
             }
         }
     }
