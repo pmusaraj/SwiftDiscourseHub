@@ -220,6 +220,7 @@ struct TopicListView: View {
             #else
             SiteIconView(site: site, isSelected: true)
                 .frame(width: 24, height: 24)
+                .id(site.baseURL)
             #endif
         }
         #if os(macOS)

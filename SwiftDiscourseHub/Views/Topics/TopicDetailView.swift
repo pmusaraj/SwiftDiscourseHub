@@ -288,7 +288,8 @@ struct TopicDetailView: View {
                         }
                         ShareLink(item: url)
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "line.3.horizontal")
+                            .scaleEffect(1.25)
                     }
                     .buttonStyle(.plain)
                 }
