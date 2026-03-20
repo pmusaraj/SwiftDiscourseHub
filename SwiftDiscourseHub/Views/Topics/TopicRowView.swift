@@ -73,14 +73,20 @@ struct TopicRowView: View {
                         .lineLimit(Theme.LineLimit.topicTitle)
                 }
 
-                // Category + time
+                // Category + time + reply count
                 HStack(spacing: Theme.Spacing.metadataItems) {
                     if let cat = category, let name = cat.name {
                         CategoryBadgeView(name: name, color: cat.color)
                     }
                     if contentWidth >= 250 {
-                        RelativeTimeText(dateString: topic.lastPostedAt ?? topic.createdAt)
+                        RelativeTimeText(dateString: topic.lastPostedAt ?? topic.createdAt, concise: true)
                             .font(Theme.Fonts.metadata)
+                    }
+                    Spacer()
+                    if let replies = formatCount((topic.postsCount ?? 0) - 1) {
+                        statLabel(replies, systemImage: "bubble.left")
+                            .font(Theme.Fonts.statCount)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -91,21 +97,6 @@ struct TopicRowView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(Theme.LineLimit.topicExcerpt)
                 }
-
-                // Stats
-                HStack(spacing: Theme.Spacing.topicRowStats) {
-                    if let replies = formatCount((topic.postsCount ?? 0) - 1) {
-                        statLabel(replies, systemImage: "bubble.left")
-                    }
-                    if contentWidth >= 250, let views = formatCount(topic.views) {
-                        statLabel(views, systemImage: "eye")
-                    }
-                    if let likes = formatCount(topic.likeCount) {
-                        statLabel(likes, systemImage: "heart")
-                    }
-                }
-                .font(Theme.Fonts.statCount)
-                .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, Theme.Padding.topicRowVertical)
