@@ -34,6 +34,7 @@
 		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* URLHelpers.swift */; };
 		A10064 /* DiscourseImageAttachmentLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10064 /* DiscourseImageAttachmentLoader.swift */; };
 		A10065 /* PostStreamDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10065 /* PostStreamDataSource.swift */; };
+		A10066 /* PostStreamCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10066 /* PostStreamCollectionView.swift */; };
 		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* Color+Hex.swift */; };
 		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027 /* Assets.xcassets */; };
 		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028 /* TopicDetailView.swift */; };
@@ -116,6 +117,7 @@
 		B10025 /* URLHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHelpers.swift; sourceTree = "<group>"; };
 		B10064 /* DiscourseImageAttachmentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseImageAttachmentLoader.swift; sourceTree = "<group>"; };
 		B10065 /* PostStreamDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamDataSource.swift; sourceTree = "<group>"; };
+		B10066 /* PostStreamCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamCollectionView.swift; sourceTree = "<group>"; };
 		B10026 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
@@ -299,6 +301,7 @@
 				B10048 /* CompactSiteListView.swift */,
 				B10049 /* CompactTopicListView.swift */,
 				B10050 /* PostView.swift */,
+				B10066 /* PostStreamCollectionView.swift */,
 				B10057 /* SmallActionView.swift */,
 			);
 			path = Topics;
@@ -510,6 +513,7 @@
 				A10062 /* FaviconCache.swift in Sources */,
 				A10064 /* DiscourseImageAttachmentLoader.swift in Sources */,
 				A10065 /* PostStreamDataSource.swift in Sources */,
+				A10066 /* PostStreamCollectionView.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
 				A10037 /* DiscourseTextStyle.swift in Sources */,

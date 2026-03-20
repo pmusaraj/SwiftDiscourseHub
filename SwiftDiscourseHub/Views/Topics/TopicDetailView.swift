@@ -40,11 +40,7 @@ struct TopicDetailView: View {
     @State private var readTracker = TopicReadTracker()
     @State private var showFooter = true
     @State private var lastScrollOffset: CGFloat = 0
-
-    // Scroll position tracking — used to pin position during prepends
-    @State private var scrollPosition = ScrollPosition(idType: String.self)
-    // For explicit scrollTo after jump
-    @State private var scrollTarget: Int?
+    @State private var scrollToPostId: Int?
     @State private var scrollAnchor: UnitPoint = .bottom
 
     @Environment(\.apiClient) private var apiClient
@@ -78,63 +74,12 @@ struct TopicDetailView: View {
                 }
             } else if !dataSource.items.isEmpty {
                 VStack(spacing: 0) {
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 0) {
-                                if dataSource.isLoadingOlder {
-                                    ProgressView()
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                }
+                    ZStack(alignment: .top) {
+                        postStreamContent
+                            .padding(.top, 1) // prevent content from underlapping header
 
-                                ForEach(dataSource.items) { item in
-                                    switch item {
-                                    case .post(let post):
-                                        postRow(post)
-                                    case .placeholder(_, let count):
-                                        placeholderRow(count: count)
-                                    }
-                                }
-
-                                if dataSource.isLoadingNewer {
-                                    ProgressView()
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                }
-
-                                Spacer().frame(height: 100)
-                            }
-                            .scrollTargetLayout()
-                        }
-                        .scrollPosition($scrollPosition)
-                        .scrollIndicators(.never)
-                    #if os(iOS)
-                    .onTapGesture {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                    #endif
-                        .safeAreaInset(edge: .top, spacing: 0) {
-                            if let topic {
-                                topicHeader(topic)
-                            }
-                        }
-                        .onScrollGeometryChange(for: ScrollGeometryInfo.self) { geometry in
-                            ScrollGeometryInfo(
-                                offset: geometry.contentOffset.y,
-                                contentHeight: geometry.contentSize.height,
-                                containerHeight: geometry.visibleRect.height
-                            )
-                        } action: { _, info in
-                            handleScrollChange(info)
-                        }
-                        .onChange(of: scrollTarget) {
-                            if let target = scrollTarget {
-                                withAnimation {
-                                    proxy.scrollTo(target, anchor: scrollAnchor)
-                                }
-                                scrollTarget = nil
-                                scrollAnchor = .bottom
-                            }
+                        if let topic {
+                            topicHeader(topic)
                         }
                     }
                     .overlay(alignment: .bottom) {
@@ -199,12 +144,166 @@ struct TopicDetailView: View {
         }
     }
 
-    // MARK: - Scroll Visibility
+    // MARK: - Post Stream Content (platform-specific)
 
-    private func handleScrollChange(_ info: ScrollGeometryInfo) {
-        let newOffset = info.offset
+    @ViewBuilder
+    private var postStreamContent: some View {
+        #if os(iOS)
+        PostStreamCollectionView(
+            items: dataSource.items,
+            postMarkdown: dataSource.postMarkdown,
+            avatarLookup: dataSource.avatarLookup,
+            baseURL: baseURL,
+            contentWidth: contentWidth,
+            topicId: topicId,
+            likedPostIds: likedPostIds,
+            isAuthenticated: site.isAuthenticated,
+            isLoadingOlder: dataSource.isLoadingOlder,
+            isLoadingNewer: dataSource.isLoadingNewer,
+            scrollToPostId: scrollToPostId,
+            scrollAnchor: scrollAnchor == .center ? .centeredVertically : .bottom,
+            onLike: { post in
+                await toggleLike(post: post)
+            },
+            onQuote: { text, post in
+                quoteText(text, from: post)
+            },
+            onScrollToPost: { postNumber in
+                scrollToPostNumber(postNumber)
+            },
+            onPostAppeared: { post in
+                if let pn = post.postNumber {
+                    readTracker.postAppeared(pn)
+                }
+                handlePostAppeared(post)
+            },
+            onPostDisappeared: { post in
+                if let pn = post.postNumber {
+                    readTracker.postDisappeared(pn)
+                }
+            },
+            onScrollChange: { offset, contentHeight, containerHeight in
+                handleScrollChange(offset: offset, contentHeight: contentHeight, containerHeight: containerHeight)
+            }
+        )
+        #else
+        macOSPostStream
+        #endif
+    }
+
+    // MARK: - macOS Fallback (SwiftUI ScrollView)
+
+    #if os(macOS)
+    private var macOSPostStream: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(dataSource.items) { item in
+                        switch item {
+                        case .post(let post):
+                            macOSPostRow(post)
+                        case .placeholder(_, let count):
+                            placeholderRow(count: count)
+                        }
+                    }
+
+                    if dataSource.isLoadingNewer {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    }
+
+                    Spacer().frame(height: 100)
+                }
+            }
+            .scrollIndicators(.never)
+            .onChange(of: scrollToPostId) {
+                if let target = scrollToPostId {
+                    withAnimation {
+                        proxy.scrollTo(target, anchor: scrollAnchor)
+                    }
+                    scrollToPostId = nil
+                    scrollAnchor = .bottom
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func macOSPostRow(_ post: Post) -> some View {
+        if post.isSmallAction {
+            SmallActionView(post: post)
+                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
+        } else {
+            PostView(
+                post: post,
+                baseURL: baseURL,
+                markdown: dataSource.postMarkdown[post.postNumber ?? 0],
+                contentWidth: contentWidth,
+                isLiked: likedPostIds.contains(post.id) || post.hasLiked,
+                isWhisper: post.isWhisper,
+                currentTopicId: topicId,
+                avatarLookup: dataSource.avatarLookup,
+                onLike: post.canLike ? {
+                    guard site.isAuthenticated else {
+                        toastManager.show("Please login to like this post", style: .info)
+                        return
+                    }
+                    await toggleLike(post: post)
+                } : nil,
+                onQuote: { selectedText in
+                    quoteText(selectedText, from: post)
+                },
+                onScrollToPost: { postNumber in
+                    scrollToPostNumber(postNumber)
+                }
+            )
+        }
+        Divider()
+        Color.clear.frame(height: 0)
+            .id(post.id)
+            .onAppear {
+                if let pn = post.postNumber {
+                    readTracker.postAppeared(pn)
+                }
+                handlePostAppeared(post)
+            }
+            .onDisappear {
+                if let pn = post.postNumber {
+                    readTracker.postDisappeared(pn)
+                }
+            }
+    }
+    #endif
+
+    // MARK: - Load Triggers
+
+    private func handlePostAppeared(_ post: Post) {
+        guard let idx = dataSource.postIndex(of: post.id) else { return }
+        let postCount = dataSource.postCount
+        let threshold = PostStreamDataSource.prefetchThreshold
+
+        // Near the bottom — load newer
+        if idx >= postCount - threshold {
+            if idx >= postCount - 3 {
+                log.info("[appear] near-bottom post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadNewer")
+                Task { await dataSource.loadNewer() }
+            }
+        }
+
+        // Near the top — front-load older
+        if idx < threshold, dataSource.canLoadOlder, !dataSource.isLoadingOlder {
+            log.info("[appear] near-top post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadOlder")
+            Task { await dataSource.loadOlder() }
+        }
+    }
+
+    // MARK: - Scroll Footer Visibility
+
+    private func handleScrollChange(offset: CGFloat, contentHeight: CGFloat, containerHeight: CGFloat) {
+        let newOffset = offset
         let delta = newOffset - lastScrollOffset
-        let atBottom = !dataSource.hasMore && info.offset + info.containerHeight >= info.contentHeight - 20
+        let atBottom = !dataSource.hasMore && offset + containerHeight >= contentHeight - 20
 
         if newOffset <= 0 || atBottom {
             if !showFooter {
@@ -306,82 +405,6 @@ struct TopicDetailView: View {
         .background(.ultraThinMaterial)
     }
 
-    // MARK: - Post Row
-
-    @ViewBuilder
-    private func postRow(_ post: Post) -> some View {
-        if post.isSmallAction {
-            SmallActionView(post: post)
-                .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-        } else {
-            PostView(
-                post: post,
-                baseURL: baseURL,
-                markdown: dataSource.postMarkdown[post.postNumber ?? 0],
-                contentWidth: contentWidth,
-                isLiked: likedPostIds.contains(post.id) || post.hasLiked,
-                isWhisper: post.isWhisper,
-                currentTopicId: topicId,
-                avatarLookup: dataSource.avatarLookup,
-                onLike: post.canLike ? {
-                    guard site.isAuthenticated else {
-                        toastManager.show("Please login to like this post", style: .info)
-                        return
-                    }
-                    await toggleLike(post: post)
-                } : nil,
-                onQuote: { selectedText in
-                    quoteText(selectedText, from: post)
-                },
-                onScrollToPost: { postNumber in
-                    scrollToPostNumber(postNumber)
-                }
-            )
-        }
-        Divider()
-        Color.clear.frame(height: 0)
-            .id(post.id)
-            .onAppear {
-                if let pn = post.postNumber {
-                    readTracker.postAppeared(pn)
-                }
-                handlePostAppeared(post)
-            }
-            .onDisappear {
-                if let pn = post.postNumber {
-                    readTracker.postDisappeared(pn)
-                }
-            }
-    }
-
-    /// Triggers front-loading when a post near the window edge appears.
-    private func handlePostAppeared(_ post: Post) {
-        guard let idx = dataSource.postIndex(of: post.id) else { return }
-        let postCount = dataSource.postCount
-        let threshold = PostStreamDataSource.prefetchThreshold
-
-        // Near the bottom — load newer
-        if idx >= postCount - threshold {
-            if case .post(let lastPost) = dataSource.items.last, lastPost.id == post.id {
-                log.info("[appear] last post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadNewer")
-                Task { await dataSource.loadNewer() }
-            } else if idx >= postCount - 3 {
-                log.info("[appear] near-last post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadNewer")
-                Task { await dataSource.loadNewer() }
-            }
-        }
-
-        // Near the top — front-load older (Signal-style prefetch)
-        if idx < threshold, dataSource.canLoadOlder, !dataSource.isLoadingOlder {
-            log.info("[appear] near-top post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadOlder, pinning scroll")
-            Task {
-                // Pin scroll to the current item before prepending
-                scrollPosition.scrollTo(id: "post-\(post.id)", anchor: .top)
-                await dataSource.loadOlder()
-            }
-        }
-    }
-
     private func placeholderRow(count: Int) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
@@ -421,7 +444,7 @@ struct TopicDetailView: View {
             return false
         }), case .post(let post) = item {
             scrollAnchor = .center
-            scrollTarget = post.id
+            scrollToPostId = post.id
         }
     }
 
@@ -441,7 +464,7 @@ struct TopicDetailView: View {
     private func refreshAfterPost() async {
         do {
             if let scrollId = try await dataSource.refreshAfterPost() {
-                scrollTarget = scrollId
+                scrollToPostId = scrollId
             }
         } catch {
             await loadTopic()
@@ -455,6 +478,7 @@ struct TopicDetailView: View {
         error = nil
         showFooter = true
         lastScrollOffset = 0
+        scrollToPostId = nil
 
         dataSource.configure(apiClient: apiClient, baseURL: baseURL, topicId: topicId)
 
@@ -473,10 +497,9 @@ struct TopicDetailView: View {
         isJumping = true
 
         if let postId = await dataSource.jumpToPost(number: targetPostNumber) {
-            // Wait for layout to settle
             try? await Task.sleep(for: .milliseconds(500))
             scrollAnchor = .center
-            scrollTarget = postId
+            scrollToPostId = postId
         } else {
             toastManager.show("Failed to jump to post", style: .error)
         }
