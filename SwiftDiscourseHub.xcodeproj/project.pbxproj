@@ -73,7 +73,7 @@
 		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
 		A30003 /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = R10003 /* Nuke */; };
 		A30004 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = R10004 /* NukeUI */; };
-		A30005 /* ChatLayout in Frameworks */ = {isa = PBXBuildFile; productRef = R10005 /* ChatLayout */; };
+		A30005 /* ChatLayout in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = R10005 /* ChatLayout */; };
 		A30006 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = R10006 /* Markdown */; };
 		A10067 /* ChatLayoutPostStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10067 /* ChatLayoutPostStreamView.swift */; };
 		A10068 /* PostCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10068 /* PostCell.swift */; };
@@ -878,6 +878,9 @@
 		R10005 /* ChatLayout */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = S10004 /* XCRemoteSwiftPackageReference "ChatLayout" */;
+			platformFilters = (
+				ios,
+			);
 			productName = ChatLayout;
 		};
 		R10006 /* Markdown */ = {
