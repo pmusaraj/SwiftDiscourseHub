@@ -45,11 +45,16 @@ final class PostCell: UICollectionViewCell {
     }()
 
     let bodyTextView: UITextView = {
-        let tv = UITextView()
+        let storage = NSTextStorage()
+        let layoutManager = QuoteBarLayoutManager()
+        let container = NSTextContainer(size: .zero)
+        container.lineFragmentPadding = 0
+        layoutManager.addTextContainer(container)
+        storage.addLayoutManager(layoutManager)
+        let tv = UITextView(frame: .zero, textContainer: container)
         tv.isEditable = false
         tv.isScrollEnabled = false
         tv.textContainerInset = .zero
-        tv.textContainer.lineFragmentPadding = 0
         tv.backgroundColor = .clear
         tv.dataDetectorTypes = .link
         tv.isSelectable = true

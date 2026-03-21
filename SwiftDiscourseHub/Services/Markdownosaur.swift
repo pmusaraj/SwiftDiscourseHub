@@ -255,19 +255,23 @@ struct Markdownosaur: MarkupVisitor {
             var quoteAttributes: [NSAttributedString.Key: Any] = [:]
 
             let quoteParagraphStyle = NSMutableParagraphStyle()
-            let baseLeftMargin: CGFloat = 15.0
-            let leftMarginOffset = baseLeftMargin + (20.0 * CGFloat(blockQuote.quoteDepth))
+            let baseLeftMargin: CGFloat = 18.0
+            let leftMarginOffset = baseLeftMargin + (22.0 * CGFloat(blockQuote.quoteDepth))
 
-            quoteParagraphStyle.tabStops = [NSTextTab(textAlignment: .left, location: leftMarginOffset)]
+            quoteParagraphStyle.firstLineHeadIndent = leftMarginOffset
             quoteParagraphStyle.headIndent = leftMarginOffset
+            quoteParagraphStyle.paragraphSpacingBefore = 4
 
             quoteAttributes[.paragraphStyle] = quoteParagraphStyle
             quoteAttributes[.font] = baseFont
             quoteAttributes[.quoteDepth] = blockQuote.quoteDepth
 
             let quoteAttributedString = visit(child).mutableCopy() as! NSMutableAttributedString
-            quoteAttributedString.insert(NSAttributedString(string: "\t", attributes: quoteAttributes), at: 0)
             quoteAttributedString.addAttribute(.foregroundColor, value: quoteColor)
+
+            // Apply paragraph style to full range so all lines indent
+            quoteAttributedString.addAttribute(.paragraphStyle, value: quoteParagraphStyle)
+            quoteAttributedString.addAttribute(.quoteDepth, value: blockQuote.quoteDepth)
 
             result.append(quoteAttributedString)
         }
@@ -471,6 +475,65 @@ extension NSAttributedString {
 
     static func doubleNewline(withFontSize fontSize: CGFloat) -> NSAttributedString {
         NSAttributedString(string: "\n\n", attributes: [.font: UIFont.systemFont(ofSize: fontSize, weight: .regular)])
+    }
+}
+
+// MARK: - Quote Bar Layout Manager
+
+/// Custom layout manager that draws a vertical bar and subtle background
+/// for text ranges marked with the `.quoteDepth` attribute.
+final class QuoteBarLayoutManager: NSLayoutManager {
+
+    private let barWidth: CGFloat = 3
+    private let barInset: CGFloat = 6
+
+    override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: CGPoint) {
+        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+
+        guard let textStorage = textStorage, let context = UIGraphicsGetCurrentContext() else { return }
+
+        let characterRange = self.characterRange(forGlyphRange: glyphsToShow, actualGlyphRange: nil)
+
+        textStorage.enumerateAttribute(.quoteDepth, in: characterRange, options: []) { value, attrRange, _ in
+            guard let depth = value as? Int, depth >= 0 else { return }
+
+            let glyphRange = self.glyphRange(forCharacterRange: attrRange, actualCharacterRange: nil)
+
+            // Collect line fragment rects for this range
+            var rects: [CGRect] = []
+            enumerateLineFragments(forGlyphRange: glyphRange) { _, usedRect, _, _, _ in
+                rects.append(usedRect)
+            }
+            guard !rects.isEmpty else { return }
+
+            // Union all rects to get the full quote area
+            let fullRect = rects.reduce(rects[0]) { $0.union($1) }
+            let drawRect = fullRect.offsetBy(dx: origin.x, dy: origin.y)
+
+            // Draw subtle background
+            context.setFillColor(UIColor.secondarySystemFill.cgColor)
+            let bgRect = CGRect(
+                x: drawRect.minX,
+                y: drawRect.minY - 2,
+                width: drawRect.width,
+                height: drawRect.height + 4
+            )
+            let bgPath = UIBezierPath(roundedRect: bgRect, cornerRadius: 4)
+            context.addPath(bgPath.cgPath)
+            context.fillPath()
+
+            // Draw vertical bar
+            context.setFillColor(UIColor.separator.cgColor)
+            let barRect = CGRect(
+                x: drawRect.minX + barInset,
+                y: drawRect.minY - 2,
+                width: barWidth,
+                height: drawRect.height + 4
+            )
+            let barPath = UIBezierPath(roundedRect: barRect, cornerRadius: barWidth / 2)
+            context.addPath(barPath.cgPath)
+            context.fillPath()
+        }
     }
 }
 #endif
