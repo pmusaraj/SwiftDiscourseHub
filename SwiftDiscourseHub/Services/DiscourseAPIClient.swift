@@ -4,6 +4,9 @@ import os.log
 
 private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "API")
 
+/// Toggle network request logging to the console. Set to `false` to silence all request/response logs.
+nonisolated(unsafe) var enableNetworkLogging = true
+
 // MARK: - Environment Key
 
 private struct DiscourseAPIClientKey: EnvironmentKey {
@@ -46,6 +49,32 @@ actor DiscourseAPIClient {
         self.credentialProvider = credentialProvider
     }
 
+    // MARK: - Logging
+
+    private func timestamp() -> String {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.string(from: Date())
+    }
+
+    private func logRequest(_ method: String, _ url: URL) {
+        guard enableNetworkLogging else { return }
+        log.info("[request] [\(self.timestamp())] \(method) \(url.absoluteString)")
+    }
+
+    private func logResponse(_ statusCode: Int, _ url: URL, duration: TimeInterval) {
+        guard enableNetworkLogging else { return }
+        let ms = Int(duration * 1000)
+        log.info("[response] [\(self.timestamp())] \(statusCode) \(url.absoluteString) (\(ms)ms)")
+    }
+
+    private func logError(_ method: String, _ url: URL, error: String) {
+        guard enableNetworkLogging else { return }
+        log.error("[error] [\(self.timestamp())] \(method) \(url.absoluteString) — \(error)")
+    }
+
+    // MARK: - Core Request Methods
+
     private func extractErrors(from data: Data) -> String? {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let errors = json["errors"] as? [String] else { return nil }
@@ -59,15 +88,9 @@ actor DiscourseAPIClient {
     }
 
     private func addAuthHeaders(to request: inout URLRequest, baseURL: String?) async {
-        guard let baseURL, let provider = credentialProvider else {
-            log.debug("No auth: baseURL=\(baseURL ?? "nil"), provider=\(self.credentialProvider == nil ? "nil" : "set")")
-            return
-        }
+        guard let baseURL, let provider = credentialProvider else { return }
         if let apiKey = await provider.apiKey(for: baseURL) {
             request.setValue(apiKey, forHTTPHeaderField: "User-Api-Key")
-            log.debug("Set User-Api-Key header (\(apiKey.count) chars)")
-        } else {
-            log.warning("No API key found for \(baseURL)")
         }
     }
 
@@ -77,17 +100,23 @@ actor DiscourseAPIClient {
         request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
         await addAuthHeaders(to: &request, baseURL: baseURL)
 
+        logRequest("GET", url)
+        let start = CFAbsoluteTimeGetCurrent()
+
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: request)
         } catch {
+            logError("GET", url, error: error.localizedDescription)
             throw DiscourseAPIError.networkError(error)
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw DiscourseAPIError.networkError(URLError(.badServerResponse))
         }
+
+        logResponse(httpResponse.statusCode, url, duration: CFAbsoluteTimeGetCurrent() - start)
 
         guard httpResponse.statusCode == 200 else {
             if httpResponse.statusCode == 403 {
@@ -101,6 +130,66 @@ actor DiscourseAPIClient {
         } catch {
             throw DiscourseAPIError.decodingError(error)
         }
+    }
+
+    private func fetchText(from url: URL, baseURL: String? = nil) async throws -> String {
+        var request = URLRequest(url: url)
+        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
+        await addAuthHeaders(to: &request, baseURL: baseURL)
+
+        logRequest("GET", url)
+        let start = CFAbsoluteTimeGetCurrent()
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            logError("GET", url, error: error.localizedDescription)
+            throw DiscourseAPIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw DiscourseAPIError.networkError(URLError(.badServerResponse))
+        }
+
+        logResponse(httpResponse.statusCode, url, duration: CFAbsoluteTimeGetCurrent() - start)
+
+        guard httpResponse.statusCode == 200 else {
+            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
+        }
+
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw DiscourseAPIError.decodingError(URLError(.cannotDecodeContentData))
+        }
+
+        return text
+    }
+
+    /// Performs a non-GET request (POST/PUT/DELETE) with logging.
+    private func performRequest(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let method = request.httpMethod ?? "UNKNOWN"
+        let url = request.url!
+
+        logRequest(method, url)
+        let start = CFAbsoluteTimeGetCurrent()
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            logError(method, url, error: error.localizedDescription)
+            throw DiscourseAPIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw DiscourseAPIError.networkError(URLError(.badServerResponse))
+        }
+
+        logResponse(httpResponse.statusCode, url, duration: CFAbsoluteTimeGetCurrent() - start)
+
+        return (data, httpResponse)
     }
 
     private func buildURL(base: String, path: String) throws -> URL {
@@ -166,6 +255,11 @@ actor DiscourseAPIClient {
         return try await fetch(TopicDetailResponse.self, from: url, baseURL: baseURL)
     }
 
+    func fetchTopic(baseURL: String, topicId: Int, nearPost postNumber: Int) async throws -> TopicDetailResponse {
+        let url = try buildURL(base: baseURL, path: "/t/\(topicId).json?post_number=\(postNumber)")
+        return try await fetch(TopicDetailResponse.self, from: url, baseURL: baseURL)
+    }
+
     func fetchTopicPosts(baseURL: String, topicId: Int, postIds: [Int]) async throws -> TopicPostsResponse {
         guard !postIds.isEmpty else {
             return TopicPostsResponse(postStream: TopicPostsResponse.PostStreamSlice(posts: []))
@@ -198,32 +292,9 @@ actor DiscourseAPIClient {
         let body = CreatePostRequest(topicId: topicId, raw: raw)
         request.httpBody = try JSONEncoder().encode(body)
 
-        log.info("POST \(url) for topic \(topicId)")
-        log.debug("Request headers: \(request.allHTTPHeaderFields ?? [:])")
-        if let httpBody = request.httpBody, let bodyStr = String(data: httpBody, encoding: .utf8) {
-            log.debug("Request body: \(bodyStr)")
-        }
-
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            log.error("Network error: \(error)")
-            throw DiscourseAPIError.networkError(error)
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw DiscourseAPIError.networkError(URLError(.badServerResponse))
-        }
-
-        let responseBody = String(data: data, encoding: .utf8) ?? "<binary>"
-        log.info("Response status: \(httpResponse.statusCode)")
-        log.debug("Response headers: \(httpResponse.allHeaderFields)")
-        log.debug("Response body: \(responseBody)")
+        let (data, httpResponse) = try await performRequest(request)
 
         guard httpResponse.statusCode == 200 else {
-            log.error("createPost failed: HTTP \(httpResponse.statusCode) — \(responseBody)")
             throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
         }
 
@@ -234,7 +305,7 @@ actor DiscourseAPIClient {
         }
     }
 
-    func uploadFile(baseURL: String, data: Data, fileName: String, mimeType: String) async throws -> UploadResponse {
+    func uploadFile(baseURL: String, data fileData: Data, fileName: String, mimeType: String) async throws -> UploadResponse {
         let url = try buildURL(base: baseURL, path: "/uploads.json")
         let boundary = UUID().uuidString
         var request = URLRequest(url: url)
@@ -244,37 +315,21 @@ actor DiscourseAPIClient {
         await addAuthHeaders(to: &request, baseURL: baseURL)
 
         var body = Data()
-        // upload_type field
         body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ncomposer\r\n".data(using: .utf8)!)
-        // synchronous field
         body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"synchronous\"\r\n\r\ntrue\r\n".data(using: .utf8)!)
-        // file field
         body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\nContent-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-        body.append(data)
+        body.append(fileData)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-
         request.httpBody = body
 
-        log.info("POST \(url) upload \(fileName) (\(data.count) bytes)")
-
-        let responseData: Data
-        let response: URLResponse
-        do {
-            (responseData, response) = try await session.data(for: request)
-        } catch {
-            throw DiscourseAPIError.networkError(error)
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw DiscourseAPIError.networkError(URLError(.badServerResponse))
-        }
+        let (data, httpResponse) = try await performRequest(request)
 
         guard httpResponse.statusCode == 200 else {
-            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: responseData))
+            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
         }
 
         do {
-            return try makeDecoder().decode(UploadResponse.self, from: responseData)
+            return try makeDecoder().decode(UploadResponse.self, from: data)
         } catch {
             throw DiscourseAPIError.decodingError(error)
         }
@@ -298,7 +353,6 @@ actor DiscourseAPIClient {
         request.setValue("true", forHTTPHeaderField: "Discourse-Background")
         await addAuthHeaders(to: &request, baseURL: baseURL)
 
-        // Discourse expects timings as "timings[post_number]" = ms, but JSON body works too
         let body: [String: Any] = [
             "topic_id": topicId,
             "topic_time": topicTime,
@@ -306,10 +360,9 @@ actor DiscourseAPIClient {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw DiscourseAPIError.httpError(code, extractErrors(from: data))
+        let (data, httpResponse) = try await performRequest(request)
+        guard httpResponse.statusCode == 200 else {
+            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
         }
     }
 
@@ -329,10 +382,9 @@ actor DiscourseAPIClient {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw DiscourseAPIError.httpError(code, extractErrors(from: data))
+        let (data, httpResponse) = try await performRequest(request)
+        guard httpResponse.statusCode == 200 else {
+            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
         }
     }
 
@@ -342,7 +394,8 @@ actor DiscourseAPIClient {
         request.httpMethod = "POST"
         request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
         await addAuthHeaders(to: &request, baseURL: baseURL)
-        _ = try await session.data(for: request)
+
+        _ = try await performRequest(request)
     }
 
     func likePost(baseURL: String, postId: Int) async throws {
@@ -356,10 +409,9 @@ actor DiscourseAPIClient {
         let body: [String: Any] = ["id": postId, "post_action_type_id": 2]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw DiscourseAPIError.httpError(code, extractErrors(from: data))
+        let (data, httpResponse) = try await performRequest(request)
+        guard httpResponse.statusCode == 200 else {
+            throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
         }
     }
 
@@ -372,40 +424,9 @@ actor DiscourseAPIClient {
         await addAuthHeaders(to: &request, baseURL: baseURL)
         request.httpBody = "post_action_type_id=2".data(using: .utf8)
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw DiscourseAPIError.httpError(code, extractErrors(from: data))
-        }
-    }
-
-    // MARK: - Private
-
-    private func fetchText(from url: URL, baseURL: String? = nil) async throws -> String {
-        var request = URLRequest(url: url)
-        request.setValue("DiscourseHub", forHTTPHeaderField: "User-Agent")
-        await addAuthHeaders(to: &request, baseURL: baseURL)
-
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw DiscourseAPIError.networkError(error)
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw DiscourseAPIError.networkError(URLError(.badServerResponse))
-        }
-
+        let (data, httpResponse) = try await performRequest(request)
         guard httpResponse.statusCode == 200 else {
             throw DiscourseAPIError.httpError(httpResponse.statusCode, extractErrors(from: data))
         }
-
-        guard let text = String(data: data, encoding: .utf8) else {
-            throw DiscourseAPIError.decodingError(URLError(.cannotDecodeContentData))
-        }
-
-        return text
     }
 }

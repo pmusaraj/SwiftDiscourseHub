@@ -4,31 +4,25 @@ import os.log
 
 private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "PostStream")
 
-/// Signal-inspired windowed data source for bidirectional post stream loading.
-/// Maintains a sliding window of up to `maxWindowSize` posts, trimming from
-/// the opposite end when loading in one direction pushes past the cap.
+/// Data source for the post stream. Loads posts via the topic JSON endpoint
+/// and manages a window of loaded posts with bidirectional progressive loading.
 @Observable
 @MainActor
 final class PostStreamDataSource {
 
     // MARK: - Configuration
 
-    static let maxWindowSize = 400
-    private let loadChunkSize = 20
     private let rawPageSize = 100
-    /// Number of posts from the window edge that triggers pre-loading.
-    static let prefetchThreshold = 10
+    static let loadChunkSize = 20
 
     // MARK: - Public State
 
     private(set) var items: [StreamItem] = []
-    private(set) var isLoadingNewer = false
-    private(set) var isLoadingOlder = false
-    private(set) var canLoadOlder = false
-    private(set) var canLoadNewer = false
     var postMarkdown: [Int: String] = [:]
     var avatarLookup: [String: String] = [:]
     var topicDetail: TopicDetailResponse?
+    private(set) var isLoadingOlder = false
+    private(set) var isLoadingNewer = false
 
     // MARK: - Stream Metadata
 
@@ -37,9 +31,9 @@ final class PostStreamDataSource {
     /// Set of post IDs currently in the window.
     private(set) var loadedPostIds: Set<Int> = []
     /// Index into `stream` of the first post in the window.
-    private var windowStart: Int = 0
+    private(set) var windowStart: Int = 0
     /// Index into `stream` one past the last post in the window (exclusive).
-    private var windowEnd: Int = 0
+    private(set) var windowEnd: Int = 0
     /// Raw markdown pages already fetched.
     private var loadedRawPages: Set<Int> = []
 
@@ -53,18 +47,8 @@ final class PostStreamDataSource {
     // MARK: - Computed
 
     var hasMore: Bool { loadedPostIds.count < stream.count }
-
-    /// Returns the index of a post within the items array (posts only, ignoring placeholders).
-    func postIndex(of postId: Int) -> Int? {
-        var idx = 0
-        for item in items {
-            if case .post(let p) = item {
-                if p.id == postId { return idx }
-                idx += 1
-            }
-        }
-        return nil
-    }
+    var canLoadOlder: Bool { windowStart > 0 }
+    var canLoadNewer: Bool { windowEnd < stream.count }
 
     /// Number of post items (not placeholders) in the window.
     var postCount: Int {
@@ -87,115 +71,90 @@ final class PostStreamDataSource {
         avatarLookup = [:]
         windowStart = 0
         windowEnd = 0
-        canLoadOlder = false
-        canLoadNewer = false
         loadedRawPages = []
         topicDetail = nil
+        isLoadingOlder = false
+        isLoadingNewer = false
     }
 
     // MARK: - Initial Load
 
+    /// Loads the topic from the beginning (post #1).
     func loadInitial() async throws {
+        try await loadInitial(nearPost: nil)
+    }
+
+    /// Loads the topic near a specific post number.
+    /// If `nearPost` is nil or 1, loads from the beginning.
+    /// Returns the post ID to scroll to, if a specific post was requested.
+    @discardableResult
+    func loadInitial(nearPost postNumber: Int?) async throws -> Int? {
         reset()
-        log.info("[loadInitial] topic=\(self.topicId)")
 
-        async let jsonResponse = apiClient.fetchTopic(baseURL: baseURL, topicId: topicId)
-        async let rawResponse = apiClient.fetchTopicRaw(baseURL: baseURL, topicId: topicId, page: 1)
+        let useNear = postNumber != nil && postNumber! > 1
 
-        let detail = try await jsonResponse
+        if useNear {
+            log.info("[loadInitial] topic=\(self.topicId) near=#\(postNumber!)")
+        } else {
+            log.info("[loadInitial] topic=\(self.topicId)")
+        }
+
+        // Fetch topic JSON and raw markdown concurrently
+        let rawPage = useNear ? max(1, (postNumber! - 1) / rawPageSize + 1) : 1
+        let client = apiClient!
+        let bURL = baseURL
+        let tId = topicId
+        let nearPN = postNumber
+
+        async let detailTask: TopicDetailResponse = {
+            if useNear {
+                return try await client.fetchTopic(baseURL: bURL, topicId: tId, nearPost: nearPN!)
+            } else {
+                return try await client.fetchTopic(baseURL: bURL, topicId: tId)
+            }
+        }()
+
+        async let rawTask: String? = {
+            try? await client.fetchTopicRaw(baseURL: bURL, topicId: tId, page: rawPage)
+        }()
+
+        let detail = try await detailTask
+        let rawText = await rawTask
+
         topicDetail = detail
         stream = detail.postStream?.stream ?? []
 
-        let initialPosts = detail.postStream?.posts ?? []
-        registerPosts(initialPosts)
-        items = initialPosts.map { .post($0) }
-
-        windowStart = 0
-        windowEnd = min(initialPosts.count, stream.count)
-        canLoadOlder = false
-        canLoadNewer = windowEnd < stream.count
-
-        let rawText = try await rawResponse
-        processRawText(rawText)
-        loadedRawPages.insert(1)
-    }
-
-    // MARK: - Load Newer (downward / appending)
-
-    func loadNewer() async {
-        guard canLoadNewer, !isLoadingNewer else { return }
-        isLoadingNewer = true
-        defer { isLoadingNewer = false }
-
-        do {
-            let nextIds = stream[windowEnd...]
-                .filter { !loadedPostIds.contains($0) }
-            let batch = Array(nextIds.prefix(loadChunkSize))
-            guard !batch.isEmpty else {
-                canLoadNewer = false
-                return
-            }
-            log.info("[loadNewer] fetching \(batch.count) posts, window=[\(self.windowStart)..\(self.windowEnd)]/\(self.stream.count)")
-
-            let posts = try await fetchPostsWithRaw(ids: batch)
-            let filtered = posts.filter { !loadedPostIds.contains($0.id) }
-            registerPosts(filtered)
-            items.append(contentsOf: filtered.map { .post($0) })
-
-            if let lastId = filtered.last?.id, let idx = stream.firstIndex(of: lastId) {
-                windowEnd = idx + 1
-            }
-            canLoadNewer = windowEnd < stream.count
-            log.info("[loadNewer] done, \(filtered.count) added, window=[\(self.windowStart)..\(self.windowEnd)]")
-
-            trimOlder()
-        } catch {
-            log.error("[loadNewer] error: \(error.localizedDescription)")
+        // Process raw markdown before setting items so the first render has content
+        if let rawText {
+            loadedRawPages.insert(rawPage)
+            processRawText(rawText)
         }
-    }
 
-    // MARK: - Load Older (upward / prepending)
-    // Prepends older posts. The caller must handle scroll position restoration.
+        let posts = detail.postStream?.posts ?? []
+        let sorted = posts.sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
+        registerPosts(sorted)
+        items = sorted.map { .post($0) }
 
-    func loadOlder() async {
-        guard canLoadOlder, !isLoadingOlder else { return }
-        isLoadingOlder = true
-        defer { isLoadingOlder = false }
+        // Determine window bounds from the stream
+        let returnedIds = Set(sorted.map(\.id))
+        let firstStreamIdx = stream.firstIndex(where: { returnedIds.contains($0) }) ?? 0
+        let lastStreamIdx = stream.lastIndex(where: { returnedIds.contains($0) }).map({ $0 + 1 }) ?? stream.count
 
-        do {
-            let olderIds = stream[0..<windowStart]
-                .filter { !loadedPostIds.contains($0) }
-            let batch = Array(olderIds.suffix(loadChunkSize))
-            guard !batch.isEmpty else {
-                canLoadOlder = false
-                return
-            }
-            log.info("[loadOlder] fetching \(batch.count) posts, window=[\(self.windowStart)..\(self.windowEnd)]/\(self.stream.count)")
+        windowStart = firstStreamIdx
+        windowEnd = lastStreamIdx
 
-            let posts = try await fetchPostsWithRaw(ids: batch)
-            let filtered = posts
-                .filter { !loadedPostIds.contains($0.id) }
-                .sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
-            registerPosts(filtered)
-
-            let newItems = filtered.map { StreamItem.post($0) }
-            items.insert(contentsOf: newItems, at: 0)
-
-            if let firstId = filtered.first?.id, let idx = stream.firstIndex(of: firstId) {
-                windowStart = idx
-            }
-            canLoadOlder = windowStart > 0
-            log.info("[loadOlder] done, \(filtered.count) prepended, window=[\(self.windowStart)..\(self.windowEnd)]")
-
-            trimNewer()
-        } catch {
-            log.error("[loadOlder] error: \(error.localizedDescription)")
+        if useNear {
+            return sorted.first(where: { $0.postNumber == postNumber })?.id
+                ?? sorted.last?.id
         }
+        return nil
     }
 
     // MARK: - Jump to Post
-    // Returns the post ID to scroll to, or nil on failure.
 
+    /// Replaces the current window with posts around the target post number.
+    /// Uses `/t/{id}.json?post_number=N` which returns ~20 posts near the target
+    /// in a single request (Discourse's `filter_posts_near`).
     func jumpToPost(number targetPostNumber: Int) async -> Int? {
         // If already in window, just return the ID
         if let item = items.first(where: {
@@ -206,31 +165,171 @@ final class PostStreamDataSource {
         }
 
         do {
-            let estimatedIdx = min(max(targetPostNumber - 1, 0), stream.count - 1)
-            let startIdx = max(0, estimatedIdx - 10)
-            let endIdx = min(stream.count, estimatedIdx + 11)
-            let idsToFetch = Array(stream[startIdx..<endIdx])
-                .filter { !loadedPostIds.contains($0) }
+            log.info("[jumpToPost] target=#\(targetPostNumber), fetching via /t/\(self.topicId).json?post_number=\(targetPostNumber)")
 
-            guard !idsToFetch.isEmpty else { return nil }
+            // Fetch topic JSON and raw markdown concurrently
+            let targetPage = max(1, (targetPostNumber - 1) / rawPageSize + 1)
 
-            let posts = try await fetchPostsWithRaw(ids: idsToFetch)
+            let alreadyLoaded = loadedRawPages.contains(targetPage)
+            let client = apiClient!
+            let bURL = baseURL
+            let tId = topicId
+
+            async let detailTask = client.fetchTopic(baseURL: bURL, topicId: tId, nearPost: targetPostNumber)
+            async let rawTask: String? = {
+                if alreadyLoaded { return nil }
+                return try? await client.fetchTopicRaw(baseURL: bURL, topicId: tId, page: targetPage)
+            }()
+
+            let detail = try await detailTask
+            let rawText = await rawTask
+
+            topicDetail = detail
+            stream = detail.postStream?.stream ?? []
+
+            // Process raw markdown before setting items
+            if let rawText {
+                loadedRawPages.insert(targetPage)
+                processRawText(rawText)
+            }
+
+            let posts = detail.postStream?.posts ?? []
             let sorted = posts.sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
-            registerPosts(sorted)
 
-            // Rebuild window centered on target — no placeholders
+            guard !sorted.isEmpty else { return nil }
+
+            let returnedIds = Set(sorted.map(\.id))
+            let firstStreamIdx = stream.firstIndex(where: { returnedIds.contains($0) }) ?? 0
+            let lastStreamIdx = stream.lastIndex(where: { returnedIds.contains($0) }).map({ $0 + 1 }) ?? stream.count
+
+            // Replace the entire window
+            loadedPostIds.removeAll()
+            loadedRawPages.removeAll()
+            if let rawText { loadedRawPages.insert(targetPage) }
+            registerPosts(sorted)
             items = sorted.map { .post($0) }
-            windowStart = startIdx
-            windowEnd = endIdx
-            canLoadOlder = windowStart > 0
-            canLoadNewer = windowEnd < stream.count
+
+            windowStart = firstStreamIdx
+            windowEnd = lastStreamIdx
+
+            log.info("[jumpToPost] window=[\(self.windowStart)..\(self.windowEnd)], items=\(self.items.count)")
 
             return sorted.first(where: { $0.postNumber == targetPostNumber })?.id
-                ?? sorted.min(by: {
-                    abs(($0.postNumber ?? 0) - targetPostNumber) < abs(($1.postNumber ?? 0) - targetPostNumber)
-                })?.id
+                ?? sorted.last?.id
         } catch {
+            log.error("[jumpToPost] error: \(error.localizedDescription)")
             return nil
+        }
+    }
+
+    // MARK: - Progressive Loading
+
+    /// Loads older posts (prepend) from the stream before the current window.
+    func loadOlder() async {
+        guard canLoadOlder, !isLoadingOlder else { return }
+        isLoadingOlder = true
+        defer { isLoadingOlder = false }
+
+        let chunkSize = Self.loadChunkSize
+        let newStart = max(0, windowStart - chunkSize)
+        let postIds = Array(stream[newStart..<windowStart])
+        guard !postIds.isEmpty else { return }
+
+        log.info("[loadOlder] fetching \(postIds.count) posts, stream[\(newStart)..\(self.windowStart)]")
+
+        do {
+            // Fetch posts and raw markdown concurrently
+            let client = apiClient!
+            let bURL = baseURL
+            let tId = topicId
+
+            // Determine which raw pages we need for these posts
+            // Post numbers aren't known yet, but we can estimate from stream position
+            let estimatedFirstPostNum = newStart + 1
+            let neededPage = max(1, (estimatedFirstPostNum - 1) / rawPageSize + 1)
+            let needsRaw = !loadedRawPages.contains(neededPage)
+
+            async let postsTask = client.fetchTopicPosts(baseURL: bURL, topicId: tId, postIds: postIds)
+            async let rawTask: String? = {
+                guard needsRaw else { return nil }
+                return try? await client.fetchTopicRaw(baseURL: bURL, topicId: tId, page: neededPage)
+            }()
+
+            let response = try await postsTask
+            let rawText = await rawTask
+
+            // Process raw markdown before updating items
+            if let rawText {
+                loadedRawPages.insert(neededPage)
+                processRawText(rawText)
+            }
+
+            let newPosts = response.postStream.posts
+                .filter { !loadedPostIds.contains($0.id) }
+                .sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
+
+            guard !newPosts.isEmpty else { return }
+
+            registerPosts(newPosts)
+            items.insert(contentsOf: newPosts.map { .post($0) }, at: 0)
+            windowStart = newStart
+
+            log.info("[loadOlder] prepended \(newPosts.count) posts, window=[\(self.windowStart)..\(self.windowEnd)]")
+        } catch {
+            log.error("[loadOlder] error: \(error.localizedDescription)")
+        }
+    }
+
+    /// Loads newer posts (append) from the stream after the current window.
+    func loadNewer() async {
+        guard canLoadNewer, !isLoadingNewer else { return }
+        isLoadingNewer = true
+        defer { isLoadingNewer = false }
+
+        let chunkSize = Self.loadChunkSize
+        let newEnd = min(stream.count, windowEnd + chunkSize)
+        let postIds = Array(stream[windowEnd..<newEnd])
+        guard !postIds.isEmpty else { return }
+
+        log.info("[loadNewer] fetching \(postIds.count) posts, stream[\(self.windowEnd)..\(newEnd)]")
+
+        do {
+            let client = apiClient!
+            let bURL = baseURL
+            let tId = topicId
+
+            // Estimate post numbers for raw page calculation
+            let estimatedLastPostNum = newEnd
+            let neededPage = max(1, (estimatedLastPostNum - 1) / rawPageSize + 1)
+            let needsRaw = !loadedRawPages.contains(neededPage)
+
+            async let postsTask = client.fetchTopicPosts(baseURL: bURL, topicId: tId, postIds: postIds)
+            async let rawTask: String? = {
+                guard needsRaw else { return nil }
+                return try? await client.fetchTopicRaw(baseURL: bURL, topicId: tId, page: neededPage)
+            }()
+
+            let response = try await postsTask
+            let rawText = await rawTask
+
+            if let rawText {
+                loadedRawPages.insert(neededPage)
+                processRawText(rawText)
+            }
+
+            let newPosts = response.postStream.posts
+                .filter { !loadedPostIds.contains($0.id) }
+                .sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
+
+            guard !newPosts.isEmpty else { return }
+
+            registerPosts(newPosts)
+            items.append(contentsOf: newPosts.map { .post($0) })
+            windowEnd = newEnd
+
+            log.info("[loadNewer] appended \(newPosts.count) posts, window=[\(self.windowStart)..\(self.windowEnd)]")
+        } catch {
+            log.error("[loadNewer] error: \(error.localizedDescription)")
         }
     }
 
@@ -251,7 +350,6 @@ final class PostStreamDataSource {
         registerPosts(newPosts)
         items.append(contentsOf: newPosts.map { .post($0) })
         windowEnd = stream.count
-        canLoadNewer = false
 
         // Fetch raw markdown for the last new post
         if let lastPost = newPosts.last, let pn = lastPost.postNumber {
@@ -266,98 +364,6 @@ final class PostStreamDataSource {
             return last.id
         }
         return nil
-    }
-
-    // MARK: - Trimming
-
-    private func trimOlder() {
-        let count = postCount
-        guard count > Self.maxWindowSize else { return }
-
-        let excess = count - Self.maxWindowSize
-        var removed = 0
-        while removed < excess, !items.isEmpty {
-            if case .post(let p) = items.first {
-                loadedPostIds.remove(p.id)
-                if let idx = stream.firstIndex(of: p.id) {
-                    windowStart = idx + 1
-                }
-                items.removeFirst()
-                removed += 1
-            } else {
-                items.removeFirst()
-            }
-        }
-        canLoadOlder = windowStart > 0
-    }
-
-    private func trimNewer() {
-        let count = postCount
-        guard count > Self.maxWindowSize else { return }
-
-        let excess = count - Self.maxWindowSize
-        var removed = 0
-        while removed < excess, !items.isEmpty {
-            if case .post(let p) = items.last {
-                loadedPostIds.remove(p.id)
-                if let idx = stream.firstIndex(of: p.id) {
-                    windowEnd = idx
-                }
-                items.removeLast()
-                removed += 1
-            } else {
-                items.removeLast()
-            }
-        }
-        canLoadNewer = windowEnd < stream.count
-    }
-
-    // MARK: - Raw + JSON Fetching
-
-    private func fetchPostsWithRaw(ids: [Int]) async throws -> [Post] {
-        log.info("[fetch] POST /t/\(self.topicId)/posts.json post_ids=\(ids)")
-
-        // Start JSON fetch
-        async let postsResponse = apiClient.fetchTopicPosts(
-            baseURL: baseURL, topicId: topicId, postIds: ids
-        )
-
-        // Figure out which raw pages we need (estimate post numbers from stream indices)
-        let neededPages: Set<Int> = Set(ids.compactMap { id in
-            guard let idx = stream.firstIndex(of: id) else { return nil }
-            let estimatedPostNumber = idx + 1
-            return (estimatedPostNumber - 1) / rawPageSize + 1
-        })
-        let pagesToFetch = neededPages.subtracting(loadedRawPages)
-
-        if !pagesToFetch.isEmpty {
-            log.info("[fetch] raw pages needed=\(pagesToFetch.sorted()), already loaded=\(self.loadedRawPages.sorted())")
-        }
-
-        // Fetch raw pages in parallel
-        let tid = topicId
-        await withTaskGroup(of: (Int, String?).self) { group in
-            for page in pagesToFetch {
-                group.addTask {
-                    log.info("[fetch] GET /raw/\(tid)?page=\(page)")
-                    let text = try? await self.apiClient.fetchTopicRaw(
-                        baseURL: self.baseURL, topicId: self.topicId, page: page
-                    )
-                    return (page, text)
-                }
-            }
-            for await (page, text) in group {
-                if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    loadedRawPages.insert(page)
-                    processRawText(text)
-                    log.info("[fetch] raw page \(page) processed")
-                }
-            }
-        }
-
-        let posts = try await postsResponse.postStream.posts
-        log.info("[fetch] got \(posts.count) posts from JSON")
-        return posts
     }
 
     // MARK: - Helpers
@@ -410,5 +416,46 @@ final class PostStreamDataSource {
 
     func stopPrefetching() {
         prefetcher.stopPrefetching()
+    }
+
+    // MARK: - Test Helpers
+
+    func configureForTesting(
+        stream: [Int],
+        posts: [Post],
+        windowStart: Int,
+        windowEnd: Int
+    ) {
+        self.stream = stream
+        self.windowStart = windowStart
+        self.windowEnd = windowEnd
+        self.items = posts.map { .post($0) }
+        self.loadedPostIds = Set(posts.map(\.id))
+    }
+
+    @discardableResult
+    func simulateJumpToPost(number targetPostNumber: Int, fetchedPosts: [Post]) -> Int? {
+        if let item = items.first(where: {
+            if case .post(let p) = $0 { return p.postNumber == targetPostNumber }
+            return false
+        }), case .post(let post) = item {
+            return post.id
+        }
+
+        let estimatedIdx = min(max(targetPostNumber - 1, 0), stream.count - 1)
+        let endIdx = min(stream.count, estimatedIdx + 1)
+        let startIdx = max(0, endIdx - 20)
+
+        let sorted = fetchedPosts.sorted { ($0.postNumber ?? 0) < ($1.postNumber ?? 0) }
+
+        loadedPostIds.removeAll()
+        registerPosts(sorted)
+        items = sorted.map { .post($0) }
+
+        windowStart = startIdx
+        windowEnd = endIdx
+
+        return sorted.first(where: { $0.postNumber == targetPostNumber })?.id
+            ?? sorted.last?.id
     }
 }

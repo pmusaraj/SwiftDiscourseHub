@@ -1,6 +1,15 @@
 {
-  "originHash" : "9959cae60b296106579aa1acc3761c14fe78330b3380a63926bc156b28ecc160",
+  "originHash" : "910746c5ccf6dff5ff899df556d21268acb935376f4d9ca034ead5efb083e187",
   "pins" : [
+    {
+      "identity" : "chatlayout",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ekazaev/ChatLayout.git",
+      "state" : {
+        "revision" : "8d48250f2cd7cf20456de440ece7dc78e52ffc83",
+        "version" : "2.3.2"
+      }
+    },
     {
       "identity" : "nuke",
       "kind" : "remoteSourceControl",
@@ -20,12 +29,12 @@
       }
     },
     {
-      "identity" : "swift-concurrency-extras",
+      "identity" : "swift-cmark",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
+      "location" : "https://github.com/swiftlang/swift-cmark.git",
       "state" : {
-        "revision" : "5a3825302b1a0d744183200915a47b508c828e6f",
-        "version" : "1.3.2"
+        "revision" : "5d9bdaa4228b381639fff09403e39a04926e2dbe",
+        "version" : "0.7.1"
       }
     },
     {
@@ -38,21 +47,12 @@
       }
     },
     {
-      "identity" : "swiftui-math",
+      "identity" : "swift-markdown",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/gonzalezreal/swiftui-math",
+      "location" : "https://github.com/swiftlang/swift-markdown.git",
       "state" : {
-        "revision" : "0b5c2cfaaec8d6193db206f675048eeb5ce95f71",
-        "version" : "0.1.0"
-      }
-    },
-    {
-      "identity" : "textual",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/gonzalezreal/textual.git",
-      "state" : {
-        "revision" : "5b06b811c0f5313b6b84bbef98c635a630638c38",
-        "version" : "0.3.1"
+        "revision" : "7d9a5ce307528578dfa777d505496bd5f544ad94",
+        "version" : "0.7.3"
       }
     }
   ],

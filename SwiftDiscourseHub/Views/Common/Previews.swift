@@ -1,6 +1,5 @@
 #if DEBUG
 import SwiftUI
-import Textual
 
 // MARK: - Sample Data
 
@@ -88,7 +87,8 @@ enum PreviewData {
         likeCount: 56,
         categoryId: 1,
         posters: [Poster(extras: "Original Poster", description: "Original Poster", userId: 1)],
-        imageUrl: nil
+        imageUrl: nil,
+        lastReadPostNumber: nil
     )
 
     static let topic2 = Topic(
@@ -114,7 +114,8 @@ enum PreviewData {
         likeCount: 12,
         categoryId: 2,
         posters: [Poster(extras: "Original Poster", description: nil, userId: 2)],
-        imageUrl: nil
+        imageUrl: nil,
+        lastReadPostNumber: nil
     )
 
     static let topic3 = Topic(
@@ -140,7 +141,8 @@ enum PreviewData {
         likeCount: 34,
         categoryId: 1,
         posters: [Poster(extras: "Original Poster", description: nil, userId: 1)],
-        imageUrl: nil
+        imageUrl: nil,
+        lastReadPostNumber: nil
     )
 
     static let topic4 = Topic(
@@ -166,7 +168,8 @@ enum PreviewData {
         likeCount: 2,
         categoryId: 3,
         posters: [Poster(extras: "Original Poster", description: nil, userId: 3)],
-        imageUrl: nil
+        imageUrl: nil,
+        lastReadPostNumber: nil
     )
 
     static let topic5 = Topic(
@@ -192,7 +195,8 @@ enum PreviewData {
         likeCount: 45,
         categoryId: 2,
         posters: [Poster(extras: "Original Poster", description: nil, userId: 2)],
-        imageUrl: nil
+        imageUrl: nil,
+        lastReadPostNumber: nil
     )
 
     static let topic6 = Topic(
@@ -218,7 +222,8 @@ enum PreviewData {
         likeCount: 28,
         categoryId: 1,
         posters: [Poster(extras: "Original Poster", description: nil, userId: 3)],
-        imageUrl: nil
+        imageUrl: nil,
+        lastReadPostNumber: nil
     )
 
     static let allTopics = [topic, topic2, topic3, topic4, topic5, topic6]
@@ -339,22 +344,6 @@ enum PreviewData {
         replyToPostNumber: 1,
         actionCode: nil
     )
-}
-
-// MARK: - PostContentView
-
-#Preview("Post Content — Full") {
-    ScrollView {
-        PostContentView(markdown: PreviewData.sampleMarkdown, baseURL: PreviewData.baseURL)
-            .padding()
-    }
-    .frame(width: 600, height: 700)
-}
-
-#Preview("Post Content — Short") {
-    PostContentView(markdown: PreviewData.shortMarkdown, baseURL: PreviewData.baseURL)
-        .padding()
-        .frame(width: 500)
 }
 
 // MARK: - PostView
@@ -654,126 +643,6 @@ private struct TopicViewPreview: View {
         isWhisper: true
     )
     .frame(width: 500)
-}
-
-// MARK: - Rich Links
-
-#Preview("Rich Links") {
-    ScrollView {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("GitHub").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://github.com/discourse/discourse",
-                title: "GitHub - discourse/discourse: A platform for community discussion",
-                description: "A platform for community discussion. Free, open, simple.",
-                imageURL: "https://opengraph.githubassets.com/1/discourse/discourse",
-                faviconURL: "https://github.githubassets.com/favicons/favicon.svg",
-                siteName: "GitHub"
-            ))
-
-            Text("Wikipedia").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://en.wikipedia.org/wiki/Discourse_(software)",
-                title: "Discourse (software) - Wikipedia",
-                description: "Discourse is an open-source Internet forum and mailing list management software application.",
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: "Wikipedia"
-            ))
-
-            Text("Amazon").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://www.amazon.com/dp/B0D1XD1ZV3",
-                title: "Apple iPad Pro 13-Inch (M4): Ultra Retina XDR Display, 256GB",
-                description: "Stunning Ultra Retina XDR display with tandem OLED technology.",
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: "Amazon"
-            ))
-
-            Text("Google Docs").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://docs.google.com/document/d/1BxiMkBo/edit",
-                title: "Project Roadmap Q2 2026",
-                description: "Planning document for upcoming features and milestones.",
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: "Google Docs"
-            ))
-
-            Text("Hacker News").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://news.ycombinator.com/item?id=12345",
-                title: "Show HN: A new open-source forum platform",
-                description: nil,
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: "Hacker News"
-            ))
-
-            Text("Reddit").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://www.reddit.com/r/swift/comments/abc123",
-                title: "What's new in Swift 6.2?",
-                description: "A roundup of all the new features and improvements in the latest Swift release.",
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: "Reddit"
-            ))
-
-            Text("Generic Website").font(.caption).foregroundStyle(.secondary)
-            RichLinkView(info: OneboxInfo(
-                url: "https://discourse.org/",
-                title: "Discourse is the place to build civilized communities",
-                description: "Modern forum software for meaningful discussions and teamwork.",
-                imageURL: nil,
-                faviconURL: nil,
-                siteName: "Discourse"
-            ))
-        }
-        .padding()
-    }
-    .frame(width: 500, height: 900)
-}
-
-#Preview("Post with Rich Link") {
-    ScrollView {
-        PostView(
-            post: Post(
-                id: 300, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
-                createdAt: "2026-03-16T09:00:00.000Z",
-                cooked: """
-                <p>Check out the source code:</p>
-                <aside class="onebox githubrepo" data-onebox-src="https://github.com/discourse/discourse">
-                  <header class="source">
-                      <a href="https://github.com/discourse/discourse" target="_blank">github.com</a>
-                  </header>
-                  <article class="onebox-body">
-                    <img src="https://opengraph.githubassets.com/1/discourse/discourse" class="thumbnail" width="690" height="344">
-                    <h3><a href="https://github.com/discourse/discourse" target="_blank">GitHub - discourse/discourse: A platform for community discussion</a></h3>
-                    <p>A platform for community discussion. Free, open, simple.</p>
-                  </article>
-                </aside>
-                <p>It's fully open source!</p>
-                """,
-                postNumber: 1,
-                postType: 1, replyCount: 3, readsCount: 50, score: 8.0, yours: false,
-                topicId: 1, admin: false, moderator: false, staff: true,
-                actionsSummary: [ActionSummary(id: 2, count: 7, acted: false)],
-                replyToPostNumber: nil, actionCode: nil
-            ),
-            baseURL: PreviewData.baseURL,
-            markdown: """
-            Check out the source code:
-
-            https://github.com/discourse/discourse
-
-            It's fully open source!
-            """,
-            contentWidth: 500
-        )
-    }
-    .frame(width: 500, height: 500)
 }
 
 // MARK: - Discover Site Card

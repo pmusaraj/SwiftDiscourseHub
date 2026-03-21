@@ -5,7 +5,7 @@ import os.log
 private let log = Logger(subsystem: "com.pmusaraj.SwiftDiscourseHub", category: "TopicDetail")
 
 /// Represents an item in the displayed post stream.
-enum StreamItem: Identifiable, Equatable {
+enum StreamItem: Identifiable, Hashable {
     case post(Post)
     case placeholder(id: String, count: Int)
 
@@ -19,6 +19,10 @@ enum StreamItem: Identifiable, Equatable {
     static func == (lhs: StreamItem, rhs: StreamItem) -> Bool {
         lhs.id == rhs.id
     }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 struct TopicDetailView: View {
@@ -26,6 +30,7 @@ struct TopicDetailView: View {
     let site: DiscourseSite
     var topic: Topic?
     var categories: [DiscourseCategory] = []
+    var startPostNumber: Int?
 
     private var baseURL: String { site.baseURL }
 
@@ -37,7 +42,6 @@ struct TopicDetailView: View {
     @State private var composerText = ""
     @State private var showComposer = false
     @State private var likedPostIds: Set<Int> = []
-    @State private var readTracker = TopicReadTracker()
     @State private var showFooter = true
     @State private var lastScrollOffset: CGFloat = 0
     @State private var scrollToPostId: Int?
@@ -76,7 +80,9 @@ struct TopicDetailView: View {
             } else if !dataSource.items.isEmpty {
                 VStack(spacing: 0) {
                     ZStack(alignment: .top) {
-                        postStreamContent
+                        if headerHeight > 0 {
+                            postStreamContent
+                        }
 
                         if let topic {
                             topicHeader(topic)
@@ -111,8 +117,7 @@ struct TopicDetailView: View {
         .toolbar(removing: .title)
         #endif
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarVisibility(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
         #endif
         .onReceive(NotificationCenter.default.publisher(for: .showReplyComposer)) { _ in
             guard site.hasApiKey, !showComposer else { return }
@@ -129,14 +134,9 @@ struct TopicDetailView: View {
         }
         #endif
         .task(id: topicId) {
-            await loadTopic()
-            if site.isAuthenticated {
-                let highest = topic?.highestPostNumber ?? dataSource.topicDetail?.highestPostNumber ?? 0
-                readTracker.start(topicId: topicId, baseURL: baseURL, apiClient: apiClient, highestPostNumber: highest)
-            }
+            await loadTopic(nearPost: startPostNumber)
         }
         .onDisappear {
-            readTracker.stop()
             dataSource.stopPrefetching()
         }
         .navigationDestination(for: LinkedTopicDestination.self) { dest in
@@ -149,7 +149,7 @@ struct TopicDetailView: View {
     @ViewBuilder
     private var postStreamContent: some View {
         #if os(iOS)
-        PostStreamCollectionView(
+        ChatLayoutPostStreamView(
             items: dataSource.items,
             postMarkdown: dataSource.postMarkdown,
             avatarLookup: dataSource.avatarLookup,
@@ -158,8 +158,6 @@ struct TopicDetailView: View {
             topicId: topicId,
             likedPostIds: likedPostIds,
             isAuthenticated: site.isAuthenticated,
-            isLoadingOlder: dataSource.isLoadingOlder,
-            isLoadingNewer: dataSource.isLoadingNewer,
             topInset: headerHeight,
             scrollToPostId: scrollToPostId,
             scrollAnchor: scrollAnchor == .center ? .centeredVertically : .bottom,
@@ -172,17 +170,16 @@ struct TopicDetailView: View {
             onScrollToPost: { postNumber in
                 scrollToPostNumber(postNumber)
             },
-            onPostAppeared: { post in
-                if let pn = post.postNumber {
-                    readTracker.postAppeared(pn)
-                }
-                handlePostAppeared(post)
+            onLoadOlder: {
+                Task { await dataSource.loadOlder() }
             },
-            onPostDisappeared: { post in
-                if let pn = post.postNumber {
-                    readTracker.postDisappeared(pn)
-                }
+            onLoadNewer: {
+                Task { await dataSource.loadNewer() }
             },
+            canLoadOlder: dataSource.canLoadOlder,
+            canLoadNewer: dataSource.canLoadNewer,
+            isLoadingOlder: dataSource.isLoadingOlder,
+            isLoadingNewer: dataSource.isLoadingNewer,
             onScrollChange: { offset, contentHeight, containerHeight in
                 handleScrollChange(offset: offset, contentHeight: contentHeight, containerHeight: containerHeight)
             },
@@ -210,12 +207,6 @@ struct TopicDetailView: View {
                         case .placeholder(_, let count):
                             placeholderRow(count: count)
                         }
-                    }
-
-                    if dataSource.isLoadingNewer {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .padding()
                     }
 
                     Spacer().frame(height: 100)
@@ -267,41 +258,10 @@ struct TopicDetailView: View {
         Divider()
         Color.clear.frame(height: 0)
             .id(post.id)
-            .onAppear {
-                if let pn = post.postNumber {
-                    readTracker.postAppeared(pn)
-                }
-                handlePostAppeared(post)
-            }
-            .onDisappear {
-                if let pn = post.postNumber {
-                    readTracker.postDisappeared(pn)
-                }
-            }
+            .onAppear { }
+            .onDisappear { }
     }
     #endif
-
-    // MARK: - Load Triggers
-
-    private func handlePostAppeared(_ post: Post) {
-        guard let idx = dataSource.postIndex(of: post.id) else { return }
-        let postCount = dataSource.postCount
-        let threshold = PostStreamDataSource.prefetchThreshold
-
-        // Near the bottom — load newer
-        if idx >= postCount - threshold {
-            if idx >= postCount - 3 {
-                log.info("[appear] near-bottom post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadNewer")
-                Task { await dataSource.loadNewer() }
-            }
-        }
-
-        // Near the top — front-load older
-        if idx < threshold, dataSource.canLoadOlder, !dataSource.isLoadingOlder {
-            log.info("[appear] near-top post \(post.id) (idx=\(idx)/\(postCount)) — triggering loadOlder")
-            Task { await dataSource.loadOlder() }
-        }
-    }
 
     // MARK: - Scroll Footer Visibility
 
@@ -368,19 +328,17 @@ struct TopicDetailView: View {
 
                 if let url = topicURL {
                     Menu {
-                        if site.isAuthenticated, let postNum = lastReadPostNumber, postNum > 1 {
-                            Button {
-                                Task { await jumpToPost(number: postNum) }
-                            } label: {
-                                Label("Jump to Post #\(postNum)", systemImage: "bookmark")
-                            }
-                        }
                         if let lastPostNum = dataSource.topicDetail?.highestPostNumber, lastPostNum > 1 {
                             Button {
                                 Task { await jumpToPost(number: lastPostNum) }
                             } label: {
                                 Label("Jump to Last Post", systemImage: "arrow.down.to.line")
                             }
+                        }
+                        Button {
+                            Task { await jumpToPost(number: 25) }
+                        } label: {
+                            Label("Jump to Post #25", systemImage: "arrow.right.to.line")
                         }
                         Divider()
                         Button {
@@ -396,6 +354,8 @@ struct TopicDetailView: View {
                     } label: {
                         Image(systemName: "line.3.horizontal")
                             .scaleEffect(1.25)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -483,7 +443,7 @@ struct TopicDetailView: View {
 
     // MARK: - Initial load
 
-    private func loadTopic() async {
+    private func loadTopic(nearPost postNumber: Int? = nil) async {
         isLoading = true
         error = nil
         showFooter = true
@@ -493,7 +453,10 @@ struct TopicDetailView: View {
         dataSource.configure(apiClient: apiClient, baseURL: baseURL, topicId: topicId)
 
         do {
-            try await dataSource.loadInitial()
+            if let postId = try await dataSource.loadInitial(nearPost: postNumber) {
+                scrollAnchor = .center
+                scrollToPostId = postId
+            }
         } catch {
             self.error = error.localizedDescription
         }
@@ -504,10 +467,20 @@ struct TopicDetailView: View {
 
     private func jumpToPost(number targetPostNumber: Int) async {
         guard !isJumping else { return }
+
+        // If the post is already loaded, just scroll to it — no network request needed
+        if let item = dataSource.items.first(where: {
+            if case .post(let p) = $0 { return p.postNumber == targetPostNumber }
+            return false
+        }), case .post(let post) = item {
+            scrollAnchor = .center
+            scrollToPostId = post.id
+            return
+        }
+
         isJumping = true
 
         if let postId = await dataSource.jumpToPost(number: targetPostNumber) {
-            try? await Task.sleep(for: .milliseconds(500))
             scrollAnchor = .center
             scrollToPostId = postId
         } else {

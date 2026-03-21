@@ -32,19 +32,15 @@
 		A10023 /* RelativeTimeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* RelativeTimeText.swift */; };
 		A10024 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* ErrorStateView.swift */; };
 		A10025 /* URLHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10025 /* URLHelpers.swift */; };
-		A10064 /* DiscourseImageAttachmentLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10064 /* DiscourseImageAttachmentLoader.swift */; };
 		A10065 /* PostStreamDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10065 /* PostStreamDataSource.swift */; };
-		A10066 /* PostStreamCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10066 /* PostStreamCollectionView.swift */; };
 		A10026 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026 /* Color+Hex.swift */; };
 		A10027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10027 /* Assets.xcassets */; };
 		A10028 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028 /* TopicDetailView.swift */; };
 		A10029 /* TopicDetailResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029 /* TopicDetailResponse.swift */; };
-		A10031 /* PostContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031 /* PostContentView.swift */; };
 		A10033 /* RawTopicParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* RawTopicParser.swift */; };
 		A10062 /* FaviconCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10062 /* FaviconCache.swift */; };
 		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* DiscourseMarkdownPreprocessor.swift */; };
 		A10035 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* Theme.swift */; };
-		A10037 /* DiscourseTextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037 /* DiscourseTextStyle.swift */; };
 		A10038 /* Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10038 /* Previews.swift */; };
 		A10039 /* DiscoverSiteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10039 /* DiscoverSiteDetailView.swift */; };
 		A10040 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040 /* KeychainService.swift */; };
@@ -68,15 +64,21 @@
 		A10058 /* TopicReadTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10058 /* TopicReadTracker.swift */; };
 		A10059 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10059 /* PrivacyInfo.xcprivacy */; };
 		A10060 /* KeyboardShortcutHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10060 /* KeyboardShortcutHelpView.swift */; };
-		A10061 /* RichLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10061 /* RichLinkView.swift */; };
 		A20001 /* DiscoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DiscoverTests.swift */; };
 		A20002 /* RawTopicParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* RawTopicParserTests.swift */; };
 		A20003 /* AuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* AuthTests.swift */; };
 		A20004 /* ComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* ComposerTests.swift */; };
-		A30001 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = R10001 /* Textual */; };
+		A20005 /* PostStreamLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20005 /* PostStreamLayoutTests.swift */; };
+		A20006 /* PostStreamDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20006 /* PostStreamDataSourceTests.swift */; };
 		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
 		A30003 /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = R10003 /* Nuke */; };
 		A30004 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = R10004 /* NukeUI */; };
+		A30005 /* ChatLayout in Frameworks */ = {isa = PBXBuildFile; productRef = R10005 /* ChatLayout */; };
+		A30006 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = R10006 /* Markdown */; };
+		A10067 /* ChatLayoutPostStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10067 /* ChatLayoutPostStreamView.swift */; };
+		A10068 /* PostCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10068 /* PostCell.swift */; };
+		A10069 /* PostCellSizeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10069 /* PostCellSizeCache.swift */; };
+		A10070 /* Markdownosaur.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10070 /* Markdownosaur.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,20 +117,19 @@
 		B10023 /* RelativeTimeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelativeTimeText.swift; sourceTree = "<group>"; };
 		B10024 /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
 		B10025 /* URLHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHelpers.swift; sourceTree = "<group>"; };
-		B10064 /* DiscourseImageAttachmentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseImageAttachmentLoader.swift; sourceTree = "<group>"; };
 		B10065 /* PostStreamDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamDataSource.swift; sourceTree = "<group>"; };
-		B10066 /* PostStreamCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamCollectionView.swift; sourceTree = "<group>"; };
+		B10067 /* ChatLayoutPostStreamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLayoutPostStreamView.swift; sourceTree = "<group>"; };
+		B10068 /* PostCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCell.swift; sourceTree = "<group>"; };
+		B10069 /* PostCellSizeCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCellSizeCache.swift; sourceTree = "<group>"; };
+		B10070 /* Markdownosaur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markdownosaur.swift; sourceTree = "<group>"; };
 		B10026 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
 		B10029 /* TopicDetailResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailResponse.swift; sourceTree = "<group>"; };
-		B10031 /* PostContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentView.swift; sourceTree = "<group>"; };
-		B10061 /* RichLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichLinkView.swift; sourceTree = "<group>"; };
 		B10033 /* RawTopicParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParser.swift; sourceTree = "<group>"; };
 		B10062 /* FaviconCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconCache.swift; sourceTree = "<group>"; };
 		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 		B10035 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		B10037 /* DiscourseTextStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseTextStyle.swift; sourceTree = "<group>"; };
 		B10038 /* Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Previews.swift; sourceTree = "<group>"; };
 		B10039 /* DiscoverSiteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSiteDetailView.swift; sourceTree = "<group>"; };
 		B10040 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
@@ -156,6 +157,8 @@
 		B20002 /* RawTopicParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawTopicParserTests.swift; sourceTree = "<group>"; };
 		B20003 /* AuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTests.swift; sourceTree = "<group>"; };
 		B20004 /* ComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerTests.swift; sourceTree = "<group>"; };
+		B20005 /* PostStreamLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamLayoutTests.swift; sourceTree = "<group>"; };
+		B20006 /* PostStreamDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamDataSourceTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -169,6 +172,7 @@
 				A30002 /* _CryptoExtras in Frameworks */,
 				A30003 /* Nuke in Frameworks */,
 				A30004 /* NukeUI in Frameworks */,
+				A30005 /* ChatLayout in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,10 +251,10 @@
 				B10008 /* SiteDiscoveryService.swift */,
 				B10033 /* RawTopicParser.swift */,
 				B10034 /* DiscourseMarkdownPreprocessor.swift */,
+				B10070 /* Markdownosaur.swift */,
 				B10040 /* KeychainService.swift */,
 				B10041 /* AuthService.swift */,
 				B10062 /* FaviconCache.swift */,
-				B10064 /* DiscourseImageAttachmentLoader.swift */,
 				B10065 /* PostStreamDataSource.swift */,
 				B10058 /* TopicReadTracker.swift */,
 			);
@@ -301,7 +305,9 @@
 				B10048 /* CompactSiteListView.swift */,
 				B10049 /* CompactTopicListView.swift */,
 				B10050 /* PostView.swift */,
-				B10066 /* PostStreamCollectionView.swift */,
+				B10067 /* ChatLayoutPostStreamView.swift */,
+				B10068 /* PostCell.swift */,
+				B10069 /* PostCellSizeCache.swift */,
 				B10057 /* SmallActionView.swift */,
 			);
 			path = Topics;
@@ -345,10 +351,7 @@
 				B10022 /* CachedAsyncImage.swift */,
 				B10023 /* RelativeTimeText.swift */,
 				B10024 /* ErrorStateView.swift */,
-				B10031 /* PostContentView.swift */,
-				B10061 /* RichLinkView.swift */,
 				B10046 /* ToastOverlay.swift */,
-				B10037 /* DiscourseTextStyle.swift */,
 				B10038 /* Previews.swift */,
 				B10060 /* KeyboardShortcutHelpView.swift */,
 			);
@@ -380,6 +383,8 @@
 				B20002 /* RawTopicParserTests.swift */,
 				B20003 /* AuthTests.swift */,
 				B20004 /* ComposerTests.swift */,
+				B20005 /* PostStreamLayoutTests.swift */,
+				B20006 /* PostStreamDataSourceTests.swift */,
 			);
 			path = SwiftDiscourseHubTests;
 			sourceTree = "<group>";
@@ -401,10 +406,11 @@
 			);
 			name = SwiftDiscourseHub;
 			packageProductDependencies = (
-				R10001 /* Textual */,
 				R10002 /* _CryptoExtras */,
+				R10006 /* Markdown */,
 				R10003 /* Nuke */,
 				R10004 /* NukeUI */,
+				R10005 /* ChatLayout */,
 			);
 			productName = SwiftDiscourseHub;
 			productReference = C10001 /* SwiftDiscourseHub.app */;
@@ -447,9 +453,10 @@
 			);
 			mainGroup = E10001;
 			packageReferences = (
-				S10001 /* XCRemoteSwiftPackageReference "textual" */,
 				S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */,
 				S10003 /* XCRemoteSwiftPackageReference "Nuke" */,
+				S10005 /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				S10004 /* XCRemoteSwiftPackageReference "ChatLayout" */,
 			);
 			productRefGroup = E10003 /* Products */;
 			projectDirPath = "";
@@ -507,16 +514,15 @@
 				A10026 /* Color+Hex.swift in Sources */,
 				A10028 /* TopicDetailView.swift in Sources */,
 				A10029 /* TopicDetailResponse.swift in Sources */,
-				A10031 /* PostContentView.swift in Sources */,
-				A10061 /* RichLinkView.swift in Sources */,
 				A10033 /* RawTopicParser.swift in Sources */,
 				A10062 /* FaviconCache.swift in Sources */,
-				A10064 /* DiscourseImageAttachmentLoader.swift in Sources */,
 				A10065 /* PostStreamDataSource.swift in Sources */,
-				A10066 /* PostStreamCollectionView.swift in Sources */,
+				A10067 /* ChatLayoutPostStreamView.swift in Sources */,
+				A10068 /* PostCell.swift in Sources */,
+				A10069 /* PostCellSizeCache.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
+				A10070 /* Markdownosaur.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
-				A10037 /* DiscourseTextStyle.swift in Sources */,
 				A10038 /* Previews.swift in Sources */,
 				A10040 /* KeychainService.swift in Sources */,
 				A10041 /* AuthService.swift in Sources */,
@@ -549,6 +555,8 @@
 				A20002 /* RawTopicParserTests.swift in Sources */,
 				A20003 /* AuthTests.swift in Sources */,
 				A20004 /* ComposerTests.swift in Sources */,
+				A20005 /* PostStreamLayoutTests.swift in Sources */,
+				A20006 /* PostStreamDataSourceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -813,14 +821,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		S10001 /* XCRemoteSwiftPackageReference "textual" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/gonzalezreal/textual.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
-			};
-		};
 		S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-crypto.git";
@@ -837,14 +837,25 @@
 				minimumVersion = 12.0.0;
 			};
 		};
+		S10004 /* XCRemoteSwiftPackageReference "ChatLayout" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ekazaev/ChatLayout.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+		S10005 /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		R10001 /* Textual */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = S10001 /* XCRemoteSwiftPackageReference "textual" */;
-			productName = Textual;
-		};
 		R10002 /* _CryptoExtras */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = S10002 /* XCRemoteSwiftPackageReference "swift-crypto" */;
@@ -859,6 +870,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = S10003 /* XCRemoteSwiftPackageReference "Nuke" */;
 			productName = NukeUI;
+		};
+		R10005 /* ChatLayout */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10004 /* XCRemoteSwiftPackageReference "ChatLayout" */;
+			productName = ChatLayout;
+		};
+		R10006 /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = S10005 /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -28,6 +28,14 @@ struct ContentView: View {
 
     private var hasSites: Bool { !sites.isEmpty }
 
+    // TODO: Re-enable jump to last read post
+    // private var nextUnreadPostNumber: Int? {
+    //     guard let site = selectedSite, site.isAuthenticated,
+    //           let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0 else { return nil }
+    //     return lastRead + 1
+    // }
+    private var nextUnreadPostNumber: Int? { nil }
+
     var body: some View {
         Group {
             if !hasSites && !showingDiscover {
@@ -188,7 +196,7 @@ struct ContentView: View {
                 } detail: {
                     NavigationStack {
                         if let topicId = selectedTopicId, let site = selectedSite {
-                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: nextUnreadPostNumber)
                         } else {
                             Color.clear
                         }
@@ -230,7 +238,7 @@ struct ContentView: View {
                 } detail: {
                     NavigationStack {
                         if let topicId = selectedTopicId, let site = selectedSite {
-                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories)
+                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: nextUnreadPostNumber)
                         } else {
                             Color.clear
                         }

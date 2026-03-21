@@ -127,41 +127,6 @@ enum Theme {
         static let tagPaddingV: CGFloat = 4
     }
 
-    // MARK: - Post Body (Textual/Markdown rendering)
-
-    enum PostBody {
-        // Paragraph
-        static let paragraphFontScale: CGFloat = isTablet ? 1.0 : 1.2
-        static let paragraphLineSpacing: CGFloat = 0.35
-        static let paragraphBlockSpacingTop: CGFloat = 0.9
-
-        // Headings
-        static let headingFontScales: [CGFloat] = isTablet ? [1.7, 1.4, 1.2, 1.0, 0.95, 0.9] : [2.0, 1.6, 1.4, 1.2, 1.1, 1.0]
-        static let headingLineSpacing: CGFloat = 0.15
-        static let headingBlockSpacingTop: CGFloat = 1.4
-        static let headingBlockSpacingBottom: CGFloat = 0.6
-
-        // Block quote
-        static let blockQuoteLineSpacing: CGFloat = 0.3
-        static let blockQuotePadding: CGFloat = 0.8
-        static let blockQuoteBarWidth: CGFloat = 4
-        static let blockQuoteBgOpacity: Double = 0.06
-        static let blockQuoteBarOpacity: Double = 0.3
-        static let blockQuoteCornerRadius: CGFloat = 4
-
-        // Code block
-        static let codeBlockFontScale: CGFloat = 1
-        static let codeBlockLineSpacing: CGFloat = 0.5
-        static let codeBlockPaddingVertical: CGFloat = 16
-        static let codeBlockPaddingHorizontal: CGFloat = 16
-        static let codeBlockBgOpacity: Double = 0.06
-        static let codeBlockCornerRadius: CGFloat = 6
-        static let codeBlockBlockSpacingTop: CGFloat = 0.8
-
-        // Inline code
-        static let inlineCodeBgOpacity: Double = 0.12
-    }
-
     // MARK: - Selection
 
     enum Selection {

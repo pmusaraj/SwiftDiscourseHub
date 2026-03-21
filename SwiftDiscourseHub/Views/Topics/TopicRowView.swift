@@ -7,6 +7,12 @@ struct TopicRowView: View {
     let baseURL: String
     var contentWidth: CGFloat = .infinity
 
+    private var hasUnread: Bool {
+        guard let lastRead = topic.lastReadPostNumber, lastRead > 0,
+              let highest = topic.highestPostNumber, highest > lastRead else { return false }
+        return true
+    }
+
     private var originalPoster: DiscourseUser? {
         guard let poster = topic.posters?.first(where: { $0.extras?.contains("Original") == true }) ?? topic.posters?.first,
               let userId = poster.userId else { return nil }
@@ -71,6 +77,11 @@ struct TopicRowView: View {
                     Text(topic.title ?? "Untitled")
                         .font(Theme.Fonts.topicTitle)
                         .lineLimit(Theme.LineLimit.topicTitle)
+                    if hasUnread {
+                        Circle()
+                            .fill(.blue.opacity(0.6))
+                            .frame(width: 8, height: 8)
+                    }
                 }
 
                 // Category + time + reply count

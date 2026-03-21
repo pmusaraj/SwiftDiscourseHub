@@ -70,48 +70,25 @@ struct PostView: View {
 
             // Content
             if let md = markdown {
-                let oneboxes = DiscourseMarkdownPreprocessor.parseOneboxes(from: post.cooked)
-                let videoURLs = DiscourseMarkdownPreprocessor.parseVideoURLs(from: post.cooked, baseURL: baseURL)
-                let segments = DiscourseMarkdownPreprocessor.extractSegments(from: md, oneboxes: oneboxes, videoURLs: videoURLs)
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
-                        switch segment {
-                        case .markdown(let text):
-                            PostContentView(markdown: text, baseURL: baseURL)
-                        case .quote(let info):
-                            QuoteBlockView(
-                                quote: info,
-                                baseURL: baseURL,
-                                avatarURL: URLHelpers.avatarURL(
-                                    template: avatarLookup[info.username],
-                                    size: Theme.Avatar.postFetch,
-                                    baseURL: baseURL
-                                ),
-                                currentTopicId: currentTopicId,
-                                onScrollToPost: onScrollToPost
-                            )
-                        case .richLink(let info):
-                            RichLinkView(info: info)
-                        case .video(let url):
-                            PostVideoPlayerView(urlString: url)
-                        }
-                    }
-                }
-                .contextMenu {
-                    if let onQuote {
-                        Button {
-                            let plainText = md
-                                .replacing(/!\[.*?\]\(.*?\)/, with: "[image]")
-                            onQuote(plainText)
-                        } label: {
-                            Label("Quote in Reply", systemImage: "text.quote")
-                        }
-                    }
-                }
-            } else if let cooked = post.cooked, !cooked.isEmpty {
-                Text(cooked)
+                Text(md)
                     .font(Theme.Fonts.postBody)
                     .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contextMenu {
+                        if let onQuote {
+                            Button {
+                                let plainText = md
+                                    .replacing(/!\[.*?\]\(.*?\)/, with: "[image]")
+                                onQuote(plainText)
+                            } label: {
+                                Label("Quote in Reply", systemImage: "text.quote")
+                            }
+                        }
+                    }
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 8)
             }
 
             Spacer().frame(height: Theme.Spacing.postBodyToFooter)
