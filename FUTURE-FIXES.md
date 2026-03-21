@@ -1,12 +1,10 @@
-# Future Fixes
+## Next possible fixes
 
-## Onebox Expansion
+- better oneboxes
+- draw markdown tables
+- code syntax highlighting
 
-Currently, Discourse oneboxes (`<aside class="onebox" data-onebox-src="...">`) are rendered as a simple clickable URL. In the future, expand these to show a richer preview including:
+## Long-term vague improvements, not actionable yet
 
-- Title (from the `<h4>` or `<header>` inside the onebox)
-- Description/excerpt
-- Thumbnail image (if available)
-- Source domain with favicon
-
-Onebox types to handle: GitHub issues/PRs/repos, Wikipedia, Twitter/X, YouTube, generic URL previews.
+- add more actions to topics
+- add better diagnostics and tracking
