@@ -6,7 +6,73 @@
 
 #if os(iOS)
 import UIKit
+#else
+import AppKit
+#endif
 import Markdown
+
+#if os(iOS)
+typealias PlatformFont = UIFont
+typealias PlatformColor = UIColor
+typealias PlatformImage = UIImage
+typealias PlatformBezierPath = UIBezierPath
+typealias PlatformFontTraits = UIFontDescriptor.SymbolicTraits
+#else
+typealias PlatformFont = NSFont
+typealias PlatformColor = NSColor
+typealias PlatformImage = NSImage
+typealias PlatformBezierPath = NSBezierPath
+typealias PlatformFontTraits = NSFontDescriptor.SymbolicTraits
+#endif
+
+// MARK: - Platform Compatibility
+
+extension PlatformFontTraits {
+    #if os(iOS)
+    static var italic: PlatformFontTraits { .traitItalic }
+    static var bold: PlatformFontTraits { .traitBold }
+    #endif
+}
+
+#if os(iOS)
+extension UIFont {
+    static var preferredBodyFont: UIFont { .preferredFont(forTextStyle: .body) }
+}
+extension UIColor {
+    static var labelColor: UIColor { .label }
+    static var secondaryLabelColor: UIColor { .secondaryLabel }
+    static var secondaryFillColor: UIColor { .secondarySystemFill }
+    static var linkColor: UIColor { .systemBlue }
+    static var separatorColor: UIColor { .separator }
+}
+#else
+extension NSFont {
+    static var preferredBodyFont: NSFont { .systemFont(ofSize: NSFont.systemFontSize) }
+}
+extension NSColor {
+    static var secondaryFillColor: NSColor { .unemphasizedSelectedContentBackgroundColor }
+}
+extension NSBezierPath {
+    /// Convert NSBezierPath to CGPath for use with CoreGraphics.
+    var cgPath: CGPath {
+        let path = CGMutablePath()
+        var points = [CGPoint](repeating: .zero, count: 3)
+        for i in 0..<elementCount {
+            let type = element(at: i, associatedPoints: &points)
+            switch type {
+            case .moveTo: path.move(to: points[0])
+            case .lineTo: path.addLine(to: points[0])
+            case .curveTo: path.addCurve(to: points[2], control1: points[0], control2: points[1])
+            case .closePath: path.closeSubpath()
+            case .cubicCurveTo: path.addCurve(to: points[2], control1: points[0], control2: points[1])
+            case .quadraticCurveTo: path.addQuadCurve(to: points[1], control: points[0])
+            @unknown default: break
+            }
+        }
+        return path
+    }
+}
+#endif
 
 /// NSTextAttachment subclass that stores image URL and original size for async loading.
 final class ScalableImageAttachment: NSTextAttachment {
@@ -15,23 +81,23 @@ final class ScalableImageAttachment: NSTextAttachment {
 }
 
 struct Markdownosaur: MarkupVisitor {
-    let baseFont: UIFont
-    let bodyColor: UIColor
-    let codeColor: UIColor
-    let codeBgColor: UIColor
-    let linkColor: UIColor
-    let quoteColor: UIColor
+    let baseFont: PlatformFont
+    let bodyColor: PlatformColor
+    let codeColor: PlatformColor
+    let codeBgColor: PlatformColor
+    let linkColor: PlatformColor
+    let quoteColor: PlatformColor
     /// Maximum width for inline images (set to body content width).
     var maxImageWidth: CGFloat = 300
 
     init(
-        baseFont: UIFont = .preferredFont(forTextStyle: .body),
-        bodyColor: UIColor = .label,
-        codeColor: UIColor = .label,
-        codeBgColor: UIColor = .secondarySystemFill,
-        linkColor: UIColor = .systemBlue,
-        quoteColor: UIColor = .secondaryLabel,
-        maxImageWidth: CGFloat = 300
+        baseFont: PlatformFont = .systemFont(ofSize: Theme.Markdown.bodyFontSize, weight: Theme.Markdown.bodyWeight),
+        bodyColor: PlatformColor = .labelColor,
+        codeColor: PlatformColor = .labelColor,
+        codeBgColor: PlatformColor = .secondaryFillColor,
+        linkColor: PlatformColor = .linkColor,
+        quoteColor: PlatformColor = .secondaryLabelColor,
+        maxImageWidth: CGFloat = Theme.Markdown.defaultImageWidth
     ) {
         self.baseFont = baseFont
         self.bodyColor = bodyColor
@@ -43,6 +109,12 @@ struct Markdownosaur: MarkupVisitor {
     }
 
     private var baseFontSize: CGFloat { baseFont.pointSize }
+
+    private var baseParagraphStyle: NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        style.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
+        return style
+    }
 
     mutating func attributedString(from document: Document) -> NSAttributedString {
         return visit(document)
@@ -59,7 +131,8 @@ struct Markdownosaur: MarkupVisitor {
     mutating func visitText(_ text: Text) -> NSAttributedString {
         return NSAttributedString(string: text.plainText, attributes: [
             .font: baseFont,
-            .foregroundColor: bodyColor
+            .foregroundColor: bodyColor,
+            .paragraphStyle: baseParagraphStyle
         ])
     }
 
@@ -117,7 +190,7 @@ struct Markdownosaur: MarkupVisitor {
     }
 
     mutating func visitInlineCode(_ inlineCode: InlineCode) -> NSAttributedString {
-        let codeFont = UIFont.monospacedSystemFont(ofSize: baseFontSize * 0.9, weight: .regular)
+        let codeFont = PlatformFont.monospacedSystemFont(ofSize: baseFontSize * Theme.Markdown.codeFontScale, weight: .regular)
         return NSAttributedString(string: inlineCode.code, attributes: [
             .font: codeFont,
             .foregroundColor: codeColor,
@@ -126,11 +199,18 @@ struct Markdownosaur: MarkupVisitor {
     }
 
     func visitCodeBlock(_ codeBlock: CodeBlock) -> NSAttributedString {
-        let codeFont = UIFont.monospacedSystemFont(ofSize: baseFontSize * 0.9, weight: .regular)
+        let codeFont = PlatformFont.monospacedSystemFont(ofSize: baseFontSize * Theme.Markdown.codeFontScale, weight: .regular)
+        let codeParagraphStyle = NSMutableParagraphStyle()
+        codeParagraphStyle.lineHeightMultiple = Theme.Markdown.codeBlockLineHeightMultiple
+        codeParagraphStyle.firstLineHeadIndent = Theme.Markdown.codeBlockHorizontalPadding
+        codeParagraphStyle.headIndent = Theme.Markdown.codeBlockHorizontalPadding
+        codeParagraphStyle.tailIndent = -Theme.Markdown.codeBlockHorizontalPadding
+        codeParagraphStyle.paragraphSpacingBefore = Theme.Markdown.codeBlockVerticalPadding
         let result = NSMutableAttributedString(string: codeBlock.code, attributes: [
             .font: codeFont,
             .foregroundColor: codeColor,
-            .backgroundColor: codeBgColor
+            .paragraphStyle: codeParagraphStyle,
+            .codeBlock: true
         ])
         if codeBlock.hasSuccessor {
             result.append(.singleNewline(withFontSize: baseFontSize))
@@ -156,9 +236,9 @@ struct Markdownosaur: MarkupVisitor {
 
             let listItemParagraphStyle = NSMutableParagraphStyle()
 
-            let baseLeftMargin: CGFloat = 15.0
-            let leftMarginOffset = baseLeftMargin + (20.0 * CGFloat(unorderedList.listDepth))
-            let spacingFromIndex: CGFloat = 8.0
+            let baseLeftMargin = Theme.Markdown.listBaseLeftMargin
+            let leftMarginOffset = baseLeftMargin + (Theme.Markdown.listDepthIndent * CGFloat(unorderedList.listDepth))
+            let spacingFromIndex = Theme.Markdown.listItemSpacing
             let bulletWidth = ceil(NSAttributedString(string: "\u{2022}", attributes: [.font: font]).size().width)
             let firstTabLocation = leftMarginOffset + bulletWidth
             let secondTabLocation = firstTabLocation + spacingFromIndex
@@ -205,17 +285,17 @@ struct Markdownosaur: MarkupVisitor {
             var listItemAttributes: [NSAttributedString.Key: Any] = [:]
 
             let font = baseFont
-            let numeralFont = UIFont.monospacedDigitSystemFont(ofSize: baseFontSize, weight: .regular)
+            let numeralFont = PlatformFont.monospacedDigitSystemFont(ofSize: baseFontSize, weight: .regular)
 
             let listItemParagraphStyle = NSMutableParagraphStyle()
 
-            let baseLeftMargin: CGFloat = 15.0
-            let leftMarginOffset = baseLeftMargin + (20.0 * CGFloat(orderedList.listDepth))
+            let baseLeftMargin = Theme.Markdown.listBaseLeftMargin
+            let leftMarginOffset = baseLeftMargin + (Theme.Markdown.listDepthIndent * CGFloat(orderedList.listDepth))
 
             let highestNumberInList = orderedList.childCount
             let numeralColumnWidth = ceil(NSAttributedString(string: "\(highestNumberInList).", attributes: [.font: numeralFont]).size().width)
 
-            let spacingFromIndex: CGFloat = 8.0
+            let spacingFromIndex = Theme.Markdown.listItemSpacing
             let firstTabLocation = leftMarginOffset + numeralColumnWidth
             let secondTabLocation = firstTabLocation + spacingFromIndex
 
@@ -255,12 +335,13 @@ struct Markdownosaur: MarkupVisitor {
             var quoteAttributes: [NSAttributedString.Key: Any] = [:]
 
             let quoteParagraphStyle = NSMutableParagraphStyle()
-            let baseLeftMargin: CGFloat = 18.0
-            let leftMarginOffset = baseLeftMargin + (22.0 * CGFloat(blockQuote.quoteDepth))
+            quoteParagraphStyle.lineHeightMultiple = Theme.Quote.lineHeightMultiple
+            let baseLeftMargin = Theme.Quote.baseLeftMargin
+            let leftMarginOffset = baseLeftMargin + (Theme.Quote.depthIndent * CGFloat(blockQuote.quoteDepth))
 
             quoteParagraphStyle.firstLineHeadIndent = leftMarginOffset
             quoteParagraphStyle.headIndent = leftMarginOffset
-            quoteParagraphStyle.paragraphSpacingBefore = 4
+            quoteParagraphStyle.paragraphSpacingBefore = Theme.Quote.paragraphSpacingBefore
 
             quoteAttributes[.paragraphStyle] = quoteParagraphStyle
             quoteAttributes[.font] = baseFont
@@ -316,11 +397,11 @@ struct Markdownosaur: MarkupVisitor {
             attachment.bounds = CGRect(x: 0, y: 0, width: scaledW, height: scaledH)
         } else {
             // Default placeholder size for images without dimensions
-            attachment.bounds = CGRect(x: 0, y: 0, width: maxWidth, height: maxWidth * 0.56)
+            attachment.bounds = CGRect(x: 0, y: 0, width: maxWidth, height: maxWidth * Theme.Markdown.defaultImageAspect)
         }
 
         // Placeholder tint
-        attachment.image = UIImage()
+        attachment.image = PlatformImage()
 
         let result = NSMutableAttributedString(attachment: attachment)
         if image.hasSuccessor {
@@ -332,7 +413,7 @@ struct Markdownosaur: MarkupVisitor {
     mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -> NSAttributedString {
         let result = NSMutableAttributedString(string: "\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}", attributes: [
             .font: baseFont,
-            .foregroundColor: UIColor.separator
+            .foregroundColor: PlatformColor.separatorColor
         ])
         if thematicBreak.hasSuccessor {
             result.append(.doubleNewline(withFontSize: baseFontSize))
@@ -376,19 +457,19 @@ struct Markdownosaur: MarkupVisitor {
 extension NSMutableAttributedString {
     func applyEmphasis() {
         enumerateAttribute(.font, in: NSRange(location: 0, length: length), options: []) { value, range, _ in
-            guard let font = value as? UIFont else { return }
-            addAttribute(.font, value: font.apply(newTraits: .traitItalic), range: range)
+            guard let font = value as? PlatformFont else { return }
+            addAttribute(.font, value: font.apply(newTraits: .italic), range: range)
         }
     }
 
     func applyStrong() {
         enumerateAttribute(.font, in: NSRange(location: 0, length: length), options: []) { value, range, _ in
-            guard let font = value as? UIFont else { return }
-            addAttribute(.font, value: font.apply(newTraits: .traitBold), range: range)
+            guard let font = value as? PlatformFont else { return }
+            addAttribute(.font, value: font.apply(newTraits: .bold), range: range)
         }
     }
 
-    func applyLink(withURL url: URL?, color: UIColor) {
+    func applyLink(withURL url: URL?, color: PlatformColor) {
         addAttribute(.foregroundColor, value: color)
         if let url {
             addAttribute(.link, value: url)
@@ -397,9 +478,9 @@ extension NSMutableAttributedString {
 
     func applyHeading(withLevel level: Int, baseFontSize: CGFloat) {
         enumerateAttribute(.font, in: NSRange(location: 0, length: length), options: []) { value, range, _ in
-            guard let font = value as? UIFont else { return }
-            let headingSize = baseFontSize + CGFloat(max(6 - level, 0)) * 2
-            addAttribute(.font, value: font.apply(newTraits: .traitBold, newPointSize: headingSize), range: range)
+            guard let font = value as? PlatformFont else { return }
+            let headingSize = baseFontSize + CGFloat(max(6 - level, 0)) * Theme.Markdown.headingBonusPerLevel
+            addAttribute(.font, value: font.apply(newTraits: .bold, newPointSize: headingSize), range: range)
         }
     }
 
@@ -408,12 +489,19 @@ extension NSMutableAttributedString {
     }
 }
 
-private extension UIFont {
-    func apply(newTraits: UIFontDescriptor.SymbolicTraits, newPointSize: CGFloat? = nil) -> UIFont {
+private extension PlatformFont {
+    func apply(newTraits: PlatformFontTraits, newPointSize: CGFloat? = nil) -> PlatformFont {
+        #if os(iOS)
         var existingTraits = fontDescriptor.symbolicTraits
         existingTraits.insert(newTraits)
         guard let newDescriptor = fontDescriptor.withSymbolicTraits(existingTraits) else { return self }
-        return UIFont(descriptor: newDescriptor, size: newPointSize ?? pointSize)
+        return PlatformFont(descriptor: newDescriptor, size: newPointSize ?? pointSize)
+        #else
+        var existingTraits = fontDescriptor.symbolicTraits
+        existingTraits.insert(newTraits)
+        let newDescriptor = fontDescriptor.withSymbolicTraits(existingTraits)
+        return PlatformFont(descriptor: newDescriptor, size: newPointSize ?? pointSize) ?? self
+        #endif
     }
 }
 
@@ -444,6 +532,7 @@ extension BlockQuote {
 extension NSAttributedString.Key {
     static let listDepth = NSAttributedString.Key("ListDepth")
     static let quoteDepth = NSAttributedString.Key("QuoteDepth")
+    static let codeBlock = NSAttributedString.Key("CodeBlock")
 }
 
 private extension NSMutableAttributedString {
@@ -470,70 +559,114 @@ extension Markup {
 
 extension NSAttributedString {
     static func singleNewline(withFontSize fontSize: CGFloat) -> NSAttributedString {
-        NSAttributedString(string: "\n", attributes: [.font: UIFont.systemFont(ofSize: fontSize, weight: .regular)])
+        NSAttributedString(string: "\n", attributes: [.font: PlatformFont.systemFont(ofSize: fontSize, weight: .regular)])
     }
 
     static func doubleNewline(withFontSize fontSize: CGFloat) -> NSAttributedString {
-        NSAttributedString(string: "\n\n", attributes: [.font: UIFont.systemFont(ofSize: fontSize, weight: .regular)])
+        NSAttributedString(string: "\n\n", attributes: [.font: PlatformFont.systemFont(ofSize: fontSize, weight: .regular)])
     }
 }
 
 // MARK: - Quote Bar Layout Manager
 
-/// Custom layout manager that draws a vertical bar and subtle background
-/// for text ranges marked with the `.quoteDepth` attribute.
+/// Custom layout manager that draws styled backgrounds for blockquotes
+/// (`.quoteDepth` attribute) and code blocks (`.codeBlock` attribute).
 final class QuoteBarLayoutManager: NSLayoutManager {
-
-    private let barWidth: CGFloat = 3
-    private let barInset: CGFloat = 6
 
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: CGPoint) {
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
 
+        #if os(iOS)
         guard let textStorage = textStorage, let context = UIGraphicsGetCurrentContext() else { return }
+        #else
+        guard let textStorage = textStorage, let context = NSGraphicsContext.current?.cgContext else { return }
+        #endif
 
         let characterRange = self.characterRange(forGlyphRange: glyphsToShow, actualGlyphRange: nil)
+        #if os(iOS)
+        let containerWidth = textContainers.first?.size.width ?? 0
+        #else
+        let containerWidth = textContainers.first?.containerSize.width ?? 0
+        #endif
 
+        // --- Blockquotes ---
         textStorage.enumerateAttribute(.quoteDepth, in: characterRange, options: []) { value, attrRange, _ in
             guard let depth = value as? Int, depth >= 0 else { return }
 
-            let glyphRange = self.glyphRange(forCharacterRange: attrRange, actualCharacterRange: nil)
-
-            // Collect line fragment rects for this range
-            var rects: [CGRect] = []
-            enumerateLineFragments(forGlyphRange: glyphRange) { _, usedRect, _, _, _ in
-                rects.append(usedRect)
-            }
+            let rects = lineFragmentRects(forCharacterRange: attrRange)
             guard !rects.isEmpty else { return }
 
-            // Union all rects to get the full quote area
             let fullRect = rects.reduce(rects[0]) { $0.union($1) }
-            let drawRect = fullRect.offsetBy(dx: origin.x, dy: origin.y)
+            let vPad = Theme.Quote.backgroundVerticalPad
+            let cornerRadius = Theme.Quote.backgroundCornerRadius
 
-            // Draw subtle background
-            context.setFillColor(UIColor.secondarySystemFill.cgColor)
+            // Full-width background
             let bgRect = CGRect(
-                x: drawRect.minX,
-                y: drawRect.minY - 2,
-                width: drawRect.width,
-                height: drawRect.height + 4
+                x: origin.x,
+                y: fullRect.minY + origin.y - vPad,
+                width: containerWidth,
+                height: fullRect.height + vPad * 2
             )
-            let bgPath = UIBezierPath(roundedRect: bgRect, cornerRadius: 4)
-            context.addPath(bgPath.cgPath)
-            context.fillPath()
+            context.saveGState()
+            context.setFillColor(PlatformColor.separatorColor.withAlphaComponent(Theme.Quote.backgroundOpacity).cgColor)
+            fillRoundedRect(bgRect, cornerRadius: cornerRadius, in: context)
+            context.restoreGState()
 
-            // Draw vertical bar
-            context.setFillColor(UIColor.separator.cgColor)
+            // Vertical bar
+            let barWidth = Theme.Quote.barWidth
             let barRect = CGRect(
-                x: drawRect.minX + barInset,
-                y: drawRect.minY - 2,
+                x: origin.x + Theme.Quote.barInset,
+                y: bgRect.minY,
                 width: barWidth,
-                height: drawRect.height + 4
+                height: bgRect.height
             )
-            let barPath = UIBezierPath(roundedRect: barRect, cornerRadius: barWidth / 2)
-            context.addPath(barPath.cgPath)
-            context.fillPath()
+            context.setFillColor(PlatformColor.separatorColor.cgColor)
+            fillRoundedRect(barRect, cornerRadius: barWidth / 2, in: context)
+        }
+
+        // --- Code blocks ---
+        textStorage.enumerateAttribute(.codeBlock, in: characterRange, options: []) { value, attrRange, _ in
+            guard value != nil else { return }
+
+            let rects = lineFragmentRects(forCharacterRange: attrRange)
+            guard !rects.isEmpty else { return }
+
+            let fullRect = rects.reduce(rects[0]) { $0.union($1) }
+            let vPad = Theme.Markdown.codeBlockVerticalPadding
+            let cornerRadius = Theme.Markdown.codeBlockCornerRadius
+
+            let bgRect = CGRect(
+                x: origin.x,
+                y: fullRect.minY + origin.y - vPad,
+                width: containerWidth,
+                height: fullRect.height + vPad * 2
+            )
+            context.saveGState()
+            context.setFillColor(PlatformColor.separatorColor.withAlphaComponent(Theme.Markdown.codeBlockBackgroundOpacity).cgColor)
+            fillRoundedRect(bgRect, cornerRadius: cornerRadius, in: context)
+            context.restoreGState()
         }
     }
+
+    // MARK: - Helpers
+
+    private func lineFragmentRects(forCharacterRange attrRange: NSRange) -> [CGRect] {
+        let glyphRange = self.glyphRange(forCharacterRange: attrRange, actualCharacterRange: nil)
+        var rects: [CGRect] = []
+        enumerateLineFragments(forGlyphRange: glyphRange) { _, usedRect, _, _, _ in
+            rects.append(usedRect)
+        }
+        return rects
+    }
+
+    private func fillRoundedRect(_ rect: CGRect, cornerRadius: CGFloat, in context: CGContext) {
+        #if os(iOS)
+        let path = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius)
+        context.addPath(path.cgPath)
+        #else
+        let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
+        context.addPath(path.cgPath)
+        #endif
+        context.fillPath()
+    }
 }
-#endif

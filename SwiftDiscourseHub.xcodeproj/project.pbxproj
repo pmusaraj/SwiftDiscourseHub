@@ -42,6 +42,7 @@
 		A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* DiscourseMarkdownPreprocessor.swift */; };
 		A10035 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* Theme.swift */; };
 		A10038 /* Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10038 /* Previews.swift */; };
+		A10072 /* TopicPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10072 /* TopicPreviews.swift */; };
 		A10039 /* DiscoverSiteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10039 /* DiscoverSiteDetailView.swift */; };
 		A10040 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040 /* KeychainService.swift */; };
 		A10041 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041 /* AuthService.swift */; };
@@ -133,6 +134,7 @@
 		B10034 /* DiscourseMarkdownPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscourseMarkdownPreprocessor.swift; sourceTree = "<group>"; };
 		B10035 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B10038 /* Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Previews.swift; sourceTree = "<group>"; };
+		B10072 /* TopicPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicPreviews.swift; sourceTree = "<group>"; };
 		B10039 /* DiscoverSiteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSiteDetailView.swift; sourceTree = "<group>"; };
 		B10040 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B10041 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -356,6 +358,7 @@
 				B10024 /* ErrorStateView.swift */,
 				B10046 /* ToastOverlay.swift */,
 				B10038 /* Previews.swift */,
+				B10072 /* TopicPreviews.swift */,
 				B10060 /* KeyboardShortcutHelpView.swift */,
 			);
 			path = Common;
@@ -528,6 +531,7 @@
 				A10071 /* EmojiShortcodes.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
 				A10038 /* Previews.swift in Sources */,
+				A10072 /* TopicPreviews.swift in Sources */,
 				A10040 /* KeychainService.swift in Sources */,
 				A10041 /* AuthService.swift in Sources */,
 				A10042 /* CreatePostResponse.swift in Sources */,

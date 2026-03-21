@@ -36,11 +36,7 @@ final class PostCellSizeCache: @unchecked Sendable {
 
     // MARK: - Fonts
 
-    nonisolated(unsafe) static let bodyFont: UIFont = {
-        let isTablet = MainActor.assumeIsolated { UIDevice.current.userInterfaceIdiom == .pad }
-        let style: UIFont.TextStyle = isTablet ? .subheadline : .body
-        return UIFont.preferredFont(forTextStyle: style)
-    }()
+    static let bodyFont: UIFont = .systemFont(ofSize: Theme.Markdown.bodyFontSize, weight: Theme.Markdown.bodyWeight)
 
     // MARK: - Cache
 
@@ -99,15 +95,10 @@ final class PostCellSizeCache: @unchecked Sendable {
 
     // MARK: - Markdown Rendering
 
-    static func renderMarkdown(_ markdown: String, maxImageWidth: CGFloat = 300) -> NSAttributedString {
+    static func renderMarkdown(_ markdown: String, maxImageWidth: CGFloat = Theme.Markdown.defaultImageWidth) -> NSAttributedString {
         let document = Document(parsing: markdown)
         var renderer = Markdownosaur(
             baseFont: bodyFont,
-            bodyColor: .label,
-            codeColor: .label,
-            codeBgColor: .secondarySystemFill,
-            linkColor: .systemBlue,
-            quoteColor: .secondaryLabel,
             maxImageWidth: maxImageWidth
         )
         return renderer.attributedString(from: document)

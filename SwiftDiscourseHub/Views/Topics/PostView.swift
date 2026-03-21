@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(macOS)
+import Markdown
+#endif
+
 struct PostView: View {
     let post: Post
     let baseURL: String
@@ -50,9 +54,9 @@ struct PostView: View {
                 Spacer()
 
                 if isWhisper {
-                    Label("Whisper", systemImage: "eye.slash.fill")
-                        .font(Theme.Fonts.metadataSmall)
-                        .foregroundStyle(.orange)
+                    Image(systemName: Theme.Whisper.iconName)
+                        .font(Theme.Whisper.iconFont)
+                        .foregroundStyle(Theme.Whisper.iconColor)
                 }
 
                 HStack(spacing: 4) {
@@ -70,6 +74,24 @@ struct PostView: View {
 
             // Content
             if let md = markdown {
+                #if os(macOS)
+                MarkdownNSTextView(
+                    markdown: md,
+                    contentWidth: contentWidth > 0 ? contentWidth : nil
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contextMenu {
+                    if let onQuote {
+                        Button {
+                            let plainText = md
+                                .replacing(/!\[.*?\]\(.*?\)/, with: "[image]")
+                            onQuote(plainText)
+                        } label: {
+                            Label("Quote in Reply", systemImage: "text.quote")
+                        }
+                    }
+                }
+                #else
                 Text(md)
                     .font(Theme.Fonts.postBody)
                     .textSelection(.enabled)
@@ -85,6 +107,7 @@ struct PostView: View {
                             }
                         }
                     }
+                #endif
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -136,7 +159,7 @@ struct PostView: View {
         }
         .padding(.vertical, Theme.Padding.postVertical)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
-        .background(isWhisper ? Color.orange.opacity(0.04) : Color.clear)
+        .opacity(isWhisper ? Theme.Whisper.postOpacity : 1.0)
     }
 
     private var likeCountDisplay: String {
@@ -146,3 +169,119 @@ struct PostView: View {
         return count > 0 ? "\(count)" : ""
     }
 }
+
+// MARK: - macOS Rich Markdown View
+
+#if os(macOS)
+import Nuke
+
+private struct MarkdownNSTextView: NSViewRepresentable {
+    let markdown: String
+    let contentWidth: CGFloat?
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let textStorage = NSTextStorage()
+        let layoutManager = QuoteBarLayoutManager()
+        let textContainer = NSTextContainer()
+        textContainer.lineFragmentPadding = 0
+        textContainer.widthTracksTextView = true
+
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+
+        let textView = NSTextView(frame: .zero, textContainer: textContainer)
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.isRichText = true
+        textView.textContainerInset = .zero
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.drawsBackground = false
+        scrollView.documentView = textView
+
+        applyMarkdown(to: textView, coordinator: context.coordinator)
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+        // Only re-render if markdown changed
+        if context.coordinator.lastMarkdown != markdown {
+            applyMarkdown(to: textView, coordinator: context.coordinator)
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
+        guard let textView = nsView.documentView as? NSTextView else { return nil }
+        let width = effectiveWidth(from: proposal)
+        textView.textContainer?.containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+        textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+        let usedRect = textView.layoutManager?.usedRect(for: textView.textContainer!) ?? .zero
+        return CGSize(width: width, height: ceil(usedRect.height))
+    }
+
+    private func effectiveWidth(from proposal: ProposedViewSize? = nil) -> CGFloat {
+        if let w = contentWidth, w > 0 {
+            // Subtract horizontal padding so text doesn't overflow
+            let padding = Theme.Padding.postHorizontal(for: w) * 2
+            return w - padding
+        }
+        return proposal?.width ?? 400
+    }
+
+    private func applyMarkdown(to textView: NSTextView, coordinator: Coordinator) {
+        coordinator.cancelImageLoads()
+        coordinator.lastMarkdown = markdown
+
+        let document = Document(parsing: markdown)
+        let width = effectiveWidth()
+        var renderer = Markdownosaur(maxImageWidth: width)
+        let attributed = renderer.attributedString(from: document)
+        textView.textStorage?.setAttributedString(attributed)
+        textView.textContainer?.containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+
+        loadInlineImages(in: textView, coordinator: coordinator)
+    }
+
+    private func loadInlineImages(in textView: NSTextView, coordinator: Coordinator) {
+        guard let attrText = textView.textStorage else { return }
+        let fullRange = NSRange(location: 0, length: attrText.length)
+
+        attrText.enumerateAttribute(.attachment, in: fullRange, options: []) { value, _, _ in
+            guard let attachment = value as? ScalableImageAttachment,
+                  let urlString = attachment.imageURL,
+                  let url = URL(string: urlString) else { return }
+
+            let task = ImagePipeline.shared.loadImage(with: url) { result in
+                if case .success(let response) = result {
+                    DispatchQueue.main.async {
+                        attachment.image = response.image
+                        // Force redraw
+                        let current = NSAttributedString(attributedString: attrText)
+                        textView.textStorage?.setAttributedString(current)
+                    }
+                }
+            }
+            coordinator.imageTasks.append(task)
+        }
+    }
+
+    final class Coordinator {
+        var lastMarkdown: String?
+        var imageTasks: [ImageTask] = []
+
+        func cancelImageLoads() {
+            imageTasks.forEach { $0.cancel() }
+            imageTasks.removeAll()
+        }
+    }
+}
+#endif

@@ -1,4 +1,9 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#else
+import AppKit
+#endif
 
 
 
@@ -125,6 +130,62 @@ enum Theme {
         static let detailIconCornerRadius: CGFloat = 14
         static let tagPaddingH: CGFloat = 10
         static let tagPaddingV: CGFloat = 4
+    }
+
+    // MARK: - Markdown / Post Content
+
+    enum Markdown {
+        // Paragraph
+        static let bodyFontSize: CGFloat = isTablet ? 15 : 17
+        static let bodyWeight: PlatformFont.Weight = .regular
+        static let lineHeightMultiple: CGFloat = 1.2
+
+        // Headings — size = bodyFontSize + headingBonusPerLevel * max(6 - level, 0)
+        static let headingBonusPerLevel: CGFloat = 2
+        static let headingWeight: PlatformFont.Weight = .bold
+
+        // Code (inline)
+        static let codeFontScale: CGFloat = 0.9
+
+        // Code block
+        static let codeBlockLineHeightMultiple: CGFloat = 0.8
+        static let codeBlockHorizontalPadding: CGFloat = 12
+        static let codeBlockVerticalPadding: CGFloat = 10
+        static let codeBlockBackgroundOpacity: CGFloat = 0.06
+        static let codeBlockCornerRadius: CGFloat = 6
+
+        // Lists
+        static let listBaseLeftMargin: CGFloat = 15
+        static let listDepthIndent: CGFloat = 20
+        static let listItemSpacing: CGFloat = 8
+
+        // Images
+        static let defaultImageWidth: CGFloat = 300
+        static let defaultImageAspect: CGFloat = 0.56
+    }
+
+    // MARK: - Blockquote
+
+    enum Quote {
+        static let lineHeightMultiple: CGFloat = 1
+        static let horizontalPadding: CGFloat = 12
+        static let baseLeftMargin: CGFloat = horizontalPadding + barWidth + 8
+        static let depthIndent: CGFloat = 22
+        static let paragraphSpacingBefore: CGFloat = 4
+        static let barWidth: CGFloat = 6
+        static let barInset: CGFloat = 0
+        static let backgroundOpacity: CGFloat = 0.06
+        static let backgroundCornerRadius: CGFloat = 6
+        static let backgroundVerticalPad: CGFloat = 10
+    }
+
+    // MARK: - Whisper
+
+    enum Whisper {
+        static let postOpacity: Double = 0.7
+        static let iconName: String = "eye.slash"
+        static let iconColor: Color = Color.gray.opacity(1)
+        static let iconFont: Font = .caption
     }
 
     // MARK: - Selection

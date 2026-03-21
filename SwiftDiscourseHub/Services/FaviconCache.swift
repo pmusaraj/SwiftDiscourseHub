@@ -3,10 +3,8 @@ import os
 
 #if os(macOS)
 import AppKit
-private typealias PlatformImage = NSImage
 #else
 import UIKit
-private typealias PlatformImage = UIImage
 #endif
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SwiftDiscourseHub", category: "FaviconCache")

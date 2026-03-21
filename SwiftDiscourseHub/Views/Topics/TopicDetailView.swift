@@ -200,6 +200,9 @@ struct TopicDetailView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    // Clear the floating header
+                    Spacer().frame(height: headerHeight)
+
                     ForEach(dataSource.items) { item in
                         switch item {
                         case .post(let post):
