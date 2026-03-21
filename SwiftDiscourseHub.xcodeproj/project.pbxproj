@@ -79,6 +79,7 @@
 		A10068 /* PostCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10068 /* PostCell.swift */; };
 		A10069 /* PostCellSizeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10069 /* PostCellSizeCache.swift */; };
 		A10070 /* Markdownosaur.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10070 /* Markdownosaur.swift */; };
+		A10071 /* EmojiShortcodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10071 /* EmojiShortcodes.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -122,6 +123,7 @@
 		B10068 /* PostCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCell.swift; sourceTree = "<group>"; };
 		B10069 /* PostCellSizeCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCellSizeCache.swift; sourceTree = "<group>"; };
 		B10070 /* Markdownosaur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markdownosaur.swift; sourceTree = "<group>"; };
+		B10071 /* EmojiShortcodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiShortcodes.swift; sourceTree = "<group>"; };
 		B10026 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		B10027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10028 /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 				B10033 /* RawTopicParser.swift */,
 				B10034 /* DiscourseMarkdownPreprocessor.swift */,
 				B10070 /* Markdownosaur.swift */,
+				B10071 /* EmojiShortcodes.swift */,
 				B10040 /* KeychainService.swift */,
 				B10041 /* AuthService.swift */,
 				B10062 /* FaviconCache.swift */,
@@ -522,6 +525,7 @@
 				A10069 /* PostCellSizeCache.swift in Sources */,
 				A10034 /* DiscourseMarkdownPreprocessor.swift in Sources */,
 				A10070 /* Markdownosaur.swift in Sources */,
+				A10071 /* EmojiShortcodes.swift in Sources */,
 				A10035 /* Theme.swift in Sources */,
 				A10038 /* Previews.swift in Sources */,
 				A10040 /* KeychainService.swift in Sources */,

@@ -17,6 +17,7 @@ struct DiscourseMarkdownPreprocessor {
         result = resolveRelativeImageURLs(result)
         result = convertDetails(result)
         result = convertMentions(result)
+        result = convertEmojiShortcodes(result)
         result = ensureHardBreaks(result)
         return result
     }
@@ -244,6 +245,51 @@ struct DiscourseMarkdownPreprocessor {
             lines[i] = lines[i] + "  "
         }
         return lines.joined(separator: "\n")
+    }
+
+    private func convertEmojiShortcodes(_ markdown: String) -> String {
+        let pattern = #"(?<![`\w]):([a-z0-9_+\-]+):(?![`\w])"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
+
+        let nsString = markdown as NSString
+        let range = NSRange(location: 0, length: nsString.length)
+        var result = markdown
+
+        // Track code fence state to skip replacements inside code blocks
+        let codeBlockRanges = Self.fencedCodeRanges(in: markdown)
+
+        let matches = regex.matches(in: markdown, range: range).reversed()
+        for match in matches {
+            guard let fullRange = Range(match.range, in: result),
+                  let nameRange = Range(match.range(at: 1), in: result) else { continue }
+
+            // Skip matches inside fenced code blocks
+            if codeBlockRanges.contains(where: { $0.contains(match.range.location) }) { continue }
+
+            let name = String(result[nameRange])
+            if let emoji = EmojiShortcodes.map[name] {
+                result.replaceSubrange(fullRange, with: emoji)
+            }
+        }
+
+        return result
+    }
+
+    private static func fencedCodeRanges(in markdown: String) -> [NSRange] {
+        let pattern = #"(?m)^```.*$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(markdown.startIndex..., in: markdown)
+        let fences = regex.matches(in: markdown, range: range)
+
+        var ranges: [NSRange] = []
+        var i = 0
+        while i + 1 < fences.count {
+            let start = fences[i].range.location
+            let end = fences[i + 1].range.location + fences[i + 1].range.length
+            ranges.append(NSRange(location: start, length: end - start))
+            i += 2
+        }
+        return ranges
     }
 
     private func convertMentions(_ markdown: String) -> String {

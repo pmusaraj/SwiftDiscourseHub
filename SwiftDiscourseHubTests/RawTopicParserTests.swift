@@ -390,4 +390,37 @@ import Foundation
                 "Video should be converted to marker: \(result)")
     }
 
+    // MARK: - Emoji shortcodes
+
+    @Test func emojiShortcodesConverted() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Update :tada: great work :+1:"
+        let result = preprocessor.process(input)
+        #expect(result.contains("\u{1F389}"), "tada should become party popper emoji")
+        #expect(result.contains("\u{1F44D}"), "+1 should become thumbs up emoji")
+        #expect(!result.contains(":tada:"))
+        #expect(!result.contains(":+1:"))
+    }
+
+    @Test func emojiShortcodesSkippedInCodeBlocks() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "```\n:tada:\n```"
+        let result = preprocessor.process(input)
+        #expect(result.contains(":tada:"), "Shortcodes in code blocks should not be converted")
+    }
+
+    @Test func emojiShortcodesSkippedInInlineCode() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "Use `:tada:` for celebrations"
+        let result = preprocessor.process(input)
+        #expect(result.contains(":tada:"), "Shortcodes in inline code should not be converted")
+    }
+
+    @Test func unknownEmojiShortcodesLeftAlone() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = "This :not_a_real_emoji_xyz: stays"
+        let result = preprocessor.process(input)
+        #expect(result.contains(":not_a_real_emoji_xyz:"))
+    }
+
 }
