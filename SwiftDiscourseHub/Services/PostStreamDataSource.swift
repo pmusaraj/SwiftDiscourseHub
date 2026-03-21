@@ -19,6 +19,7 @@ final class PostStreamDataSource {
 
     private(set) var items: [StreamItem] = []
     var postMarkdown: [Int: String] = [:]
+    var postCooked: [Int: String] = [:]
     var avatarLookup: [String: String] = [:]
     var topicDetail: TopicDetailResponse?
     private(set) var isLoadingOlder = false
@@ -68,6 +69,7 @@ final class PostStreamDataSource {
         stream = []
         loadedPostIds = []
         postMarkdown = [:]
+        postCooked = [:]
         avatarLookup = [:]
         windowStart = 0
         windowEnd = 0
@@ -357,7 +359,7 @@ final class PostStreamDataSource {
                 baseURL: baseURL, topicId: topicId, postNumber: pn
             )
             let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
-            postMarkdown[pn] = preprocessor.process(rawText)
+            postMarkdown[pn] = preprocessor.process(rawText, cooked: lastPost.cooked)
         }
 
         if case .post(let last) = items.last {
@@ -372,6 +374,9 @@ final class PostStreamDataSource {
         var urls: [URL] = []
         for post in posts {
             loadedPostIds.insert(post.id)
+            if let pn = post.postNumber, let cooked = post.cooked {
+                postCooked[pn] = cooked
+            }
             if let username = post.username, let template = post.avatarTemplate {
                 avatarLookup[username] = template
                 if let url = URLHelpers.avatarURL(template: template, size: 80, baseURL: baseURL) {
@@ -389,7 +394,8 @@ final class PostStreamDataSource {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
         var imageURLs: [URL] = []
         for rawPost in rawPosts {
-            let processed = preprocessor.process(rawPost.markdown)
+            let cooked = postCooked[rawPost.postNumber]
+            let processed = preprocessor.process(rawPost.markdown, cooked: cooked)
             postMarkdown[rawPost.postNumber] = processed
             imageURLs.append(contentsOf: extractImageURLs(from: processed))
         }

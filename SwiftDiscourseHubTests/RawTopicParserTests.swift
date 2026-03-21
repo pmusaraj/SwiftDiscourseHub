@@ -107,7 +107,7 @@ import Foundation
         #expect(result.contains("https://meta.discourse.org/uploads/default/original/1X/abc.png"))
     }
 
-    @Test func quotesPreservedInProcessedOutput() {
+    @Test func quotesConvertedToBlockquotes() {
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
         let input = """
         [quote="alice, post:3, topic:123"]
@@ -115,8 +115,57 @@ import Foundation
         [/quote]
         """
         let result = preprocessor.process(input)
-        #expect(result.contains("[quote=\"alice, post:3, topic:123\"]"))
-        #expect(result.contains("[/quote]"))
+        #expect(result.contains("> **alice:**"), "Should have bold attribution")
+        #expect(result.contains("> This is a quote."), "Content should be blockquoted")
+        #expect(!result.contains("[quote"), "Quote tags should be removed")
+    }
+
+    @Test func plainQuoteWithoutAttribution() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        [quote]
+        Some quoted text.
+        [/quote]
+        """
+        let result = preprocessor.process(input)
+        #expect(result.contains("> Some quoted text."), "Content should be blockquoted")
+        #expect(!result.contains("> **"), "No attribution for anonymous quote")
+    }
+
+    @Test func bareURLConvertedToLink() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        Check this:
+
+        https://meta.discourse.org/t/some-topic/12345
+
+        Nice right?
+        """
+        let result = preprocessor.process(input)
+        #expect(result.contains("[https://meta.discourse.org/t/some-topic/12345](https://meta.discourse.org/t/some-topic/12345)"))
+    }
+
+    @Test func bareURLWithOneboxRendersRichLink() {
+        let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://example.com")
+        let input = """
+        Check this:
+
+        https://www.example.com/
+
+        Nice!
+        """
+        let cooked = """
+        <aside class="onebox" data-onebox-src="https://www.example.com/">
+          <article class="onebox-body">
+            <h3><a href="https://www.example.com/">Example Domain</a></h3>
+            <p>An illustrative example.</p>
+          </article>
+        </aside>
+        """
+        let result = preprocessor.process(input, cooked: cooked)
+        #expect(result.contains("**[Example Domain](https://www.example.com/)**"), "Should have bold linked title")
+        #expect(result.contains("An illustrative example."), "Should include description")
+        #expect(result.contains("*example.com*"), "Should include domain in italics")
     }
 
     @Test func convertDetails() {
@@ -262,9 +311,9 @@ import Foundation
         let preprocessor = DiscourseMarkdownPreprocessor(baseURL: "https://community.openai.com")
         let input = "![1000021541|690x460](https://example.com/image.jpeg)"
         let result = preprocessor.process(input)
-        #expect(result.contains("![1000021541](https://example.com/image.jpeg)"),
-                "Pipe and dimensions should be removed from alt text: \(result)")
-        #expect(!result.contains("|690x460"), "Dimension suffix should be gone: \(result)")
+        #expect(result.contains("![1000021541](https://example.com/image.jpeg#dim=690x460)"),
+                "Pipe dimensions should move to URL fragment: \(result)")
+        #expect(!result.contains("|690x460"), "Pipe dimension suffix should be gone from alt text: \(result)")
     }
 
     @Test func openAIImageGenFirstPostUploads() {
@@ -290,11 +339,11 @@ import Foundation
         #expect(!result.contains("|690x460"), "First image dimensions should be cleaned")
         #expect(!result.contains("|500x500"), "Second image dimensions should be cleaned")
 
-        // Result should be valid standard markdown images
-        #expect(result.contains("![1000021541](https://community.openai.com/uploads/short-url/qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg)"),
-                "Should produce clean markdown image syntax: \(result)")
-        #expect(result.contains("![1000021542](https://community.openai.com/uploads/short-url/vPHDVTwvE2kzkggJG15pm7VrupO.webp)"),
-                "Should produce clean markdown image syntax: \(result)")
+        // Result should be valid markdown images with dimension fragments
+        #expect(result.contains("![1000021541](https://community.openai.com/uploads/short-url/qauUrQlAXnLu8OF7ScSHSskLtiD.jpeg#dim=690x460)"),
+                "Should produce markdown image with dim fragment: \(result)")
+        #expect(result.contains("![1000021542](https://community.openai.com/uploads/short-url/vPHDVTwvE2kzkggJG15pm7VrupO.webp#dim=500x500)"),
+                "Should produce markdown image with dim fragment: \(result)")
 
         // No upload:// references should remain
         #expect(!result.contains("upload://"), "No upload:// URLs should remain")

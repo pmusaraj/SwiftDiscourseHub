@@ -80,6 +80,7 @@ final class PostCell: UICollectionViewCell {
 
     var onLike: (() -> Void)?
     private var avatarTask: ImageTask?
+    private var imageTasks: [ImageTask] = []
     private var exactSize: CGSize?
 
     // MARK: - Init
@@ -97,6 +98,8 @@ final class PostCell: UICollectionViewCell {
         super.prepareForReuse()
         avatarTask?.cancel()
         avatarTask = nil
+        imageTasks.forEach { $0.cancel() }
+        imageTasks.removeAll()
         avatarImageView.image = nil
         bodyTextView.attributedText = nil
         nameLabel.text = nil
@@ -225,6 +228,9 @@ final class PostCell: UICollectionViewCell {
             exactSize = nil
         }
 
+        // Load inline images
+        loadInlineImages()
+
         // Like button
         configureLikeButton(post: post, isLiked: isLiked)
 
@@ -259,6 +265,28 @@ final class PostCell: UICollectionViewCell {
         }
 
         likeButton.isHidden = !post.canLike && post.likeCount == 0
+    }
+
+    private func loadInlineImages() {
+        guard let attrText = bodyTextView.attributedText else { return }
+        let fullRange = NSRange(location: 0, length: attrText.length)
+
+        attrText.enumerateAttribute(.attachment, in: fullRange, options: []) { value, range, _ in
+            guard let attachment = value as? ScalableImageAttachment,
+                  let urlString = attachment.imageURL,
+                  let url = URL(string: urlString) else { return }
+
+            let task = ImagePipeline.shared.loadImage(with: url) { [weak self] result in
+                guard let self else { return }
+                if case .success(let response) = result {
+                    attachment.image = response.image
+                    // Trigger text view to redraw with the loaded image
+                    let current = self.bodyTextView.attributedText
+                    self.bodyTextView.attributedText = current
+                }
+            }
+            imageTasks.append(task)
+        }
     }
 
     private func loadAvatar(template: String?, baseURL: String) {

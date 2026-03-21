@@ -7,7 +7,7 @@ struct LinkedTopicDestination: Hashable {
 struct DiscourseMarkdownPreprocessor {
     let baseURL: String
 
-    func process(_ markdown: String) -> String {
+    func process(_ markdown: String, cooked: String? = nil) -> String {
         var result = markdown
         result = stripHTML(result)
         result = convertCheckboxes(result)
@@ -15,7 +15,9 @@ struct DiscourseMarkdownPreprocessor {
         result = extractVideoMarkers(result)
         result = cleanDiscourseImageSyntax(result)
         result = resolveRelativeImageURLs(result)
+        result = convertQuotes(result)
         result = convertDetails(result)
+        result = convertBareURLsToLinks(result, cooked: cooked)
         result = convertMentions(result)
         result = convertEmojiShortcodes(result)
         result = ensureHardBreaks(result)
@@ -198,6 +200,152 @@ struct DiscourseMarkdownPreprocessor {
         }
 
         return result
+    }
+
+    private func convertQuotes(_ markdown: String) -> String {
+        // Convert [quote="username, post:N, topic:T"]content[/quote] to markdown blockquotes
+        let pattern = #"(?s)\[quote(?:="([^"]*?)")?\](.*?)\[/quote\]"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return markdown }
+
+        let range = NSRange(markdown.startIndex..., in: markdown)
+        let matches = regex.matches(in: markdown, range: range)
+        if matches.isEmpty { return markdown }
+
+        var result = markdown
+        for match in matches.reversed() {
+            guard let fullRange = Range(match.range, in: result),
+                  let contentRange = Range(match.range(at: 2), in: result) else { continue }
+
+            let meta = Range(match.range(at: 1), in: result).map { String(result[$0]) } ?? ""
+            let content = String(result[contentRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Extract username from meta (first comma-separated part)
+            let username = meta.components(separatedBy: ",").first?.trimmingCharacters(in: .whitespaces) ?? ""
+
+            // Build blockquote: attribution line + quoted content
+            var lines: [String] = []
+            if !username.isEmpty {
+                lines.append("> **\(username):**")
+            }
+            for line in content.components(separatedBy: "\n") {
+                lines.append("> \(line)")
+            }
+
+            result.replaceSubrange(fullRange, with: lines.joined(separator: "\n"))
+        }
+
+        return result
+    }
+
+    private func convertBareURLsToLinks(_ markdown: String, cooked: String?) -> String {
+        // Parse onebox data from cooked HTML if available
+        let oneboxes = Self.parseOneboxes(from: cooked)
+
+        // Match bare URLs on their own line
+        let pattern = #"^(https?://\S+)\s*$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines) else {
+            return markdown
+        }
+
+        let range = NSRange(markdown.startIndex..., in: markdown)
+        let matches = regex.matches(in: markdown, range: range)
+        if matches.isEmpty { return markdown }
+
+        var result = markdown
+        for match in matches.reversed() {
+            guard let fullRange = Range(match.range, in: result),
+                  let urlRange = Range(match.range(at: 1), in: result) else { continue }
+
+            let url = String(result[urlRange])
+            let normalizedURL = Self.normalizeURL(url)
+
+            if let info = oneboxes[normalizedURL] ?? oneboxes[url] {
+                // Rich link: render as styled block with title, description, domain
+                var block: [String] = []
+                if let title = info.title {
+                    block.append("**[\(title)](\(url))**")
+                } else {
+                    block.append("**[\(url)](\(url))**")
+                }
+                if let desc = info.description, !desc.isEmpty {
+                    block.append(desc)
+                }
+                block.append("*\(info.domain)*")
+                result.replaceSubrange(fullRange, with: block.joined(separator: "\n"))
+            } else {
+                // Plain link
+                result.replaceSubrange(fullRange, with: "[\(url)](\(url))")
+            }
+        }
+
+        return result
+    }
+
+    // MARK: - Onebox Parsing from Cooked HTML
+
+    private static func parseOneboxes(from cooked: String?) -> [String: OneboxInfo] {
+        guard let cooked else { return [:] }
+
+        let pattern = #"(?s)<aside\b[^>]*\bdata-onebox-src="([^"]*)"[^>]*>(.*?)</aside>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [:] }
+
+        let range = NSRange(cooked.startIndex..., in: cooked)
+        let matches = regex.matches(in: cooked, range: range)
+        if matches.isEmpty { return [:] }
+
+        var result: [String: OneboxInfo] = [:]
+        for match in matches {
+            guard let urlRange = Range(match.range(at: 1), in: cooked),
+                  let bodyRange = Range(match.range(at: 2), in: cooked) else { continue }
+
+            let url = String(cooked[urlRange])
+            let body = String(cooked[bodyRange])
+
+            let title = stripHTMLTags(firstMatch(in: body, pattern: #"<h[34]>\s*<a[^>]*>(.*?)</a>"#))
+            let description = stripHTMLTags(firstMatch(in: body, pattern: #"<p[^>]*>(.*?)</p>"#))
+
+            let key = normalizeURL(url)
+            result[key] = OneboxInfo(url: url, title: title, description: description, domain: domainFrom(url))
+        }
+
+        return result
+    }
+
+    struct OneboxInfo {
+        let url: String
+        let title: String?
+        let description: String?
+        let domain: String
+    }
+
+    private static func normalizeURL(_ url: String) -> String {
+        var normalized = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        while normalized.hasSuffix("/") { normalized = String(normalized.dropLast()) }
+        return normalized
+    }
+
+    private static func domainFrom(_ url: String) -> String {
+        guard let urlObj = URL(string: url), let host = urlObj.host() else { return url }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    private static func firstMatch(in html: String, pattern: String) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators) else { return nil }
+        let range = NSRange(html.startIndex..., in: html)
+        guard let match = regex.firstMatch(in: html, range: range),
+              let captureRange = Range(match.range(at: 1), in: html) else { return nil }
+        return String(html[captureRange])
+    }
+
+    private static func stripHTMLTags(_ text: String?) -> String? {
+        guard let text else { return nil }
+        return text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func convertDetails(_ markdown: String) -> String {

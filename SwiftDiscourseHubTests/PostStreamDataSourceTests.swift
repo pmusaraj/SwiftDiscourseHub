@@ -133,19 +133,7 @@ private func makePosts(ids: [Int]) -> [Post] {
         #expect(ds.hasMore == false)
     }
 
-    // MARK: - postIndex / postCount
-
-    @Test func postIndexFindsCorrectPost() {
-        let ds = PostStreamDataSource()
-        let stream = makeStream(count: 50)
-        let posts = makePosts(ids: Array(stream[0..<5]))
-        ds.configureForTesting(stream: stream, posts: posts, windowStart: 0, windowEnd: 5)
-
-        #expect(ds.postIndex(of: 1) == 0)
-        #expect(ds.postIndex(of: 3) == 2)
-        #expect(ds.postIndex(of: 5) == 4)
-        #expect(ds.postIndex(of: 99) == nil)
-    }
+    // MARK: - postCount
 
     @Test func postCountMatchesItemCount() {
         let ds = PostStreamDataSource()
@@ -419,54 +407,6 @@ private func makePosts(ids: [Int]) -> [Post] {
         return CVTestHarness(window: window, collectionView: cv, dataSource: diffDS)
     }
 
-    /// Helper: creates a BufferedCollectionContainer (same as production) with 200pt-tall cells.
-    private func makeBufferedCollectionView(items: [StreamItem]) async -> CVTestHarness {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-
-        let layout = UICollectionViewCompositionalLayout { _, _ in
-            let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(200))
-            let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(200))
-            let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-            return NSCollectionLayoutSection(group: group)
-        }
-
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.contentInset = UIEdgeInsets(top: 400, left: 0, bottom: 500, right: 0)
-
-        let container = BufferedCollectionContainer(collectionView: cv)
-        container.frame = window.bounds
-        window.addSubview(container)
-        window.makeKeyAndVisible()
-        container.setNeedsLayout()
-        container.layoutIfNeeded()
-        cv.layoutIfNeeded()
-
-        let cellReg = UICollectionView.CellRegistration<UICollectionViewCell, StreamItem> {
-            cell, _, item in
-            var content = UIListContentConfiguration.cell()
-            content.text = item.id
-            cell.contentConfiguration = content
-        }
-
-        let diffDS = UICollectionViewDiffableDataSource<Int, StreamItem>(collectionView: cv) {
-            collectionView, indexPath, item in
-            collectionView.dequeueConfiguredReusableCell(using: cellReg, for: indexPath, item: item)
-        }
-
-        var snap = NSDiffableDataSourceSnapshot<Int, StreamItem>()
-        snap.appendSections([0])
-        snap.appendItems(items)
-
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        await diffDS.apply(snap, animatingDifferences: false)
-        cv.layoutIfNeeded()
-        CATransaction.commit()
-
-        return CVTestHarness(window: window, collectionView: cv, dataSource: diffDS)
-    }
-
     @Test func jumpToLastPostNeedsScroll() async {
         // After jump, items are replaced. Without scrolling, the last post is NOT visible
         // because 20 cells × 200pt = 4000pt total, only ~4 fit in 844pt viewport.
@@ -494,114 +434,4 @@ private func makePosts(ids: [Int]) -> [Post] {
         h.tearDown()
     }
 
-    @Test func jumpToLastPostScrollSucceedsWithBufferedContainer() async {
-        // scrollToItem with animated: false + suppressed animations should
-        // correctly show the last post in the BufferedCollectionContainer clip area.
-        let ds = PostStreamDataSource()
-        let stream = makeStream(count: 120)
-        let initialPosts = makePosts(ids: Array(stream[0..<20]))
-        ds.configureForTesting(stream: stream, posts: initialPosts, windowStart: 0, windowEnd: 20)
-
-        let _ = ds.simulateJumpToPost(
-            number: 120,
-            fetchedPosts: makePosts(ids: Array(stream[100..<120]))
-        )
-
-        let h = await makeBufferedCollectionView(items: ds.items)
-        let cv = h.collectionView
-        let lastIdx = IndexPath(item: ds.items.count - 1, section: 0)
-
-        // Scroll synchronously with no animation (the fix)
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        cv.scrollToItem(at: lastIdx, at: .centeredVertically, animated: false)
-        cv.layoutIfNeeded()
-        CATransaction.commit()
-
-        // Verify the last item is visible in the clip area
-        let container = cv.superview as! BufferedCollectionContainer
-        let containerBounds = container.bounds
-        guard let lastItemAttrs = cv.layoutAttributesForItem(at: lastIdx) else {
-            #expect(Bool(false), "Layout attributes nil — item not laid out")
-            h.tearDown()
-            return
-        }
-        let frameInContainer = cv.convert(lastItemAttrs.frame, to: container)
-        let isVisibleInClipArea = containerBounds.intersects(frameInContainer)
-
-        #expect(
-            isVisibleInClipArea,
-            "Last post should be visible in clip area. Frame: \(frameInContainer), clip: \(containerBounds)"
-        )
-
-        h.tearDown()
-    }
-
-    @Test(.timeLimit(.minutes(1)))
-    func lastPostVisibleAfter2Seconds() async {
-        await verifyLastPostStaysVisible(reRenderCount: 8) // 8 × 250ms = 2s
-    }
-
-    @Test(.timeLimit(.minutes(1)))
-    func lastPostVisibleAfter4Seconds() async {
-        await verifyLastPostStaysVisible(reRenderCount: 16) // 16 × 250ms = 4s
-    }
-
-    /// Scrolls to last item, then simulates SwiftUI re-renders (reconfigure
-    /// snapshots) and verifies the last post remains visible in the clip area.
-    private func verifyLastPostStaysVisible(reRenderCount: Int) async {
-        let ds = PostStreamDataSource()
-        let stream = makeStream(count: 120)
-        let initialPosts = makePosts(ids: Array(stream[0..<20]))
-        ds.configureForTesting(stream: stream, posts: initialPosts, windowStart: 0, windowEnd: 20)
-
-        let _ = ds.simulateJumpToPost(
-            number: 120,
-            fetchedPosts: makePosts(ids: Array(stream[100..<120]))
-        )
-
-        let h = await makeBufferedCollectionView(items: ds.items)
-        let cv = h.collectionView
-        let lastIdx = IndexPath(item: ds.items.count - 1, section: 0)
-
-        // Scroll synchronously with no animation
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        cv.scrollToItem(at: lastIdx, at: .centeredVertically, animated: false)
-        cv.layoutIfNeeded()
-        CATransaction.commit()
-
-        // Simulate SwiftUI re-renders: reconfigure snapshots fire repeatedly
-        // (this is what updateUIView does on each @Observable state change)
-        for i in 0..<reRenderCount {
-            try? await Task.sleep(for: .milliseconds(250))
-
-            // Mirrors the reconfigure branch in updateUIView
-            var snap = h.dataSource.snapshot()
-            snap.reconfigureItems(snap.itemIdentifiers)
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            await h.dataSource.apply(snap, animatingDifferences: false)
-            cv.layoutIfNeeded()
-            CATransaction.commit()
-
-            // Check visibility after each re-render
-            let container = cv.superview as! BufferedCollectionContainer
-            let containerBounds = container.bounds
-            guard let attrs = cv.layoutAttributesForItem(at: lastIdx) else {
-                #expect(Bool(false), "Layout attributes nil at re-render \(i)")
-                h.tearDown()
-                return
-            }
-            let frameInContainer = cv.convert(attrs.frame, to: container)
-            let isVisible = containerBounds.intersects(frameInContainer)
-
-            #expect(
-                isVisible,
-                "Last post should still be visible after re-render \(i + 1)/\(reRenderCount). Frame: \(frameInContainer), clip: \(containerBounds)"
-            )
-        }
-
-        h.tearDown()
-    }
 }

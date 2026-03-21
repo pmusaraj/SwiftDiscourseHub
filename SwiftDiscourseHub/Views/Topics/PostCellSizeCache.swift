@@ -75,7 +75,7 @@ final class PostCellSizeCache: @unchecked Sendable {
         let hPad = Self.horizontalPadding(for: availableWidth)
         let bodyWidth = availableWidth - hPad * 2
 
-        let attrString = Self.renderMarkdown(markdown)
+        let attrString = Self.renderMarkdown(markdown, maxImageWidth: bodyWidth)
         let bodyHeight = Self.measureHeight(of: attrString, width: bodyWidth)
 
         let totalHeight = Self.verticalPadding
@@ -99,7 +99,7 @@ final class PostCellSizeCache: @unchecked Sendable {
 
     // MARK: - Markdown Rendering
 
-    static func renderMarkdown(_ markdown: String) -> NSAttributedString {
+    static func renderMarkdown(_ markdown: String, maxImageWidth: CGFloat = 300) -> NSAttributedString {
         let document = Document(parsing: markdown)
         var renderer = Markdownosaur(
             baseFont: bodyFont,
@@ -107,7 +107,8 @@ final class PostCellSizeCache: @unchecked Sendable {
             codeColor: .label,
             codeBgColor: .secondarySystemFill,
             linkColor: .systemBlue,
-            quoteColor: .secondaryLabel
+            quoteColor: .secondaryLabel,
+            maxImageWidth: maxImageWidth
         )
         return renderer.attributedString(from: document)
     }

@@ -8,6 +8,12 @@
 import UIKit
 import Markdown
 
+/// NSTextAttachment subclass that stores image URL and original size for async loading.
+final class ScalableImageAttachment: NSTextAttachment {
+    var imageURL: String?
+    var originalSize: CGSize?
+}
+
 struct Markdownosaur: MarkupVisitor {
     let baseFont: UIFont
     let bodyColor: UIColor
@@ -15,6 +21,8 @@ struct Markdownosaur: MarkupVisitor {
     let codeBgColor: UIColor
     let linkColor: UIColor
     let quoteColor: UIColor
+    /// Maximum width for inline images (set to body content width).
+    var maxImageWidth: CGFloat = 300
 
     init(
         baseFont: UIFont = .preferredFont(forTextStyle: .body),
@@ -22,7 +30,8 @@ struct Markdownosaur: MarkupVisitor {
         codeColor: UIColor = .label,
         codeBgColor: UIColor = .secondarySystemFill,
         linkColor: UIColor = .systemBlue,
-        quoteColor: UIColor = .secondaryLabel
+        quoteColor: UIColor = .secondaryLabel,
+        maxImageWidth: CGFloat = 300
     ) {
         self.baseFont = baseFont
         self.bodyColor = bodyColor
@@ -30,6 +39,7 @@ struct Markdownosaur: MarkupVisitor {
         self.codeBgColor = codeBgColor
         self.linkColor = linkColor
         self.quoteColor = quoteColor
+        self.maxImageWidth = maxImageWidth
     }
 
     private var baseFontSize: CGFloat { baseFont.pointSize }
@@ -270,11 +280,49 @@ struct Markdownosaur: MarkupVisitor {
     }
 
     mutating func visitImage(_ image: Image) -> NSAttributedString {
-        let alt = image.plainText.isEmpty ? "image" : image.plainText
-        return NSAttributedString(string: "[\(alt)]", attributes: [
-            .font: baseFont,
-            .foregroundColor: linkColor
-        ])
+        guard let source = image.source, !source.isEmpty else {
+            let alt = image.plainText.isEmpty ? "image" : image.plainText
+            return NSAttributedString(string: "[\(alt)]", attributes: [
+                .font: baseFont,
+                .foregroundColor: linkColor
+            ])
+        }
+
+        let attachment = ScalableImageAttachment()
+        attachment.imageURL = source
+
+        // Parse #dim=WxH fragment for pre-sizing
+        if let fragment = URLComponents(string: source)?.fragment,
+           fragment.hasPrefix("dim=") {
+            let dims = fragment.dropFirst(4).split(separator: "x")
+            if dims.count == 2,
+               let w = Double(dims[0]),
+               let h = Double(dims[1]),
+               w > 0, h > 0 {
+                attachment.originalSize = CGSize(width: w, height: h)
+            }
+        }
+
+        // Scale to fit available width (will be updated in PostCell if needed)
+        let maxWidth = maxImageWidth
+        if let orig = attachment.originalSize {
+            let scale = min(maxWidth / orig.width, 1.0)
+            let scaledW = orig.width * scale
+            let scaledH = orig.height * scale
+            attachment.bounds = CGRect(x: 0, y: 0, width: scaledW, height: scaledH)
+        } else {
+            // Default placeholder size for images without dimensions
+            attachment.bounds = CGRect(x: 0, y: 0, width: maxWidth, height: maxWidth * 0.56)
+        }
+
+        // Placeholder tint
+        attachment.image = UIImage()
+
+        let result = NSMutableAttributedString(attachment: attachment)
+        if image.hasSuccessor {
+            result.append(.doubleNewline(withFontSize: baseFontSize))
+        }
+        return result
     }
 
     mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -> NSAttributedString {
