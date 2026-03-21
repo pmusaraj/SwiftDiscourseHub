@@ -442,98 +442,55 @@ private struct PostCellPreview: UIViewRepresentable {
 }
 #endif
 
-// MARK: - PostView
+// MARK: - Post Cells
 
 #if os(iOS)
-#Preview("Post Cell — Rich Content") {
-    let width: CGFloat = 393
-    ScrollView {
-        VStack(spacing: 0) {
-            PostCellPreview(
-                post: PreviewData.post,
-                markdown: PreviewData.sampleMarkdown,
-                baseURL: PreviewData.baseURL,
-                availableWidth: width
-            )
-            .frame(height: PostCellPreview.measuredHeight(
-                postNumber: PreviewData.post.postNumber ?? 0,
-                markdown: PreviewData.sampleMarkdown,
-                availableWidth: width
-            ))
+#Preview("Post Cells") {
+    PostCellsPreview()
+        .frame(width: 393, height: 900)
+}
 
-            PostCellPreview(
-                post: PreviewData.post2,
-                markdown: PreviewData.shortMarkdown,
-                baseURL: PreviewData.baseURL,
-                availableWidth: width
-            )
-            .frame(height: PostCellPreview.measuredHeight(
-                postNumber: PreviewData.post2.postNumber ?? 0,
-                markdown: PreviewData.shortMarkdown,
-                availableWidth: width
-            ))
+private struct PostCellsPreview: View {
+    private static let width: CGFloat = 393
+
+    private let entries: [(Post, String)] = [
+        (PreviewData.post, PreviewData.sampleMarkdown),
+        (PreviewData.post2, PreviewData.quoteMarkdown),
+        (Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
+              createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
+              postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
+              topicId: 1, admin: false, moderator: true, staff: true,
+              actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)],
+              replyToPostNumber: nil, actionCode: nil),
+         PreviewData.richMarkdown),
+        (Post(id: 4, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
+              createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 4,
+              postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
+              topicId: 1, admin: false, moderator: false, staff: false,
+              actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)],
+              replyToPostNumber: 3, actionCode: nil),
+         PreviewData.imageMarkdown),
+    ]
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(entries, id: \.0.id) { post, md in
+                    let pn = post.postNumber ?? 0
+                    PostCellPreview(
+                        post: post,
+                        markdown: md,
+                        baseURL: PreviewData.baseURL,
+                        availableWidth: Self.width,
+                        isLiked: post.hasLiked
+                    )
+                    .frame(height: PostCellPreview.measuredHeight(
+                        postNumber: pn, markdown: md, availableWidth: Self.width
+                    ))
+                }
+            }
         }
     }
-    .frame(width: width, height: 800)
-}
-
-#Preview("Post Cell — Quotes") {
-    let width: CGFloat = 393
-    ScrollView {
-        PostCellPreview(
-            post: PreviewData.post2,
-            markdown: PreviewData.quoteMarkdown,
-            baseURL: PreviewData.baseURL,
-            availableWidth: width
-        )
-        .frame(height: PostCellPreview.measuredHeight(
-            postNumber: PreviewData.post2.postNumber ?? 0,
-            markdown: PreviewData.quoteMarkdown,
-            availableWidth: width
-        ))
-    }
-    .frame(width: width, height: 600)
-}
-
-#Preview("Post Cell — Images") {
-    let width: CGFloat = 393
-    ScrollView {
-        PostCellPreview(
-            post: PreviewData.post,
-            markdown: PreviewData.imageMarkdown,
-            baseURL: PreviewData.baseURL,
-            availableWidth: width
-        )
-        .frame(height: PostCellPreview.measuredHeight(
-            postNumber: PreviewData.post.postNumber ?? 0,
-            markdown: PreviewData.imageMarkdown,
-            availableWidth: width
-        ))
-    }
-    .frame(width: width, height: 800)
-}
-
-#Preview("Post Cell — Mixed") {
-    let width: CGFloat = 393
-    ScrollView {
-        PostCellPreview(
-            post: Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
-                       createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
-                       postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
-                       topicId: 1, admin: false, moderator: true, staff: true,
-                       actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)],
-                       replyToPostNumber: nil, actionCode: nil),
-            markdown: PreviewData.richMarkdown,
-            baseURL: PreviewData.baseURL,
-            availableWidth: width
-        )
-        .frame(height: PostCellPreview.measuredHeight(
-            postNumber: 3,
-            markdown: PreviewData.richMarkdown,
-            availableWidth: width
-        ))
-    }
-    .frame(width: width, height: 800)
 }
 #else
 #Preview("Post View — Staff") {
