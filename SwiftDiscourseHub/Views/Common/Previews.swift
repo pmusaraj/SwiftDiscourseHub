@@ -64,6 +64,59 @@ enum PreviewData {
     3. Test across browsers
     """
 
+    static let quoteMarkdown = """
+    > **codinghorror:**
+    > I think we should reconsider the approach to theme modifiers.
+    > The current API is too complex for most plugin developers.
+
+    I agree with this! The `ThemeModifier` API should be simpler.
+
+    > **sam:**
+    > We could add a convenience wrapper that handles the common cases.
+
+    That's exactly what I had in mind. Here's a quick example:
+
+    ```javascript
+    api.modifyTheme("my-theme", {
+      borderLeft: "3px solid var(--tertiary)"
+    });
+    ```
+    """
+
+    static let imageMarkdown = """
+    Check out the new dashboard design:
+
+    ![Dashboard screenshot](https://meta.discourse.org/uploads/default/original/3X/a/b/abc123.png#dim=690x400)
+
+    And here's the mobile view:
+
+    ![Mobile view](https://meta.discourse.org/uploads/default/original/3X/d/e/def456.png#dim=400x700)
+
+    Let me know what you think of the layout!
+    """
+
+    static let richMarkdown = """
+    Great news everyone! The new release is out.
+
+    > **eviltrout:**
+    > When can we expect the migration guide?
+
+    The guide is ready. Here's a screenshot of the new settings panel:
+
+    ![Settings](https://meta.discourse.org/uploads/default/original/3X/g/h/ghi789.png#dim=600x350)
+
+    Key changes:
+
+    1. **Improved** sidebar navigation
+    2. New **dark mode** toggle
+    3. Better mobile responsiveness
+
+    > This is a simple blockquote without attribution,
+    > showing how plain quotes render.
+
+    See the [full changelog](https://meta.discourse.org/t/changelog) for details.
+    """
+
     static let topic = Topic(
         id: 1,
         title: "How to customize the look and feel of your Discourse forum",
@@ -346,8 +399,143 @@ enum PreviewData {
     )
 }
 
+// MARK: - PostCell Preview Wrapper (iOS)
+
+#if os(iOS)
+import UIKit
+
+/// Wraps a UIKit PostCell for use in SwiftUI previews.
+private struct PostCellPreview: UIViewRepresentable {
+    let post: Post
+    let markdown: String?
+    let baseURL: String
+    let availableWidth: CGFloat
+    var isLiked: Bool = false
+
+    private static let sizeCache = PostCellSizeCache()
+
+    func makeUIView(context: Context) -> PostCell {
+        let cell = PostCell(frame: CGRect(x: 0, y: 0, width: availableWidth, height: 200))
+        configure(cell)
+        return cell
+    }
+
+    func updateUIView(_ cell: PostCell, context: Context) {
+        configure(cell)
+    }
+
+    private func configure(_ cell: PostCell) {
+        let pn = post.postNumber ?? 0
+        var measured: PostCellSizeCache.MeasuredPost?
+        if let md = markdown {
+            measured = Self.sizeCache.measure(postNumber: pn, markdown: md, availableWidth: availableWidth)
+        }
+        cell.configure(post: post, measured: measured, baseURL: baseURL, isLiked: isLiked, availableWidth: availableWidth)
+    }
+
+    /// Returns the measured height for sizing the preview frame.
+    static func measuredHeight(postNumber: Int, markdown: String?, availableWidth: CGFloat) -> CGFloat {
+        guard let md = markdown else { return 200 }
+        let measured = sizeCache.measure(postNumber: postNumber, markdown: md, availableWidth: availableWidth)
+        return measured.totalHeight
+    }
+}
+#endif
+
 // MARK: - PostView
 
+#if os(iOS)
+#Preview("Post Cell — Rich Content") {
+    let width: CGFloat = 393
+    ScrollView {
+        VStack(spacing: 0) {
+            PostCellPreview(
+                post: PreviewData.post,
+                markdown: PreviewData.sampleMarkdown,
+                baseURL: PreviewData.baseURL,
+                availableWidth: width
+            )
+            .frame(height: PostCellPreview.measuredHeight(
+                postNumber: PreviewData.post.postNumber ?? 0,
+                markdown: PreviewData.sampleMarkdown,
+                availableWidth: width
+            ))
+
+            PostCellPreview(
+                post: PreviewData.post2,
+                markdown: PreviewData.shortMarkdown,
+                baseURL: PreviewData.baseURL,
+                availableWidth: width
+            )
+            .frame(height: PostCellPreview.measuredHeight(
+                postNumber: PreviewData.post2.postNumber ?? 0,
+                markdown: PreviewData.shortMarkdown,
+                availableWidth: width
+            ))
+        }
+    }
+    .frame(width: width, height: 800)
+}
+
+#Preview("Post Cell — Quotes") {
+    let width: CGFloat = 393
+    ScrollView {
+        PostCellPreview(
+            post: PreviewData.post2,
+            markdown: PreviewData.quoteMarkdown,
+            baseURL: PreviewData.baseURL,
+            availableWidth: width
+        )
+        .frame(height: PostCellPreview.measuredHeight(
+            postNumber: PreviewData.post2.postNumber ?? 0,
+            markdown: PreviewData.quoteMarkdown,
+            availableWidth: width
+        ))
+    }
+    .frame(width: width, height: 600)
+}
+
+#Preview("Post Cell — Images") {
+    let width: CGFloat = 393
+    ScrollView {
+        PostCellPreview(
+            post: PreviewData.post,
+            markdown: PreviewData.imageMarkdown,
+            baseURL: PreviewData.baseURL,
+            availableWidth: width
+        )
+        .frame(height: PostCellPreview.measuredHeight(
+            postNumber: PreviewData.post.postNumber ?? 0,
+            markdown: PreviewData.imageMarkdown,
+            availableWidth: width
+        ))
+    }
+    .frame(width: width, height: 800)
+}
+
+#Preview("Post Cell — Mixed") {
+    let width: CGFloat = 393
+    ScrollView {
+        PostCellPreview(
+            post: Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
+                       createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
+                       postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
+                       topicId: 1, admin: false, moderator: true, staff: true,
+                       actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)],
+                       replyToPostNumber: nil, actionCode: nil),
+            markdown: PreviewData.richMarkdown,
+            baseURL: PreviewData.baseURL,
+            availableWidth: width
+        )
+        .frame(height: PostCellPreview.measuredHeight(
+            postNumber: 3,
+            markdown: PreviewData.richMarkdown,
+            availableWidth: width
+        ))
+    }
+    .frame(width: width, height: 800)
+}
+#else
 #Preview("Post View — Staff") {
     ScrollView {
         PostView(post: PreviewData.post, baseURL: PreviewData.baseURL, markdown: PreviewData.sampleMarkdown, contentWidth: 600)
@@ -356,6 +544,7 @@ enum PreviewData {
     }
     .frame(width: 600, height: 800)
 }
+#endif
 
 // MARK: - TopicRowView
 
@@ -436,13 +625,17 @@ private struct TopicHeaderPreview: View {
 
 // MARK: - Topic View
 
+#if os(iOS)
 #Preview("Topic View") {
     TopicViewPreview()
-        .frame(width: 700, height: 900)
+        .frame(width: 393, height: 900)
 }
 
 private struct TopicViewPreview: View {
     @State private var composerText = ""
+
+    private static let previewWidth: CGFloat = 393
+    private static let sizeCache = PostCellSizeCache()
 
     private var posts: [Post] {[
         PreviewData.post,
@@ -463,12 +656,6 @@ private struct TopicViewPreview: View {
              postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
              topicId: 1, admin: false, moderator: false, staff: false,
              actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)], replyToPostNumber: 3, actionCode: nil),
-        // Whisper post
-        Post(id: 7, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
-             createdAt: "2025-12-18T17:00:00.000Z", cooked: nil, postNumber: 6,
-             postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
-             topicId: 1, admin: true, moderator: false, staff: true,
-             actionsSummary: nil, replyToPostNumber: nil, actionCode: nil),
         Post(id: 5, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
              createdAt: "2025-12-19T11:00:00.000Z", cooked: nil, postNumber: 7,
              postType: 1, replyCount: 0, readsCount: 30, score: 1.5, yours: true,
@@ -479,32 +666,8 @@ private struct TopicViewPreview: View {
     private let markdowns: [Int: String] = [
         1: PreviewData.sampleMarkdown,
         2: PreviewData.shortMarkdown,
-        3: """
-        Great points @sam! I'd also recommend looking into the `ThemeModifier` API \
-        which gives you fine-grained control over individual components.
-
-        ```javascript
-        api.modifyClass("component:topic-list-item", {
-          pluginId: "my-theme",
-          didInsertElement() {
-            this.element.style.borderLeft = "3px solid var(--tertiary)";
-          }
-        });
-        ```
-        """,
-        // 4 is a small action — no markdown
-        5: """
-        > Great points @sam!
-
-        Thanks @eviltrout! That's exactly what I was looking for. \
-        The `ThemeModifier` approach is much cleaner than what I had before.
-
-        One follow-up question: does this work with **child themes** as well?
-        """,
-        6: """
-        *This is a staff-only note: the user's account was flagged for review \
-        but it looks like a false positive. Clearing the flag now.*
-        """,
+        3: PreviewData.quoteMarkdown,
+        5: PreviewData.richMarkdown,
         7: """
         Yes, child themes inherit all modifiers from the parent. You can also \
         override specific modifiers in the child theme if needed.
@@ -553,16 +716,24 @@ private struct TopicViewPreview: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(posts) { post in
-                        PostView(
-                            post: post,
-                            baseURL: PreviewData.baseURL,
-                            markdown: markdowns[post.postNumber ?? 0],
-                            contentWidth: 700,
-                            isLiked: post.hasLiked
-                        )
-                        .id(post.id)
-                        if post.id != posts.last?.id {
-                            Divider()
+                        if post.postType == 3 {
+                            SmallActionView(post: post)
+                                .padding(.horizontal)
+                        } else {
+                            let pn = post.postNumber ?? 0
+                            let md = markdowns[pn]
+                            PostCellPreview(
+                                post: post,
+                                markdown: md,
+                                baseURL: PreviewData.baseURL,
+                                availableWidth: Self.previewWidth,
+                                isLiked: post.hasLiked
+                            )
+                            .frame(height: PostCellPreview.measuredHeight(
+                                postNumber: pn,
+                                markdown: md,
+                                availableWidth: Self.previewWidth
+                            ))
                         }
                     }
                 }
@@ -612,6 +783,41 @@ private struct TopicViewPreview: View {
         }
     }
 }
+#else
+#Preview("Topic View") {
+    TopicViewPreview()
+        .frame(width: 700, height: 900)
+}
+
+private struct TopicViewPreview: View {
+    @State private var composerText = ""
+
+    private var posts: [Post] {[
+        PreviewData.post,
+        PreviewData.post2,
+    ]}
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(posts) { post in
+                        PostView(
+                            post: post,
+                            baseURL: PreviewData.baseURL,
+                            markdown: post.id == 1 ? PreviewData.sampleMarkdown : PreviewData.shortMarkdown,
+                            contentWidth: 700,
+                            isLiked: post.hasLiked
+                        )
+                        .id(post.id)
+                        Divider()
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
 
 // MARK: - Small Actions
 
@@ -628,6 +834,27 @@ private struct TopicViewPreview: View {
 
 // MARK: - Whisper Post
 
+#if os(iOS)
+#Preview("Whisper Post") {
+    let width: CGFloat = 393
+    let md = "*Staff note: this user's account was reviewed and cleared.*"
+    PostCellPreview(
+        post: Post(
+            id: 200, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+            createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: 3,
+            postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
+            topicId: 1, admin: true, moderator: false, staff: true,
+            actionsSummary: nil, replyToPostNumber: nil, actionCode: nil
+        ),
+        markdown: md,
+        baseURL: PreviewData.baseURL,
+        availableWidth: width
+    )
+    .frame(width: width, height: PostCellPreview.measuredHeight(
+        postNumber: 3, markdown: md, availableWidth: width
+    ))
+}
+#else
 #Preview("Whisper Post") {
     PostView(
         post: Post(
@@ -644,6 +871,7 @@ private struct TopicViewPreview: View {
     )
     .frame(width: 500)
 }
+#endif
 
 // MARK: - Discover Site Card
 
