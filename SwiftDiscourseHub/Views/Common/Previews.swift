@@ -442,67 +442,6 @@ private struct PostCellPreview: UIViewRepresentable {
 }
 #endif
 
-// MARK: - Post Cells
-
-#if os(iOS)
-#Preview("Post Cells") {
-    PostCellsPreview()
-        .frame(width: 393, height: 900)
-}
-
-private struct PostCellsPreview: View {
-    private static let width: CGFloat = 393
-
-    private let entries: [(Post, String)] = [
-        (PreviewData.post, PreviewData.sampleMarkdown),
-        (PreviewData.post2, PreviewData.quoteMarkdown),
-        (Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
-              createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
-              postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
-              topicId: 1, admin: false, moderator: true, staff: true,
-              actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)],
-              replyToPostNumber: nil, actionCode: nil),
-         PreviewData.richMarkdown),
-        (Post(id: 4, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
-              createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 4,
-              postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
-              topicId: 1, admin: false, moderator: false, staff: false,
-              actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)],
-              replyToPostNumber: 3, actionCode: nil),
-         PreviewData.imageMarkdown),
-    ]
-
-    var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(entries, id: \.0.id) { post, md in
-                    let pn = post.postNumber ?? 0
-                    PostCellPreview(
-                        post: post,
-                        markdown: md,
-                        baseURL: PreviewData.baseURL,
-                        availableWidth: Self.width,
-                        isLiked: post.hasLiked
-                    )
-                    .frame(height: PostCellPreview.measuredHeight(
-                        postNumber: pn, markdown: md, availableWidth: Self.width
-                    ))
-                }
-            }
-        }
-    }
-}
-#else
-#Preview("Post View — Staff") {
-    ScrollView {
-        PostView(post: PreviewData.post, baseURL: PreviewData.baseURL, markdown: PreviewData.sampleMarkdown, contentWidth: 600)
-        Divider()
-        PostView(post: PreviewData.post2, baseURL: PreviewData.baseURL, markdown: PreviewData.shortMarkdown, contentWidth: 600)
-    }
-    .frame(width: 600, height: 800)
-}
-#endif
-
 // MARK: - TopicRowView
 
 #Preview("Topic Row") {
@@ -522,7 +461,7 @@ private struct PostCellsPreview: View {
     .frame(width: 400, height: 700)
 }
 
-// MARK: - CategoryBadgeView
+// MARK: - Category Badges
 
 #Preview("Category Badges") {
     HStack(spacing: 12) {
@@ -532,52 +471,6 @@ private struct PostCellsPreview: View {
         CategoryBadgeView(name: "Support", color: "808080")
     }
     .padding()
-}
-
-// MARK: - Topic Header (standalone)
-
-#Preview("Topic Header") {
-    VStack(spacing: 0) {
-        TopicHeaderPreview()
-        Divider()
-        Spacer()
-    }
-    .frame(width: 600, height: 200)
-}
-
-private struct TopicHeaderPreview: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(PreviewData.topic.title ?? "Untitled")
-                .font(Theme.Fonts.topicHeaderTitle)
-                .lineLimit(Theme.LineLimit.topicHeaderTitle)
-
-            HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
-                CategoryBadgeView(name: "Feature", color: "25AAE2")
-
-                Label("^[\(41) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
-
-                Spacer()
-
-                Menu {
-                    Button { } label: {
-                        Label("Open in Safari", systemImage: "safari")
-                    }
-                    Button { } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-                .buttonStyle(.plain)
-            }
-            .font(Theme.Fonts.metadata)
-            .foregroundStyle(.secondary)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.bar)
-    }
 }
 
 // MARK: - Topic View
@@ -592,29 +485,79 @@ private struct TopicViewPreview: View {
     @State private var composerText = ""
 
     private static let previewWidth: CGFloat = 393
-    private static let sizeCache = PostCellSizeCache()
 
     private var posts: [Post] {[
+        // #1 — OP with rich markdown (code, lists, tables, blockquote)
         PreviewData.post,
+        // #2 — short reply
         PreviewData.post2,
+        // #3 — moderator reply with nested quotes + code
         Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
              createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
              postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
              topicId: 1, admin: false, moderator: true, staff: true,
-             actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)], replyToPostNumber: nil, actionCode: nil),
-        // Small action: topic closed
+             actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)],
+             replyToPostNumber: nil, actionCode: nil),
+        // #4 — small action: topic closed
         Post(id: 6, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
              createdAt: "2025-12-17T12:00:00.000Z", cooked: nil, postNumber: 4,
              postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
              topicId: 1, admin: true, moderator: false, staff: true,
              actionsSummary: nil, replyToPostNumber: nil, actionCode: "closed.enabled"),
+        // #5 — reply with quotes + images
         Post(id: 4, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
              createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 5,
              postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
              topicId: 1, admin: false, moderator: false, staff: false,
-             actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)], replyToPostNumber: 3, actionCode: nil),
+             actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)],
+             replyToPostNumber: 3, actionCode: nil),
+        // #6 — small action: topic reopened
+        Post(id: 7, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+             createdAt: "2025-12-18T17:00:00.000Z", cooked: nil, postNumber: 6,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "closed.disabled"),
+        // #7 — image-heavy post
+        Post(id: 8, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
+             createdAt: "2025-12-19T09:00:00.000Z", cooked: nil, postNumber: 7,
+             postType: 1, replyCount: 2, readsCount: 70, score: 4.0, yours: false,
+             topicId: 1, admin: false, moderator: true, staff: true,
+             actionsSummary: [ActionSummary(id: 2, count: 8, acted: false)],
+             replyToPostNumber: nil, actionCode: nil),
+        // #8 — whisper (staff-only)
+        Post(id: 9, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+             createdAt: "2025-12-19T10:00:00.000Z", cooked: nil, postNumber: 8,
+             postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: nil),
+        // #9 — small action: tags changed
+        Post(id: 10, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
+             createdAt: "2025-12-19T11:00:00.000Z", cooked: nil, postNumber: 9,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: false, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "tags_changed"),
+        // #10 — follow-up reply
+        Post(id: 11, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
+             createdAt: "2025-12-19T14:30:00.000Z", cooked: nil, postNumber: 10,
+             postType: 1, replyCount: 0, readsCount: 40, score: 2.0, yours: false,
+             topicId: 1, admin: false, moderator: false, staff: false,
+             actionsSummary: [ActionSummary(id: 2, count: 2, acted: false)],
+             replyToPostNumber: 7, actionCode: nil),
+        // #11 — short acknowledgment
+        Post(id: 12, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
+             createdAt: "2025-12-20T08:00:00.000Z", cooked: nil, postNumber: 11,
+             postType: 1, replyCount: 0, readsCount: 35, score: 1.5, yours: false,
+             topicId: 1, admin: false, moderator: true, staff: true,
+             actionsSummary: [], replyToPostNumber: 10, actionCode: nil),
+        // #12 — small action: pinned
+        Post(id: 13, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
+             createdAt: "2025-12-20T09:00:00.000Z", cooked: nil, postNumber: 12,
+             postType: 3, replyCount: nil, readsCount: nil, score: nil, yours: false,
+             topicId: 1, admin: true, moderator: false, staff: true,
+             actionsSummary: nil, replyToPostNumber: nil, actionCode: "pinned.enabled"),
+        // #13 — own final post
         Post(id: 5, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
-             createdAt: "2025-12-19T11:00:00.000Z", cooked: nil, postNumber: 7,
+             createdAt: "2025-12-20T11:00:00.000Z", cooked: nil, postNumber: 13,
              postType: 1, replyCount: 0, readsCount: 30, score: 1.5, yours: true,
              topicId: 1, admin: true, moderator: false, staff: true,
              actionsSummary: [], replyToPostNumber: nil, actionCode: nil),
@@ -625,11 +568,25 @@ private struct TopicViewPreview: View {
         2: PreviewData.shortMarkdown,
         3: PreviewData.quoteMarkdown,
         5: PreviewData.richMarkdown,
-        7: """
-        Yes, child themes inherit all modifiers from the parent. You can also \
-        override specific modifiers in the child theme if needed.
+        7: PreviewData.imageMarkdown,
+        8: "*Staff note: this user's account was flagged for review but it looks like a false positive. Clearing the flag now.*",
+        10: """
+        Thanks for the screenshots! The mobile view looks much better now.
 
-        See the [theme documentation](https://meta.discourse.org/t/themes) for more details.
+        > **eviltrout:**
+        > And here's the mobile view
+
+        One small suggestion: the navigation bar could use a bit more contrast in dark mode. Otherwise this is ready to ship.
+        """,
+        11: """
+        Good catch on the dark mode contrast. I'll push a fix for that today.
+
+        See the [updated PR](https://meta.discourse.org/t/themes/pr/42) for the changes.
+        """,
+        13: """
+        Everything looks great! Merging this now.
+
+        Thanks everyone for the thorough review and feedback.
         """,
     ]
 
@@ -644,7 +601,7 @@ private struct TopicViewPreview: View {
                 HStack(spacing: Theme.Spacing.topicHeaderMetadata) {
                     CategoryBadgeView(name: "Feature", color: "25AAE2")
 
-                    Label("^[\(41) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
+                    Label("^[\(12) reply](inflect: true)", systemImage: "bubble.left.and.bubble.right")
 
                     Spacer()
 
@@ -742,91 +699,12 @@ private struct TopicViewPreview: View {
 }
 #else
 #Preview("Topic View") {
-    TopicViewPreview()
-        .frame(width: 700, height: 900)
-}
-
-private struct TopicViewPreview: View {
-    @State private var composerText = ""
-
-    private var posts: [Post] {[
-        PreviewData.post,
-        PreviewData.post2,
-    ]}
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(posts) { post in
-                        PostView(
-                            post: post,
-                            baseURL: PreviewData.baseURL,
-                            markdown: post.id == 1 ? PreviewData.sampleMarkdown : PreviewData.shortMarkdown,
-                            contentWidth: 700,
-                            isLiked: post.hasLiked
-                        )
-                        .id(post.id)
-                        Divider()
-                    }
-                }
-            }
-        }
+    ScrollView {
+        PostView(post: PreviewData.post, baseURL: PreviewData.baseURL, markdown: PreviewData.sampleMarkdown, contentWidth: 600)
+        Divider()
+        PostView(post: PreviewData.post2, baseURL: PreviewData.baseURL, markdown: PreviewData.shortMarkdown, contentWidth: 600)
     }
-}
-#endif
-
-// MARK: - Small Actions
-
-#Preview("Small Actions") {
-    VStack(spacing: 0) {
-        ForEach(PreviewData.smallActionPosts) { post in
-            SmallActionView(post: post)
-            Divider()
-        }
-    }
-    .padding(.horizontal)
-    .frame(width: 500)
-}
-
-// MARK: - Whisper Post
-
-#if os(iOS)
-#Preview("Whisper Post") {
-    let width: CGFloat = 393
-    let md = "*Staff note: this user's account was reviewed and cleared.*"
-    PostCellPreview(
-        post: Post(
-            id: 200, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
-            createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: 3,
-            postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
-            topicId: 1, admin: true, moderator: false, staff: true,
-            actionsSummary: nil, replyToPostNumber: nil, actionCode: nil
-        ),
-        markdown: md,
-        baseURL: PreviewData.baseURL,
-        availableWidth: width
-    )
-    .frame(width: width, height: PostCellPreview.measuredHeight(
-        postNumber: 3, markdown: md, availableWidth: width
-    ))
-}
-#else
-#Preview("Whisper Post") {
-    PostView(
-        post: Post(
-            id: 200, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
-            createdAt: "2026-03-15T10:00:00.000Z", cooked: nil, postNumber: 3,
-            postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
-            topicId: 1, admin: true, moderator: false, staff: true,
-            actionsSummary: nil, replyToPostNumber: nil, actionCode: nil
-        ),
-        baseURL: PreviewData.baseURL,
-        markdown: "*Staff note: this user's account was reviewed and cleared.*",
-        contentWidth: 500,
-        isWhisper: true
-    )
-    .frame(width: 500)
+    .frame(width: 600, height: 800)
 }
 #endif
 
