@@ -47,6 +47,7 @@ struct TopicDetailView: View {
     @State private var scrollToPostId: Int?
     @State private var scrollAnchor: UnitPoint = .bottom
     @State private var headerHeight: CGFloat = 0
+    @State private var suppressAutoLoad = false
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
@@ -190,6 +191,7 @@ struct TopicDetailView: View {
             onScrollConsumed: {
                 scrollToPostId = nil
                 scrollAnchor = .bottom
+                suppressAutoLoad = false
             }
         )
         #else
@@ -227,6 +229,11 @@ struct TopicDetailView: View {
                     }
                     scrollToPostId = nil
                     scrollAnchor = .bottom
+                    if suppressAutoLoad {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            suppressAutoLoad = false
+                        }
+                    }
                 }
             }
         }
@@ -267,6 +274,7 @@ struct TopicDetailView: View {
         Color.clear.frame(height: 0)
             .id(post.id)
             .onAppear {
+                guard !suppressAutoLoad else { return }
                 let items = dataSource.items
                 let postItem = StreamItem.post(post)
                 guard let idx = items.firstIndex(of: postItem) else { return }
@@ -473,6 +481,7 @@ struct TopicDetailView: View {
 
         do {
             if let postId = try await dataSource.loadInitial(nearPost: postNumber) {
+                suppressAutoLoad = true
                 scrollAnchor = .center
                 scrollToPostId = postId
             }
