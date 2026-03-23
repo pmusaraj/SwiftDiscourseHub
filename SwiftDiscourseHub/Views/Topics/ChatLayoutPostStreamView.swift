@@ -67,6 +67,22 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
             coord.configurePostCell(cell, item: item, indexPath: indexPath)
         }
 
+        let smallActionCellReg = UICollectionView.CellRegistration<UICollectionViewCell, StreamItem> {
+            cell, _, item in
+            if case .post(let post) = item {
+                cell.contentConfiguration = UIHostingConfiguration {
+                    SmallActionView(post: post)
+                        .padding(.horizontal, Theme.Padding.postHorizontal(for: UIScreen.main.bounds.width))
+                        .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(Color(UIColor.separator))
+                                .frame(height: 1.0 / UIScreen.main.scale)
+                        }
+                }
+                .margins(.all, 0)
+            }
+        }
+
         let placeholderCellReg = UICollectionView.CellRegistration<UICollectionViewCell, StreamItem> {
             cell, _, item in
             if case .placeholder(_, let count) = item {
@@ -93,6 +109,8 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
         let ds = UICollectionViewDiffableDataSource<Int, StreamItem>(collectionView: cv) {
             (collectionView, indexPath, item) -> UICollectionViewCell? in
             switch item {
+            case .post(let post) where post.isSmallAction:
+                return collectionView.dequeueConfiguredReusableCell(using: smallActionCellReg, for: indexPath, item: item)
             case .post:
                 return collectionView.dequeueConfiguredReusableCell(using: postCellReg, for: indexPath, item: item)
             case .placeholder:
@@ -298,6 +316,7 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
             guard width > 0 else { return }
             for item in items {
                 if case .post(let post) = item,
+                   !post.isSmallAction,
                    let pn = post.postNumber,
                    let md = markdown[pn],
                    sizeCache.get(pn) == nil {
@@ -336,6 +355,9 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
             }
 
             switch items[indexPath.item] {
+            case .post(let post) where post.isSmallAction:
+                return .estimated(CGSize(width: chatLayout.layoutFrame.width, height: 44))
+
             case .post(let post):
                 if let pn = post.postNumber, let measured = sizeCache.get(pn) {
                     return .exact(CGSize(width: chatLayout.layoutFrame.width, height: measured.totalHeight))
