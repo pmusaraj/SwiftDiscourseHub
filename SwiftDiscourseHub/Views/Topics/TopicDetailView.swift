@@ -390,8 +390,7 @@ struct TopicDetailView: View {
                         }
                         ShareLink(item: url)
                     } label: {
-                        Image(systemName: "line.3.horizontal")
-                            .scaleEffect(1.25)
+                        Image(systemName: "line.3.horizontal.circle")
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }

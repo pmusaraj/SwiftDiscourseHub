@@ -289,6 +289,7 @@ final class PostCell: UICollectionViewCell {
                     // Trigger text view to redraw with the loaded image
                     let current = self.bodyTextView.attributedText
                     self.bodyTextView.attributedText = current
+                    self.bodyTextView.layoutManager.invalidateDisplay(forCharacterRange: range)
                 }
             }
             imageTasks.append(task)

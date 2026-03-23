@@ -231,7 +231,7 @@ struct TopicListView: View {
             }
         } label: {
             #if os(macOS)
-            Image(systemName: "line.3.horizontal.decrease.circle")
+            Image(systemName: "line.3.horizontal.circle")
             #else
             SiteIconView(site: site, isSelected: true)
                 .frame(width: 24, height: 24)
@@ -255,8 +255,12 @@ struct TopicListView: View {
     }
 
     private func scrollToTopOfList() {
-        if let firstId = topicVM.topics.first?.id {
-            listScrollProxy?.scrollTo(firstId, anchor: .top)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let firstId = topicVM.topics.first?.id {
+                withAnimation(.none) {
+                    listScrollProxy?.scrollTo(firstId, anchor: .top)
+                }
+            }
         }
     }
 }
