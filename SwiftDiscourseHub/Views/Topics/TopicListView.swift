@@ -183,8 +183,12 @@ struct TopicListView: View {
             selectedTopic = topicVM.topics.first { $0.id == selectedTopicId }
         }
         .onReceive(NotificationCenter.default.publisher(for: .topicWasRead)) { notification in
-            if let topicId = notification.userInfo?["topicId"] as? Int {
-                topicVM.removeReadTopic(topicId)
+            if let topicId = notification.userInfo?["topicId"] as? Int,
+               let highestRead = notification.userInfo?["highestReadPost"] as? Int {
+                topicVM.markTopicAsRead(topicId, throughPost: highestRead)
+                if selectedTopicId == topicId {
+                    selectedTopic = topicVM.topics.first { $0.id == topicId }
+                }
             }
         }
     }

@@ -168,12 +168,19 @@ final class TopicListViewModel {
         }
     }
 
-    func removeReadTopic(_ topicId: Int) {
-        guard filter == .new else { return }
-        Task {
-            try? await Task.sleep(for: .seconds(1))
-            withAnimation(.easeInOut(duration: 0.3)) {
-                topics.removeAll { $0.id == topicId }
+    func markTopicAsRead(_ topicId: Int, throughPost postNumber: Int) {
+        if let idx = topics.firstIndex(where: { $0.id == topicId }) {
+            let current = topics[idx].lastReadPostNumber ?? 0
+            if postNumber > current {
+                topics[idx].lastReadPostNumber = postNumber
+            }
+        }
+        if filter == .new {
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    topics.removeAll { $0.id == topicId }
+                }
             }
         }
     }

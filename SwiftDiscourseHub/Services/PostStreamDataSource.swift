@@ -57,6 +57,11 @@ final class PostStreamDataSource {
         items.count(where: { if case .post = $0 { return true }; return false })
     }
 
+    /// Highest post number among loaded posts.
+    var highestLoadedPostNumber: Int {
+        items.compactMap { if case .post(let p) = $0 { return p.postNumber }; return nil }.max() ?? 0
+    }
+
     // MARK: - Setup
 
     func configure(apiClient: DiscourseAPIClient, baseURL: String, topicId: Int) {

@@ -36,7 +36,7 @@ struct Topic: Codable, Identifiable {
     let categoryId: Int?
     let posters: [Poster]?
     let imageUrl: String?
-    let lastReadPostNumber: Int?
+    var lastReadPostNumber: Int?
 }
 
 struct Poster: Codable {

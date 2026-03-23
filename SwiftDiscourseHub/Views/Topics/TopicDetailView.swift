@@ -48,6 +48,7 @@ struct TopicDetailView: View {
     @State private var scrollAnchor: UnitPoint = .bottom
     @State private var headerHeight: CGFloat = 0
     @State private var suppressAutoLoad = false
+    @State private var timingsTimer: Timer?
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
@@ -138,9 +139,19 @@ struct TopicDetailView: View {
             await loadTopic(nearPost: startPostNumber)
         }
         .onDisappear {
+            timingsTimer?.invalidate()
+            timingsTimer = nil
             dataSource.stopPrefetching()
             if site.isAuthenticated {
+                let highestRead = dataSource.highestLoadedPostNumber
                 Task { await dataSource.sendTimings() }
+                if highestRead > 0 {
+                    NotificationCenter.default.post(
+                        name: .topicWasRead,
+                        object: nil,
+                        userInfo: ["topicId": topicId, "highestReadPost": highestRead]
+                    )
+                }
             }
         }
         .navigationDestination(for: LinkedTopicDestination.self) { dest in
@@ -489,6 +500,17 @@ struct TopicDetailView: View {
             self.error = error.localizedDescription
         }
         isLoading = false
+        startTimingsTimer()
+    }
+
+    private func startTimingsTimer() {
+        timingsTimer?.invalidate()
+        guard site.isAuthenticated else { return }
+        timingsTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            Task { @MainActor in
+                await dataSource.sendTimings()
+            }
+        }
     }
 
     // MARK: - Jump to Post

@@ -108,11 +108,12 @@ final class TopicReadTracker {
                 log.debug("Flushed timings for topic \(tid): \(payload.count) posts, \(time)ms total")
 
                 if shouldNotify {
+                    let highest = payload.keys.max() ?? 0
                     await MainActor.run {
                         NotificationCenter.default.post(
                             name: .topicWasRead,
                             object: nil,
-                            userInfo: ["topicId": tid]
+                            userInfo: ["topicId": tid, "highestReadPost": highest]
                         )
                     }
                 }
