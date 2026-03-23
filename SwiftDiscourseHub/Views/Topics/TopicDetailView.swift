@@ -263,8 +263,19 @@ struct TopicDetailView: View {
         Divider()
         Color.clear.frame(height: 0)
             .id(post.id)
-            .onAppear { }
-            .onDisappear { }
+            .onAppear {
+                let items = dataSource.items
+                let postItem = StreamItem.post(post)
+                guard let idx = items.firstIndex(of: postItem) else { return }
+                // Load newer when within 3 posts of the end
+                if idx >= items.count - 3, dataSource.canLoadNewer, !dataSource.isLoadingNewer {
+                    Task { await dataSource.loadNewer() }
+                }
+                // Load older when within 3 posts of the start
+                if idx <= 2, dataSource.canLoadOlder, !dataSource.isLoadingOlder {
+                    Task { await dataSource.loadOlder() }
+                }
+            }
     }
     #endif
 

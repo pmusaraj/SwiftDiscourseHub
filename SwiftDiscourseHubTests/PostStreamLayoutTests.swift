@@ -1,3 +1,4 @@
+#if os(iOS)
 import Testing
 import Foundation
 import UIKit
@@ -663,3 +664,4 @@ import SwiftUI
         return size.height
     }
 }
+#endif

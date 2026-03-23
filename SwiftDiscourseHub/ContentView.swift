@@ -323,8 +323,7 @@ struct ContentView: View {
     }
 
     private func isFirstResponderTextInput() -> Bool {
-        guard let firstResponder = NSApp.keyWindow?.firstResponder else { return false }
-        return firstResponder is NSTextView || firstResponder is NSTextField
+        KeyboardHelper.isTextInput(NSApp.keyWindow?.firstResponder)
     }
 
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
@@ -423,9 +422,13 @@ struct ContentView: View {
         guard let contentView = NSApp.keyWindow?.contentView else { return nil }
         var scrollViews: [NSScrollView] = []
         collectScrollViews(in: contentView, into: &scrollViews)
-        // The detail column's scroll view is the rightmost large one
+        // The detail column's scroll view is the rightmost large one,
+        // excluding per-post NSScrollViews wrapping NSTextView (from MarkdownNSTextView)
         return scrollViews
-            .filter { $0.frame.width > 200 && $0.frame.height > 200 }
+            .filter { sv in
+                sv.frame.width > 200 && sv.frame.height > 200
+                && !(sv.documentView is NSTextView)
+            }
             .max(by: { $0.convert($0.bounds.origin, to: nil).x < $1.convert($1.bounds.origin, to: nil).x })
     }
 

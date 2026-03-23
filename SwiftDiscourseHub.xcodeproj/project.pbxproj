@@ -71,6 +71,8 @@
 		A20004 /* ComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* ComposerTests.swift */; };
 		A20005 /* PostStreamLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20005 /* PostStreamLayoutTests.swift */; };
 		A20006 /* PostStreamDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20006 /* PostStreamDataSourceTests.swift */; };
+		A10073 /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10073 /* KeyboardHelper.swift */; };
+		A20007 /* KeyboardShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20007 /* KeyboardShortcutTests.swift */; };
 		A30002 /* _CryptoExtras in Frameworks */ = {isa = PBXBuildFile; productRef = R10002 /* _CryptoExtras */; };
 		A30003 /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = R10003 /* Nuke */; };
 		A30004 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = R10004 /* NukeUI */; };
@@ -163,6 +165,8 @@
 		B20004 /* ComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerTests.swift; sourceTree = "<group>"; };
 		B20005 /* PostStreamLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamLayoutTests.swift; sourceTree = "<group>"; };
 		B20006 /* PostStreamDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostStreamDataSourceTests.swift; sourceTree = "<group>"; };
+		B10073 /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
+		B20007 /* KeyboardShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutTests.swift; sourceTree = "<group>"; };
 		C10001 /* SwiftDiscourseHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDiscourseHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C20001 /* SwiftDiscourseHubTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDiscourseHubTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -345,6 +349,7 @@
 			children = (
 				B10025 /* URLHelpers.swift */,
 				B10026 /* Color+Hex.swift */,
+				B10073 /* KeyboardHelper.swift */,
 				B10053 /* FlowLayout.swift */,
 			);
 			path = Utilities;
@@ -391,6 +396,7 @@
 				B20004 /* ComposerTests.swift */,
 				B20005 /* PostStreamLayoutTests.swift */,
 				B20006 /* PostStreamDataSourceTests.swift */,
+				B20007 /* KeyboardShortcutTests.swift */,
 			);
 			path = SwiftDiscourseHubTests;
 			sourceTree = "<group>";
@@ -518,6 +524,7 @@
 				A10024 /* ErrorStateView.swift in Sources */,
 				A10025 /* URLHelpers.swift in Sources */,
 				A10026 /* Color+Hex.swift in Sources */,
+				A10073 /* KeyboardHelper.swift in Sources */,
 				A10028 /* TopicDetailView.swift in Sources */,
 				A10029 /* TopicDetailResponse.swift in Sources */,
 				A10033 /* RawTopicParser.swift in Sources */,
@@ -565,6 +572,7 @@
 				A20004 /* ComposerTests.swift in Sources */,
 				A20005 /* PostStreamLayoutTests.swift in Sources */,
 				A20006 /* PostStreamDataSourceTests.swift in Sources */,
+				A20007 /* KeyboardShortcutTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

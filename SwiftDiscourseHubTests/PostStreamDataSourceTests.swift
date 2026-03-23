@@ -1,3 +1,4 @@
+#if os(iOS)
 import Testing
 import Foundation
 import UIKit
@@ -435,3 +436,4 @@ private func makePosts(ids: [Int]) -> [Post] {
     }
 
 }
+#endif
