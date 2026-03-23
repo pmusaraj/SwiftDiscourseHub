@@ -28,13 +28,13 @@ struct ContentView: View {
 
     private var hasSites: Bool { !sites.isEmpty }
 
-    // TODO: Re-enable jump to last read post
-    // private var nextUnreadPostNumber: Int? {
-    //     guard let site = selectedSite, site.isAuthenticated,
-    //           let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0 else { return nil }
-    //     return lastRead + 1
-    // }
-    private var nextUnreadPostNumber: Int? { nil }
+    private var nextUnreadPostNumber: Int? {
+        guard let site = selectedSite, site.isAuthenticated,
+              let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0,
+              let highest = selectedTopic?.highestPostNumber,
+              lastRead < highest else { return nil }
+        return lastRead + 1
+    }
 
     var body: some View {
         Group {

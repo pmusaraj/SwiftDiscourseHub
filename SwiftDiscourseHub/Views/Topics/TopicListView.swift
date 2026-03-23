@@ -75,6 +75,7 @@ struct TopicListView: View {
                 List {
                     ForEach(topicVM.topics) { topic in
                         Button {
+                            selectedTopic = topic
                             selectedTopicId = topic.id
                         } label: {
                             TopicRowView(

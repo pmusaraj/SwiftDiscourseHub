@@ -428,6 +428,36 @@ final class PostStreamDataSource {
         prefetcher.stopPrefetching()
     }
 
+    // MARK: - Read Tracking
+
+    /// Sends read timings for all loaded posts to mark them as read.
+    /// Uses a minimal timing value (1000ms per post) — just enough for Discourse to register.
+    /// Call once when leaving a topic to avoid excessive API calls.
+    func sendTimings() async {
+        guard apiClient != nil, topicId > 0 else { return }
+
+        var timings: [Int: Int] = [:]
+        for item in items {
+            if case .post(let post) = item, let pn = post.postNumber {
+                timings[pn] = 1000
+            }
+        }
+        guard !timings.isEmpty else { return }
+
+        let topicTime = min(timings.count * 1000, 60000)
+        do {
+            try await apiClient.postTimings(
+                baseURL: baseURL,
+                topicId: topicId,
+                topicTime: topicTime,
+                timings: timings
+            )
+            log.debug("Sent timings for \(timings.count) posts in topic \(self.topicId)")
+        } catch {
+            log.error("Failed to send timings: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Test Helpers
 
     func configureForTesting(

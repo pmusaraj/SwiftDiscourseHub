@@ -138,6 +138,9 @@ struct TopicDetailView: View {
         }
         .onDisappear {
             dataSource.stopPrefetching()
+            if site.isAuthenticated {
+                Task { await dataSource.sendTimings() }
+            }
         }
         .navigationDestination(for: LinkedTopicDestination.self) { dest in
             TopicDetailView(topicId: dest.topicId, site: site, categories: categories)
@@ -380,7 +383,7 @@ struct TopicDetailView: View {
             .foregroundStyle(.secondary)
         }
         .padding(.top, 0)
-        .padding(.bottom, Theme.Padding.postVertical)
+        .padding(.bottom, 0)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.ultraThinMaterial)

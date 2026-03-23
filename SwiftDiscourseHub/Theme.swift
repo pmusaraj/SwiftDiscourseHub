@@ -57,8 +57,8 @@ enum Theme {
         static let postNameItems: CGFloat = 4
         static let postFooterHorizontal: CGFloat = 16
         static let categoryBadgeHorizontal: CGFloat = 4
-        static let topicHeaderVertical: CGFloat = 8
-        static let topicHeaderMetadata: CGFloat = 12
+        static let topicHeaderVertical: CGFloat = 4
+        static let topicHeaderMetadata: CGFloat = 4
     }
 
     // MARK: - Padding

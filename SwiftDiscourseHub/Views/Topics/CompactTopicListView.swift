@@ -7,12 +7,13 @@ struct CompactTopicListView: View {
     @State private var topicCategories: [DiscourseCategory] = []
     @State private var topicVM = TopicListViewModel()
 
-    // TODO: Re-enable jump to last read post
-    // private var nextUnreadPostNumber: Int? {
-    //     guard site.isAuthenticated, let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0 else { return nil }
-    //     return lastRead + 1
-    // }
-    private var nextUnreadPostNumber: Int? { nil }
+    private var nextUnreadPostNumber: Int? {
+        guard site.isAuthenticated,
+              let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0,
+              let highest = selectedTopic?.highestPostNumber,
+              lastRead < highest else { return nil }
+        return lastRead + 1
+    }
 
     var body: some View {
         TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
