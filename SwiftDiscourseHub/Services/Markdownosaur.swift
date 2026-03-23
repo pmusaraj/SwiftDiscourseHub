@@ -78,6 +78,25 @@ extension NSBezierPath {
 final class ScalableImageAttachment: NSTextAttachment {
     var imageURL: String?
     var originalSize: CGSize?
+
+    /// A 1×1 tinted image used as a placeholder while the real image loads.
+    static let placeholderImage: PlatformImage = {
+        let size = CGSize(width: 1, height: 1)
+        #if os(iOS)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            UIColor.label.withAlphaComponent(Theme.Markdown.imagePlaceholderOpacity).setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+        }
+        #else
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.labelColor.withAlphaComponent(Theme.Markdown.imagePlaceholderOpacity).setFill()
+        NSRect(origin: .zero, size: size).fill()
+        image.unlockFocus()
+        return image
+        #endif
+    }()
 }
 
 struct Markdownosaur: MarkupVisitor {
@@ -655,8 +674,7 @@ struct Markdownosaur: MarkupVisitor {
             attachment.bounds = CGRect(x: 0, y: 0, width: maxWidth, height: maxWidth * Theme.Markdown.defaultImageAspect)
         }
 
-        // Placeholder tint
-        attachment.image = PlatformImage()
+        attachment.image = ScalableImageAttachment.placeholderImage
 
         let result = NSMutableAttributedString(attachment: attachment)
         if image.hasSuccessor {

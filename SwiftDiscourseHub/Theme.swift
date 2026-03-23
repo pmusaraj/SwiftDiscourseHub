@@ -162,6 +162,7 @@ enum Theme {
         // Images
         static let defaultImageWidth: CGFloat = 300
         static let defaultImageAspect: CGFloat = 0.56
+        static let imagePlaceholderOpacity: CGFloat = 0.06
     }
 
     // MARK: - Blockquote
