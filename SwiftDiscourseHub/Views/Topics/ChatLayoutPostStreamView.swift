@@ -14,6 +14,7 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
 
     let items: [StreamItem]
     let postMarkdown: [Int: String]
+    let postOneboxes: [Int: [DiscourseMarkdownPreprocessor.OneboxInfo]]
     let avatarLookup: [String: String]
     let baseURL: String
     let contentWidth: CGFloat
@@ -106,7 +107,7 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
         coord.updateFrom(self)
 
         // Pre-measure all initial items
-        coord.preMeasureItems(items, markdown: postMarkdown, width: contentWidth)
+        coord.preMeasureItems(items, markdown: postMarkdown, oneboxes: postOneboxes, width: contentWidth)
 
         var snap = NSDiffableDataSourceSnapshot<Int, StreamItem>()
         snap.appendSections([0])
@@ -130,7 +131,7 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
         }
 
         // Pre-measure any new markdown that arrived
-        coord.preMeasureItems(items, markdown: postMarkdown, width: contentWidth)
+        coord.preMeasureItems(items, markdown: postMarkdown, oneboxes: postOneboxes, width: contentWidth)
 
         let oldIds = coord.currentItemIds
         let newIds = items.map(\.id)
@@ -251,6 +252,7 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
 
         var items: [StreamItem] = []
         var postMarkdown: [Int: String] = [:]
+        var postOneboxes: [Int: [DiscourseMarkdownPreprocessor.OneboxInfo]] = [:]
         var avatarLookup: [String: String] = [:]
         var baseURL: String = ""
         var contentWidth: CGFloat = 0
@@ -272,6 +274,7 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
         func updateFrom(_ parent: ChatLayoutPostStreamView) {
             items = parent.items
             postMarkdown = parent.postMarkdown
+            postOneboxes = parent.postOneboxes
             avatarLookup = parent.avatarLookup
             baseURL = parent.baseURL
             contentWidth = parent.contentWidth
@@ -291,14 +294,14 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
         }
 
         /// Pre-measure posts that have markdown available
-        func preMeasureItems(_ items: [StreamItem], markdown: [Int: String], width: CGFloat) {
+        func preMeasureItems(_ items: [StreamItem], markdown: [Int: String], oneboxes: [Int: [DiscourseMarkdownPreprocessor.OneboxInfo]] = [:], width: CGFloat) {
             guard width > 0 else { return }
             for item in items {
                 if case .post(let post) = item,
                    let pn = post.postNumber,
                    let md = markdown[pn],
                    sizeCache.get(pn) == nil {
-                    _ = sizeCache.measure(postNumber: pn, markdown: md, availableWidth: width)
+                    _ = sizeCache.measure(postNumber: pn, markdown: md, oneboxes: oneboxes[pn] ?? [], availableWidth: width)
                 }
             }
         }

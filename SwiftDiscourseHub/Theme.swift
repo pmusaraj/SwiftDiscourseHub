@@ -176,7 +176,36 @@ enum Theme {
         static let barInset: CGFloat = 0
         static let backgroundOpacity: CGFloat = 0.06
         static let backgroundCornerRadius: CGFloat = 6
-        static let backgroundVerticalPad: CGFloat = 10
+        static let backgroundVerticalPad: CGFloat = 14
+    }
+
+    // MARK: - Syntax Highlighting
+
+    enum SyntaxHighlight {
+        static let keyword = "CC7832"      // orange-brown
+        static let string = "6A8759"       // green
+        static let comment = "808080"      // gray
+        static let number = "6897BB"       // steel blue
+        static let type = "FFC66D"         // warm yellow
+        static let attribute = "BBB529"    // olive
+    }
+
+    // MARK: - Table
+
+    enum Table {
+        static let headerWeight: PlatformFont.Weight = .semibold
+        static let columnGap: CGFloat = 16
+    }
+
+    // MARK: - Rich Link
+
+    enum RichLink {
+        static let borderOpacity: CGFloat = 0.2
+        static let borderWidth: CGFloat = 1.5
+        static let cornerRadius: CGFloat = 8
+        static let horizontalPadding: CGFloat = 16
+        static let verticalPadding: CGFloat = 12
+        static let domainColor = "808080"
     }
 
     // MARK: - Whisper

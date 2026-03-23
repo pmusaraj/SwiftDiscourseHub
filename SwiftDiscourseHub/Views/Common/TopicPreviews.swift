@@ -10,6 +10,7 @@ import UIKit
 private struct PostCellPreview: UIViewRepresentable {
     let post: Post
     let markdown: String?
+    var oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo] = []
     let baseURL: String
     let availableWidth: CGFloat
     var isLiked: Bool = false
@@ -30,15 +31,15 @@ private struct PostCellPreview: UIViewRepresentable {
         let pn = post.postNumber ?? 0
         var measured: PostCellSizeCache.MeasuredPost?
         if let md = markdown {
-            measured = Self.sizeCache.measure(postNumber: pn, markdown: md, availableWidth: availableWidth)
+            measured = Self.sizeCache.measure(postNumber: pn, markdown: md, oneboxes: oneboxes, availableWidth: availableWidth)
         }
         cell.configure(post: post, measured: measured, baseURL: baseURL, isLiked: isLiked, availableWidth: availableWidth)
     }
 
     /// Returns the measured height for sizing the preview frame.
-    static func measuredHeight(postNumber: Int, markdown: String?, availableWidth: CGFloat) -> CGFloat {
+    static func measuredHeight(postNumber: Int, markdown: String?, oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo] = [], availableWidth: CGFloat) -> CGFloat {
         guard let md = markdown else { return 200 }
-        let measured = sizeCache.measure(postNumber: postNumber, markdown: md, availableWidth: availableWidth)
+        let measured = sizeCache.measure(postNumber: postNumber, markdown: md, oneboxes: oneboxes, availableWidth: availableWidth)
         return measured.totalHeight
     }
 }
@@ -171,6 +172,10 @@ private struct TopicViewPreview: View {
         """,
     ]
 
+    private let oneboxes: [Int: [DiscourseMarkdownPreprocessor.OneboxInfo]] = [
+        7: PreviewData.richLinkOneboxes,
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
             // Topic header
@@ -217,6 +222,7 @@ private struct TopicViewPreview: View {
                         } else {
                             let pn = post.postNumber ?? 0
                             let md = markdowns[pn]
+                            let ob = oneboxes[pn] ?? []
                             VStack(spacing: 0) {
                                 if post.isWhisper {
                                     HStack {
@@ -231,6 +237,7 @@ private struct TopicViewPreview: View {
                                 PostCellPreview(
                                     post: post,
                                     markdown: md,
+                                    oneboxes: ob,
                                     baseURL: PreviewData.baseURL,
                                     availableWidth: Self.previewWidth,
                                     isLiked: post.hasLiked
@@ -238,6 +245,7 @@ private struct TopicViewPreview: View {
                                 .frame(height: PostCellPreview.measuredHeight(
                                     postNumber: pn,
                                     markdown: md,
+                                    oneboxes: ob,
                                     availableWidth: Self.previewWidth
                                 ))
                             }
@@ -298,46 +306,47 @@ private struct TopicViewPreview: View {
 }
 
 private struct MacOSTopicViewPreview: View {
-    private let postSamples: [(Post, String)] = [
-        (PreviewData.post, PreviewData.sampleMarkdown),
-        (PreviewData.post2, PreviewData.emojiMarkdown),
+    private let postSamples: [(Post, String, [DiscourseMarkdownPreprocessor.OneboxInfo])] = [
+        (PreviewData.post, PreviewData.sampleMarkdown, []),
+        (PreviewData.post2, PreviewData.emojiMarkdown, []),
         (Post(id: 3, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
               createdAt: "2025-12-17T09:15:00.000Z", cooked: nil, postNumber: 3,
               postType: 1, replyCount: 1, readsCount: 60, score: 3.0, yours: false,
               topicId: 1, admin: false, moderator: true, staff: true,
               actionsSummary: [ActionSummary(id: 2, count: 5, acted: false)],
               replyToPostNumber: nil, actionCode: nil),
-         PreviewData.tableMarkdown),
+         PreviewData.tableMarkdown, []),
         (Post(id: 4, username: "sam", name: "Sam Saffron", avatarTemplate: nil,
               createdAt: "2025-12-18T16:40:00.000Z", cooked: nil, postNumber: 4,
               postType: 1, replyCount: 0, readsCount: 45, score: 2.0, yours: false,
               topicId: 1, admin: false, moderator: false, staff: false,
               actionsSummary: [ActionSummary(id: 2, count: 1, acted: true)],
               replyToPostNumber: 3, actionCode: nil),
-         PreviewData.richLinkMarkdown),
+         PreviewData.richLinkMarkdown, PreviewData.richLinkOneboxes),
         (Post(id: 9, username: "codinghorror", name: "Jeff Atwood", avatarTemplate: nil,
               createdAt: "2025-12-19T10:00:00.000Z", cooked: nil, postNumber: 5,
               postType: 4, replyCount: 0, readsCount: 5, score: 0.5, yours: false,
               topicId: 1, admin: true, moderator: false, staff: true,
               actionsSummary: nil, replyToPostNumber: nil, actionCode: nil),
-         PreviewData.whisperMarkdown),
+         PreviewData.whisperMarkdown, []),
         (Post(id: 8, username: "eviltrout", name: "Robin Ward", avatarTemplate: nil,
               createdAt: "2025-12-19T09:00:00.000Z", cooked: nil, postNumber: 6,
               postType: 1, replyCount: 2, readsCount: 70, score: 4.0, yours: false,
               topicId: 1, admin: false, moderator: true, staff: true,
               actionsSummary: [ActionSummary(id: 2, count: 8, acted: false)],
               replyToPostNumber: nil, actionCode: nil),
-         PreviewData.richMarkdown),
+         PreviewData.richMarkdown, []),
     ]
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(postSamples, id: \.0.id) { post, markdown in
+                ForEach(postSamples, id: \.0.id) { post, markdown, oneboxes in
                     PostView(
                         post: post,
                         baseURL: PreviewData.baseURL,
                         markdown: markdown,
+                        oneboxes: oneboxes,
                         contentWidth: 700,
                         isWhisper: post.isWhisper
                     )

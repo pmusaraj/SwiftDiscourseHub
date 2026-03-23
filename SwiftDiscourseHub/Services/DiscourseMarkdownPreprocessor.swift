@@ -4,10 +4,20 @@ struct LinkedTopicDestination: Hashable {
     let topicId: Int
 }
 
+struct ProcessedMarkdown {
+    let markdown: String
+    let oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo]
+}
+
 struct DiscourseMarkdownPreprocessor {
     let baseURL: String
 
     func process(_ markdown: String, cooked: String? = nil) -> String {
+        let result = processWithOneboxes(markdown, cooked: cooked)
+        return result.markdown
+    }
+
+    func processWithOneboxes(_ markdown: String, cooked: String? = nil) -> ProcessedMarkdown {
         var result = markdown
         result = stripHTML(result)
         result = convertCheckboxes(result)
@@ -17,11 +27,12 @@ struct DiscourseMarkdownPreprocessor {
         result = resolveRelativeImageURLs(result)
         result = convertQuotes(result)
         result = convertDetails(result)
-        result = convertBareURLsToLinks(result, cooked: cooked)
+        let (withLinks, oneboxes) = convertBareURLsToLinks(result, cooked: cooked)
+        result = withLinks
         result = convertMentions(result)
         result = convertEmojiShortcodes(result)
         result = ensureHardBreaks(result)
-        return result
+        return ProcessedMarkdown(markdown: result, oneboxes: oneboxes)
     }
 
     // MARK: - HTML Conversion
@@ -237,21 +248,25 @@ struct DiscourseMarkdownPreprocessor {
         return result
     }
 
-    private func convertBareURLsToLinks(_ markdown: String, cooked: String?) -> String {
-        // Parse onebox data from cooked HTML if available
-        let oneboxes = Self.parseOneboxes(from: cooked)
+    /// Onebox placeholder format: %%ONEBOX:N%% where N is the index into the returned array
+    static let oneboxPlaceholderPattern = #"%%ONEBOX:(\d+)%%"#
+
+    private func convertBareURLsToLinks(_ markdown: String, cooked: String?) -> (String, [OneboxInfo]) {
+        let oneboxMap = Self.parseOneboxes(from: cooked)
 
         // Match bare URLs on their own line
         let pattern = #"^(https?://\S+)\s*$"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines) else {
-            return markdown
+            return (markdown, [])
         }
 
         let range = NSRange(markdown.startIndex..., in: markdown)
         let matches = regex.matches(in: markdown, range: range)
-        if matches.isEmpty { return markdown }
+        if matches.isEmpty { return (markdown, []) }
 
         var result = markdown
+        var collectedOneboxes: [OneboxInfo] = []
+
         for match in matches.reversed() {
             guard let fullRange = Range(match.range, in: result),
                   let urlRange = Range(match.range(at: 1), in: result) else { continue }
@@ -259,26 +274,33 @@ struct DiscourseMarkdownPreprocessor {
             let url = String(result[urlRange])
             let normalizedURL = Self.normalizeURL(url)
 
-            if let info = oneboxes[normalizedURL] ?? oneboxes[url] {
-                // Rich link: render as styled block with title, description, domain
-                var block: [String] = []
-                if let title = info.title {
-                    block.append("**[\(title)](\(url))**")
-                } else {
-                    block.append("**[\(url)](\(url))**")
-                }
-                if let desc = info.description, !desc.isEmpty {
-                    block.append(desc)
-                }
-                block.append("*\(info.domain)*")
-                result.replaceSubrange(fullRange, with: block.joined(separator: "\n"))
+            if let info = oneboxMap[normalizedURL] ?? oneboxMap[url] {
+                let index = collectedOneboxes.count
+                collectedOneboxes.append(info)
+                result.replaceSubrange(fullRange, with: "%%ONEBOX:\(index)%%")
             } else {
-                // Plain link
                 result.replaceSubrange(fullRange, with: "[\(url)](\(url))")
             }
         }
 
-        return result
+        // Reverse because we collected in reverse order
+        collectedOneboxes.reverse()
+        // Fix placeholder indices to match reversed order
+        let count = collectedOneboxes.count
+        if count > 1, let fixRegex = try? NSRegularExpression(pattern: Self.oneboxPlaceholderPattern) {
+            var fixResult = result
+            let fixRange = NSRange(fixResult.startIndex..., in: fixResult)
+            for m in fixRegex.matches(in: fixResult, range: fixRange).reversed() {
+                guard let numRange = Range(m.range(at: 1), in: fixResult),
+                      let fullR = Range(m.range, in: fixResult),
+                      let oldIndex = Int(fixResult[numRange]) else { continue }
+                let newIndex = count - 1 - oldIndex
+                fixResult.replaceSubrange(fullR, with: "%%ONEBOX:\(newIndex)%%")
+            }
+            result = fixResult
+        }
+
+        return (result, collectedOneboxes)
     }
 
     // MARK: - Onebox Parsing from Cooked HTML
@@ -303,9 +325,13 @@ struct DiscourseMarkdownPreprocessor {
 
             let title = stripHTMLTags(firstMatch(in: body, pattern: #"<h[34]>\s*<a[^>]*>(.*?)</a>"#))
             let description = stripHTMLTags(firstMatch(in: body, pattern: #"<p[^>]*>(.*?)</p>"#))
+            let faviconURL = firstMatch(in: body, pattern: #"<img[^>]*\bclass="site-icon"[^>]*\bsrc="([^"]*)"[^>]*/?\s*>"#)
+                ?? firstMatch(in: body, pattern: #"<img[^>]*\bsrc="([^"]*)"[^>]*\bclass="site-icon"[^>]*/?\s*>"#)
+            let imageURL = firstMatch(in: body, pattern: #"<img[^>]*\bclass="thumbnail[^"]*"[^>]*\bsrc="([^"]*)"[^>]*/?\s*>"#)
+                ?? firstMatch(in: body, pattern: #"<img[^>]*\bsrc="([^"]*)"[^>]*\bclass="thumbnail[^"]*"[^>]*/?\s*>"#)
 
             let key = normalizeURL(url)
-            result[key] = OneboxInfo(url: url, title: title, description: description, domain: domainFrom(url))
+            result[key] = OneboxInfo(url: url, title: title, description: description, domain: domainFrom(url), faviconURL: faviconURL, imageURL: imageURL)
         }
 
         return result
@@ -316,6 +342,8 @@ struct DiscourseMarkdownPreprocessor {
         let title: String?
         let description: String?
         let domain: String
+        let faviconURL: String?
+        let imageURL: String?
     }
 
     private static func normalizeURL(_ url: String) -> String {

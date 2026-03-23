@@ -81,6 +81,21 @@ enum PreviewData {
       borderLeft: "3px solid var(--tertiary)"
     });
     ```
+
+    And the Swift equivalent:
+
+    ```swift
+    struct ThemeModifier {
+        let name: String
+        var styles: [String: Any] = [:]
+
+        func apply(to view: UIView) {
+            // Apply border styling
+            view.layer.borderWidth = 3.0
+            view.layer.borderColor = UIColor.systemBlue.cgColor
+        }
+    }
+    ```
     """
 
     static let imageMarkdown = """
@@ -145,16 +160,31 @@ enum PreviewData {
     static let richLinkMarkdown = """
     For anyone interested, here are the relevant discussions:
 
-    https://meta.discourse.org/t/improve-rendering-pipeline/12345
+    %%ONEBOX:0%%
 
     The RFC for the new theme system is also worth reading:
 
-    https://meta.discourse.org/t/rfc-theme-system-v2/67890
-
-    And the original proposal that started it all:
-
-    https://meta.discourse.org/t/native-mobile-apps/11111
+    %%ONEBOX:1%%
     """
+
+    static let richLinkOneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo] = [
+        DiscourseMarkdownPreprocessor.OneboxInfo(
+            url: "https://meta.discourse.org/t/improve-rendering-pipeline/12345",
+            title: "Improve Rendering Pipeline for Mobile",
+            description: "A deep dive into how we can improve the rendering pipeline for native mobile apps, with benchmarks and comparisons.",
+            domain: "meta.discourse.org",
+            faviconURL: "https://meta.discourse.org/uploads/default/optimized/favicon.png",
+            imageURL: nil
+        ),
+        DiscourseMarkdownPreprocessor.OneboxInfo(
+            url: "https://meta.discourse.org/t/rfc-theme-system-v2/67890",
+            title: "RFC: Theme System v2",
+            description: "Proposal for a new theme system with better component isolation and live preview support.",
+            domain: "meta.discourse.org",
+            faviconURL: "https://meta.discourse.org/uploads/default/optimized/favicon.png",
+            imageURL: nil
+        ),
+    ]
 
     static let whisperMarkdown = """
     *Staff note:* this user's account was flagged for review but it looks like a false positive. Clearing the flag now.

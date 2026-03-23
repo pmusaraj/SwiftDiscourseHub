@@ -162,10 +162,12 @@ import Foundation
           </article>
         </aside>
         """
-        let result = preprocessor.process(input, cooked: cooked)
-        #expect(result.contains("**[Example Domain](https://www.example.com/)**"), "Should have bold linked title")
-        #expect(result.contains("An illustrative example."), "Should include description")
-        #expect(result.contains("*example.com*"), "Should include domain in italics")
+        let processed = preprocessor.processWithOneboxes(input, cooked: cooked)
+        #expect(processed.markdown.contains("%%ONEBOX:0%%"), "Should contain onebox placeholder")
+        #expect(processed.oneboxes.count == 1, "Should have one onebox")
+        #expect(processed.oneboxes[0].title == "Example Domain", "Onebox should have title")
+        #expect(processed.oneboxes[0].description == "An illustrative example.", "Onebox should have description")
+        #expect(processed.oneboxes[0].domain == "example.com", "Onebox should have domain")
     }
 
     @Test func convertDetails() {

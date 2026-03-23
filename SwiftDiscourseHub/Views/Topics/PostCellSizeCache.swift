@@ -63,7 +63,7 @@ final class PostCellSizeCache: @unchecked Sendable {
 
     // MARK: - Measurement
 
-    func measure(postNumber: Int, markdown: String, availableWidth: CGFloat) -> MeasuredPost {
+    func measure(postNumber: Int, markdown: String, oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo] = [], availableWidth: CGFloat) -> MeasuredPost {
         if let cached = get(postNumber) {
             return cached
         }
@@ -71,7 +71,7 @@ final class PostCellSizeCache: @unchecked Sendable {
         let hPad = Self.horizontalPadding(for: availableWidth)
         let bodyWidth = availableWidth - hPad * 2
 
-        let attrString = Self.renderMarkdown(markdown, maxImageWidth: bodyWidth)
+        let attrString = Self.renderMarkdown(markdown, oneboxes: oneboxes, maxImageWidth: bodyWidth)
         let bodyHeight = Self.measureHeight(of: attrString, width: bodyWidth)
 
         let totalHeight = Self.verticalPadding
@@ -95,13 +95,16 @@ final class PostCellSizeCache: @unchecked Sendable {
 
     // MARK: - Markdown Rendering
 
-    static func renderMarkdown(_ markdown: String, maxImageWidth: CGFloat = Theme.Markdown.defaultImageWidth) -> NSAttributedString {
+    static func renderMarkdown(_ markdown: String, oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo] = [], maxImageWidth: CGFloat = Theme.Markdown.defaultImageWidth) -> NSAttributedString {
         let document = Document(parsing: markdown)
         var renderer = Markdownosaur(
             baseFont: bodyFont,
             maxImageWidth: maxImageWidth
         )
-        return renderer.attributedString(from: document)
+        if oneboxes.isEmpty {
+            return renderer.attributedString(from: document)
+        }
+        return renderer.attributedString(from: document, oneboxes: oneboxes)
     }
 
     static func measureHeight(of attrString: NSAttributedString, width: CGFloat) -> CGFloat {

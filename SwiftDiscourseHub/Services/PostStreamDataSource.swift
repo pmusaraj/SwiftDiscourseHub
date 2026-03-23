@@ -19,6 +19,7 @@ final class PostStreamDataSource {
 
     private(set) var items: [StreamItem] = []
     var postMarkdown: [Int: String] = [:]
+    var postOneboxes: [Int: [DiscourseMarkdownPreprocessor.OneboxInfo]] = [:]
     var postCooked: [Int: String] = [:]
     var avatarLookup: [String: String] = [:]
     var topicDetail: TopicDetailResponse?
@@ -359,7 +360,9 @@ final class PostStreamDataSource {
                 baseURL: baseURL, topicId: topicId, postNumber: pn
             )
             let preprocessor = DiscourseMarkdownPreprocessor(baseURL: baseURL)
-            postMarkdown[pn] = preprocessor.process(rawText, cooked: lastPost.cooked)
+            let processed = preprocessor.processWithOneboxes(rawText, cooked: lastPost.cooked)
+            postMarkdown[pn] = processed.markdown
+            if !processed.oneboxes.isEmpty { postOneboxes[pn] = processed.oneboxes }
         }
 
         if case .post(let last) = items.last {
@@ -395,9 +398,10 @@ final class PostStreamDataSource {
         var imageURLs: [URL] = []
         for rawPost in rawPosts {
             let cooked = postCooked[rawPost.postNumber]
-            let processed = preprocessor.process(rawPost.markdown, cooked: cooked)
-            postMarkdown[rawPost.postNumber] = processed
-            imageURLs.append(contentsOf: extractImageURLs(from: processed))
+            let processed = preprocessor.processWithOneboxes(rawPost.markdown, cooked: cooked)
+            postMarkdown[rawPost.postNumber] = processed.markdown
+            if !processed.oneboxes.isEmpty { postOneboxes[rawPost.postNumber] = processed.oneboxes }
+            imageURLs.append(contentsOf: extractImageURLs(from: processed.markdown))
         }
         if !imageURLs.isEmpty {
             prefetcher.startPrefetching(with: imageURLs)

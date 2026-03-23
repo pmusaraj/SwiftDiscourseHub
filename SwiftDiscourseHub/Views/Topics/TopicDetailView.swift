@@ -152,6 +152,7 @@ struct TopicDetailView: View {
         ChatLayoutPostStreamView(
             items: dataSource.items,
             postMarkdown: dataSource.postMarkdown,
+            postOneboxes: dataSource.postOneboxes,
             avatarLookup: dataSource.avatarLookup,
             baseURL: baseURL,
             contentWidth: contentWidth,
@@ -238,6 +239,7 @@ struct TopicDetailView: View {
                 post: post,
                 baseURL: baseURL,
                 markdown: dataSource.postMarkdown[post.postNumber ?? 0],
+                oneboxes: dataSource.postOneboxes[post.postNumber ?? 0] ?? [],
                 contentWidth: contentWidth,
                 isLiked: likedPostIds.contains(post.id) || post.hasLiked,
                 isWhisper: post.isWhisper,

@@ -8,6 +8,7 @@ struct PostView: View {
     let post: Post
     let baseURL: String
     let markdown: String?
+    var oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo] = []
     var contentWidth: CGFloat = 0
     var isLiked: Bool = false
     var isWhisper: Bool = false
@@ -77,6 +78,7 @@ struct PostView: View {
                 #if os(macOS)
                 MarkdownNSTextView(
                     markdown: md,
+                    oneboxes: oneboxes,
                     contentWidth: contentWidth > 0 ? contentWidth : nil
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -177,6 +179,7 @@ import Nuke
 
 private struct MarkdownNSTextView: NSViewRepresentable {
     let markdown: String
+    let oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo]
     let contentWidth: CGFloat?
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -244,7 +247,12 @@ private struct MarkdownNSTextView: NSViewRepresentable {
         let document = Document(parsing: markdown)
         let width = effectiveWidth()
         var renderer = Markdownosaur(maxImageWidth: width)
-        let attributed = renderer.attributedString(from: document)
+        let attributed: NSAttributedString
+        if oneboxes.isEmpty {
+            attributed = renderer.attributedString(from: document)
+        } else {
+            attributed = renderer.attributedString(from: document, oneboxes: oneboxes)
+        }
         textView.textStorage?.setAttributedString(attributed)
         textView.textContainer?.containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
 

@@ -120,6 +120,143 @@ struct Markdownosaur: MarkupVisitor {
         return visit(document)
     }
 
+    /// Render markdown and splice in onebox blocks for any %%ONEBOX:N%% placeholders.
+    mutating func attributedString(from document: Document, oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo]) -> NSAttributedString {
+        let result = visit(document).mutableCopy() as! NSMutableAttributedString
+        if oneboxes.isEmpty { return result }
+        Self.spliceOneboxes(into: result, oneboxes: oneboxes, baseFont: baseFont, linkColor: linkColor)
+        return result
+    }
+
+    /// Replace %%ONEBOX:N%% placeholders with rich link attributed string blocks.
+    static func spliceOneboxes(into attrString: NSMutableAttributedString, oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo], baseFont: PlatformFont, linkColor: PlatformColor) {
+        guard let regex = try? NSRegularExpression(pattern: DiscourseMarkdownPreprocessor.oneboxPlaceholderPattern) else { return }
+
+        // Find all placeholders (process from end to preserve ranges)
+        let text = attrString.string
+        let fullRange = NSRange(text.startIndex..., in: text)
+        let matches = regex.matches(in: text, range: fullRange)
+
+        for match in matches.reversed() {
+            guard let indexRange = Range(match.range(at: 1), in: text),
+                  let index = Int(text[indexRange]),
+                  index < oneboxes.count else { continue }
+
+            let info = oneboxes[index]
+            let oneboxBlock = buildOneboxBlock(info: info, baseFont: baseFont, linkColor: linkColor)
+
+            // Replace placeholder (and surrounding whitespace) with the onebox block
+            var replaceRange = match.range
+
+            // Expand to consume surrounding newlines for clean insertion
+            let nsText = text as NSString
+            if replaceRange.location > 0 && nsText.character(at: replaceRange.location - 1) == 0x0A /* \n */ {
+                replaceRange.location -= 1
+                replaceRange.length += 1
+            }
+            let afterEnd = replaceRange.location + replaceRange.length
+            if afterEnd < nsText.length && nsText.character(at: afterEnd) == 0x0A {
+                replaceRange.length += 1
+            }
+
+            attrString.replaceCharacters(in: replaceRange, with: oneboxBlock)
+        }
+    }
+
+    /// Build a self-contained rich link NSAttributedString block from onebox info.
+    static func buildOneboxBlock(info: DiscourseMarkdownPreprocessor.OneboxInfo, baseFont: PlatformFont, linkColor: PlatformColor) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        let fontSize = baseFont.pointSize
+        let inset = Theme.RichLink.horizontalPadding
+        let vPad = Theme.RichLink.verticalPadding
+
+        // --- Line 1: favicon + URL ---
+        let urlParaStyle = NSMutableParagraphStyle()
+        urlParaStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
+        urlParaStyle.firstLineHeadIndent = inset
+        urlParaStyle.headIndent = inset
+        urlParaStyle.tailIndent = -inset
+        urlParaStyle.paragraphSpacingBefore = vPad
+
+        let smallFont = PlatformFont.systemFont(ofSize: fontSize - 3)
+        let urlAttrs: [NSAttributedString.Key: Any] = [
+            .font: smallFont,
+            .foregroundColor: PlatformColor.secondaryLabelColor,
+            .paragraphStyle: urlParaStyle,
+            .richLink: true,
+        ]
+
+        // Favicon as text attachment if URL available
+        if let faviconURLStr = info.faviconURL, !faviconURLStr.isEmpty {
+            let attachment = ScalableImageAttachment()
+            attachment.imageURL = faviconURLStr
+            attachment.bounds = CGRect(x: 0, y: -2, width: smallFont.pointSize, height: smallFont.pointSize)
+            attachment.image = PlatformImage()
+            let faviconStr = NSMutableAttributedString(attachment: attachment)
+            faviconStr.addAttributes(urlAttrs, range: NSRange(location: 0, length: faviconStr.length))
+            result.append(faviconStr)
+            result.append(NSAttributedString(string: " ", attributes: urlAttrs))
+        }
+
+        // Display domain (not full URL) for cleaner look
+        result.append(NSAttributedString(string: info.domain + "\n", attributes: urlAttrs))
+
+        // --- Line 2: Title as heading link ---
+        let titleParaStyle = NSMutableParagraphStyle()
+        titleParaStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
+        titleParaStyle.firstLineHeadIndent = inset
+        titleParaStyle.headIndent = inset
+        titleParaStyle.tailIndent = -inset
+
+        let titleFont = PlatformFont.systemFont(ofSize: fontSize + 1, weight: .semibold)
+        let titleText = info.title ?? info.url
+        var titleAttrs: [NSAttributedString.Key: Any] = [
+            .font: titleFont,
+            .foregroundColor: linkColor,
+            .paragraphStyle: titleParaStyle,
+            .richLink: true,
+        ]
+        if let url = URL(string: info.url) {
+            titleAttrs[.link] = url
+        }
+
+        let hasDescription = info.description != nil && !info.description!.isEmpty
+        result.append(NSAttributedString(string: titleText + (hasDescription ? "\n" : ""), attributes: titleAttrs))
+
+        // --- Lines 3-4: Description (capped to ~2 lines) ---
+        if let desc = info.description, !desc.isEmpty {
+            let descParaStyle = NSMutableParagraphStyle()
+            descParaStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
+            descParaStyle.firstLineHeadIndent = inset
+            descParaStyle.headIndent = inset
+            descParaStyle.tailIndent = -inset
+            descParaStyle.paragraphSpacing = vPad + 12
+
+            let capped = desc.count > 160 ? String(desc.prefix(157)) + "..." : desc
+            let descAttrs: [NSAttributedString.Key: Any] = [
+                .font: baseFont,
+                .foregroundColor: PlatformColor.secondaryLabelColor,
+                .paragraphStyle: descParaStyle,
+                .richLink: true,
+            ]
+            result.append(NSAttributedString(string: capped, attributes: descAttrs))
+        } else {
+            // No description: add bottom spacing to title
+            let lastRange = NSRange(location: result.length - 1, length: 1)
+            let lastParaStyle = titleParaStyle.mutableCopy() as! NSMutableParagraphStyle
+            lastParaStyle.paragraphSpacing = vPad + 12
+            result.addAttribute(.paragraphStyle, value: lastParaStyle, range: lastRange)
+        }
+
+        // Add trailing newline for separation from next content
+        result.append(NSAttributedString(string: "\n", attributes: [
+            .font: PlatformFont.systemFont(ofSize: fontSize * 0.1),
+            .richLink: true,
+        ]))
+
+        return result
+    }
+
     mutating func defaultVisit(_ markup: Markup) -> NSAttributedString {
         let result = NSMutableAttributedString()
         for child in markup.children {
@@ -212,10 +349,118 @@ struct Markdownosaur: MarkupVisitor {
             .paragraphStyle: codeParagraphStyle,
             .codeBlock: true
         ])
+
+        // Apply syntax highlighting
+        SyntaxHighlighter.highlight(result, language: codeBlock.language, font: codeFont)
+
         if codeBlock.hasSuccessor {
             result.append(.singleNewline(withFontSize: baseFontSize))
         }
         return result
+    }
+
+    // MARK: - Table
+
+    mutating func visitTable(_ table: Markdown.Table) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+
+        // Collect all rows (head + body) to calculate column widths
+        var allRows: [[String]] = []
+        var headRow: [String] = []
+
+        if let head = table.head as? Markdown.Table.Head {
+            for cell in head.cells {
+                headRow.append(cell.plainText)
+            }
+            allRows.append(headRow)
+        }
+
+        if let body = table.body as? Markdown.Table.Body {
+            for row in body.rows {
+                var rowTexts: [String] = []
+                for cell in row.cells {
+                    rowTexts.append(cell.plainText)
+                }
+                allRows.append(rowTexts)
+            }
+        }
+
+        guard !allRows.isEmpty else { return result }
+
+        let columnCount = allRows.map(\.count).max() ?? 0
+        guard columnCount > 0 else { return result }
+
+        // Measure max column widths for tab stop alignment
+        let headerFont = PlatformFont.systemFont(ofSize: baseFontSize, weight: Theme.Table.headerWeight)
+        let measureAttrs: [NSAttributedString.Key: Any] = [.font: headerFont]
+        var columnWidths = [CGFloat](repeating: 0, count: columnCount)
+
+        for row in allRows {
+            for (colIndex, cell) in row.enumerated() where colIndex < columnCount {
+                let cellWidth = (cell as NSString).size(withAttributes: measureAttrs).width
+                columnWidths[colIndex] = max(columnWidths[colIndex], cellWidth)
+            }
+        }
+
+        // Build tab stops from measured widths
+        let gap = Theme.Table.columnGap
+        var tabStops: [NSTextTab] = []
+        var offset: CGFloat = 0
+        for colIndex in 0..<columnCount {
+            if colIndex > 0 {
+                offset += gap
+                tabStops.append(NSTextTab(textAlignment: .left, location: offset))
+            }
+            offset += columnWidths[colIndex]
+        }
+
+        let tableParagraphStyle = NSMutableParagraphStyle()
+        tableParagraphStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
+        tableParagraphStyle.tabStops = tabStops
+
+        // Build tab-separated rows
+        for (rowIndex, row) in allRows.enumerated() {
+            let isHeader = rowIndex == 0 && !headRow.isEmpty
+            let font = isHeader ? headerFont : baseFont
+
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: bodyColor,
+                .paragraphStyle: tableParagraphStyle,
+            ]
+
+            let cells = (0..<columnCount).map { i in
+                i < row.count ? row[i] : ""
+            }
+            let lineText = cells.joined(separator: "\t") + "\n"
+            result.append(NSAttributedString(string: lineText, attributes: attrs))
+        }
+
+        // Remove trailing newline from last row and add spacing
+        if result.length > 0 && result.string.hasSuffix("\n") {
+            result.deleteCharacters(in: NSRange(location: result.length - 1, length: 1))
+        }
+
+        if table.hasSuccessor {
+            result.append(.doubleNewline(withFontSize: baseFontSize))
+        }
+        return result
+    }
+
+    mutating func visitTableHead(_ tableHead: Markdown.Table.Head) -> NSAttributedString {
+        return defaultVisit(tableHead)
+    }
+
+    mutating func visitTableBody(_ tableBody: Markdown.Table.Body) -> NSAttributedString {
+        return defaultVisit(tableBody)
+    }
+
+    mutating func visitTableRow(_ tableRow: Markdown.Table.Row) -> NSAttributedString {
+        return defaultVisit(tableRow)
+    }
+
+    mutating func visitTableCell(_ tableCell: Markdown.Table.Cell) -> NSAttributedString {
+        return defaultVisit(tableCell)
     }
 
     mutating func visitStrikethrough(_ strikethrough: Strikethrough) -> NSAttributedString {
@@ -235,6 +480,7 @@ struct Markdownosaur: MarkupVisitor {
             var listItemAttributes: [NSAttributedString.Key: Any] = [:]
 
             let listItemParagraphStyle = NSMutableParagraphStyle()
+            listItemParagraphStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
 
             let baseLeftMargin = Theme.Markdown.listBaseLeftMargin
             let leftMarginOffset = baseLeftMargin + (Theme.Markdown.listDepthIndent * CGFloat(unorderedList.listDepth))
@@ -288,6 +534,7 @@ struct Markdownosaur: MarkupVisitor {
             let numeralFont = PlatformFont.monospacedDigitSystemFont(ofSize: baseFontSize, weight: .regular)
 
             let listItemParagraphStyle = NSMutableParagraphStyle()
+            listItemParagraphStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
 
             let baseLeftMargin = Theme.Markdown.listBaseLeftMargin
             let leftMarginOffset = baseLeftMargin + (Theme.Markdown.listDepthIndent * CGFloat(orderedList.listDepth))
@@ -330,8 +577,9 @@ struct Markdownosaur: MarkupVisitor {
 
     mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> NSAttributedString {
         let result = NSMutableAttributedString()
+        let children = Array(blockQuote.children)
 
-        for child in blockQuote.children {
+        for (index, child) in children.enumerated() {
             var quoteAttributes: [NSAttributedString.Key: Any] = [:]
 
             let quoteParagraphStyle = NSMutableParagraphStyle()
@@ -341,7 +589,14 @@ struct Markdownosaur: MarkupVisitor {
 
             quoteParagraphStyle.firstLineHeadIndent = leftMarginOffset
             quoteParagraphStyle.headIndent = leftMarginOffset
-            quoteParagraphStyle.paragraphSpacingBefore = Theme.Quote.paragraphSpacingBefore
+
+            // First child: top padding to match background
+            let vPad = Theme.Quote.backgroundVerticalPad
+            quoteParagraphStyle.paragraphSpacingBefore = index == 0 ? vPad : Theme.Quote.paragraphSpacingBefore
+            // Last child: bottom padding to match background
+            if index == children.count - 1 {
+                quoteParagraphStyle.paragraphSpacing = vPad
+            }
 
             quoteAttributes[.paragraphStyle] = quoteParagraphStyle
             quoteAttributes[.font] = baseFont
@@ -533,6 +788,7 @@ extension NSAttributedString.Key {
     static let listDepth = NSAttributedString.Key("ListDepth")
     static let quoteDepth = NSAttributedString.Key("QuoteDepth")
     static let codeBlock = NSAttributedString.Key("CodeBlock")
+    static let richLink = NSAttributedString.Key("RichLink")
 }
 
 private extension NSMutableAttributedString {
@@ -564,6 +820,140 @@ extension NSAttributedString {
 
     static func doubleNewline(withFontSize fontSize: CGFloat) -> NSAttributedString {
         NSAttributedString(string: "\n\n", attributes: [.font: PlatformFont.systemFont(ofSize: fontSize, weight: .regular)])
+    }
+}
+
+// MARK: - Syntax Highlighting
+
+/// Applies regex-based syntax highlighting to code block attributed strings.
+enum SyntaxHighlighter {
+
+    private static func color(hex: String) -> PlatformColor {
+        var rgb: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&rgb)
+        return PlatformColor(
+            red: CGFloat((rgb >> 16) & 0xFF) / 255,
+            green: CGFloat((rgb >> 8) & 0xFF) / 255,
+            blue: CGFloat(rgb & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+
+    private static let keywordColor = color(hex: Theme.SyntaxHighlight.keyword)
+    private static let stringColor = color(hex: Theme.SyntaxHighlight.string)
+    private static let commentColor = color(hex: Theme.SyntaxHighlight.comment)
+    private static let numberColor = color(hex: Theme.SyntaxHighlight.number)
+    private static let typeColor = color(hex: Theme.SyntaxHighlight.type)
+    private static let attributeColor = color(hex: Theme.SyntaxHighlight.attribute)
+
+    // Language keyword sets
+    private static let swiftKeywords: Set<String> = [
+        "import", "class", "struct", "enum", "protocol", "extension", "func", "var", "let",
+        "if", "else", "guard", "switch", "case", "default", "for", "while", "repeat",
+        "return", "break", "continue", "throw", "throws", "try", "catch", "do",
+        "public", "private", "internal", "fileprivate", "open", "static", "final",
+        "override", "mutating", "async", "await", "actor", "some", "any",
+        "self", "Self", "super", "nil", "true", "false", "in", "where", "as", "is",
+        "typealias", "associatedtype", "init", "deinit", "subscript", "convenience",
+        "lazy", "weak", "unowned", "willSet", "didSet", "get", "set",
+        "inout", "defer", "fallthrough", "indirect", "nonisolated", "sending",
+    ]
+
+    private static let jsKeywords: Set<String> = [
+        "function", "var", "let", "const", "if", "else", "for", "while", "do",
+        "return", "break", "continue", "switch", "case", "default", "throw", "try",
+        "catch", "finally", "new", "delete", "typeof", "instanceof", "in", "of",
+        "class", "extends", "super", "this", "import", "export", "from", "as",
+        "async", "await", "yield", "true", "false", "null", "undefined", "void",
+        "static", "get", "set", "constructor",
+    ]
+
+    private static let pythonKeywords: Set<String> = [
+        "def", "class", "if", "elif", "else", "for", "while", "return", "import",
+        "from", "as", "try", "except", "finally", "raise", "with", "pass", "break",
+        "continue", "and", "or", "not", "is", "in", "lambda", "yield", "global",
+        "nonlocal", "assert", "del", "True", "False", "None", "async", "await",
+        "self",
+    ]
+
+    private static let rubyKeywords: Set<String> = [
+        "def", "end", "class", "module", "if", "elsif", "else", "unless", "case",
+        "when", "while", "until", "for", "do", "begin", "rescue", "ensure", "raise",
+        "return", "yield", "block_given?", "require", "include", "extend", "attr_accessor",
+        "attr_reader", "attr_writer", "self", "super", "nil", "true", "false",
+        "and", "or", "not", "in", "then", "puts", "print",
+    ]
+
+    private static let genericKeywords: Set<String> = [
+        "if", "else", "for", "while", "return", "break", "continue", "switch",
+        "case", "default", "class", "function", "var", "let", "const", "import",
+        "true", "false", "null", "nil", "void", "new", "this", "self", "super",
+        "try", "catch", "throw", "public", "private", "static", "final",
+    ]
+
+    private static func keywords(for language: String?) -> Set<String> {
+        switch language?.lowercased() {
+        case "swift": return swiftKeywords
+        case "javascript", "js", "typescript", "ts", "jsx", "tsx": return jsKeywords
+        case "python", "py": return pythonKeywords
+        case "ruby", "rb": return rubyKeywords
+        default: return genericKeywords
+        }
+    }
+
+    /// Highlight patterns in order: comments, strings, numbers, keywords, types.
+    /// Earlier matches take priority (won't be overwritten).
+    static func highlight(_ attrString: NSMutableAttributedString, language: String?, font: PlatformFont) {
+        let code = attrString.string
+        let fullRange = NSRange(location: 0, length: attrString.length)
+        var colored = IndexSet() // tracks already-colored character indices
+
+        // Helper to apply color only to uncolored ranges
+        func applyColor(_ color: PlatformColor, range: NSRange) {
+            let requested = IndexSet(integersIn: range.location..<(range.location + range.length))
+            let uncolored = requested.subtracting(colored)
+            for r in uncolored.rangeView {
+                attrString.addAttribute(.foregroundColor, value: color, range: NSRange(location: r.lowerBound, length: r.count))
+            }
+            colored.formUnion(requested)
+        }
+
+        func applyPattern(_ pattern: String, color: PlatformColor, options: NSRegularExpression.Options = []) {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return }
+            for match in regex.matches(in: code, range: fullRange) {
+                applyColor(color, range: match.range)
+            }
+        }
+
+        // 1. Comments (highest priority)
+        applyPattern(#"//[^\n]*"#, color: commentColor)                    // single-line
+        applyPattern(#"/\*[\s\S]*?\*/"#, color: commentColor, options: .dotMatchesLineSeparators) // multi-line
+        applyPattern(#"#[^\n]*"#, color: commentColor)                     // Python/Ruby/shell
+
+        // 2. Strings
+        applyPattern(#""""[\s\S]*?""""#, color: stringColor, options: .dotMatchesLineSeparators) // triple-quote
+        applyPattern(#""(?:[^"\\]|\\.)*""#, color: stringColor)            // double-quoted
+        applyPattern(#"'(?:[^'\\]|\\.)*'"#, color: stringColor)            // single-quoted
+        applyPattern(#"`(?:[^`\\]|\\.)*`"#, color: stringColor)            // backtick (JS template)
+
+        // 3. Numbers
+        applyPattern(#"\b(?:0[xX][0-9a-fA-F]+|0[bB][01]+|0[oO][0-7]+|\d+\.?\d*(?:[eE][+-]?\d+)?)\b"#, color: numberColor)
+
+        // 4. Keywords
+        let kws = keywords(for: language)
+        if !kws.isEmpty {
+            let escaped = kws.map { NSRegularExpression.escapedPattern(for: $0) }
+            let pattern = "\\b(?:" + escaped.joined(separator: "|") + ")\\b"
+            applyPattern(pattern, color: keywordColor)
+        }
+
+        // 5. Types (capitalized identifiers)
+        applyPattern(#"\b[A-Z][a-zA-Z0-9]*\b"#, color: typeColor)
+
+        // 6. Attributes/decorators (@something)
+        applyPattern(#"@\w+"#, color: attributeColor)
+
+        _ = fullRange // suppress unused warning
     }
 }
 
@@ -644,6 +1034,38 @@ final class QuoteBarLayoutManager: NSLayoutManager {
             context.saveGState()
             context.setFillColor(PlatformColor.separatorColor.withAlphaComponent(Theme.Markdown.codeBlockBackgroundOpacity).cgColor)
             fillRoundedRect(bgRect, cornerRadius: cornerRadius, in: context)
+            context.restoreGState()
+        }
+
+        // --- Rich links ---
+        textStorage.enumerateAttribute(.richLink, in: characterRange, options: []) { value, attrRange, _ in
+            guard value != nil else { return }
+
+            let rects = lineFragmentRects(forCharacterRange: attrRange)
+            guard !rects.isEmpty else { return }
+
+            let fullRect = rects.reduce(rects[0]) { $0.union($1) }
+            let cornerRadius = Theme.RichLink.cornerRadius
+
+            let bgRect = CGRect(
+                x: origin.x,
+                y: fullRect.minY + origin.y,
+                width: containerWidth,
+                height: fullRect.height
+            )
+
+            // Light border only
+            context.saveGState()
+            context.setStrokeColor(PlatformColor.separatorColor.withAlphaComponent(Theme.RichLink.borderOpacity).cgColor)
+            context.setLineWidth(Theme.RichLink.borderWidth)
+            #if os(iOS)
+            let borderPath = UIBezierPath(roundedRect: bgRect, cornerRadius: cornerRadius)
+            context.addPath(borderPath.cgPath)
+            #else
+            let borderPath = NSBezierPath(roundedRect: bgRect, xRadius: cornerRadius, yRadius: cornerRadius)
+            context.addPath(borderPath.cgPath)
+            #endif
+            context.strokePath()
             context.restoreGState()
         }
     }
