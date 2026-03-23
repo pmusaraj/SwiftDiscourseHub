@@ -350,7 +350,7 @@ struct Markdownosaur: MarkupVisitor {
         return NSAttributedString(string: inlineCode.code, attributes: [
             .font: codeFont,
             .foregroundColor: codeColor,
-            .backgroundColor: codeBgColor
+            .inlineCode: true
         ])
     }
 
@@ -805,6 +805,7 @@ extension BlockQuote {
 extension NSAttributedString.Key {
     static let listDepth = NSAttributedString.Key("ListDepth")
     static let quoteDepth = NSAttributedString.Key("QuoteDepth")
+    static let inlineCode = NSAttributedString.Key("InlineCode")
     static let codeBlock = NSAttributedString.Key("CodeBlock")
     static let richLink = NSAttributedString.Key("RichLink")
 }
@@ -1055,6 +1056,11 @@ final class QuoteBarLayoutManager: NSLayoutManager {
             context.restoreGState()
         }
 
+        // --- Inline code ---
+        if let tc = textContainers.first {
+            drawInlineCodeBackgrounds(textStorage: textStorage, characterRange: characterRange, textContainer: tc, origin: origin, context: context)
+        }
+
         // --- Rich links ---
         textStorage.enumerateAttribute(.richLink, in: characterRange, options: []) { value, attrRange, _ in
             guard value != nil else { return }
@@ -1097,6 +1103,28 @@ final class QuoteBarLayoutManager: NSLayoutManager {
             rects.append(usedRect)
         }
         return rects
+    }
+
+    private func drawInlineCodeBackgrounds(textStorage: NSTextStorage, characterRange: NSRange, textContainer: NSTextContainer, origin: CGPoint, context: CGContext) {
+        textStorage.enumerateAttribute(.inlineCode, in: characterRange, options: []) { (value: Any?, attrRange: NSRange, _: UnsafeMutablePointer<ObjCBool>) in
+            guard value != nil else { return }
+
+            let glyphRange = self.glyphRange(forCharacterRange: attrRange, actualCharacterRange: nil)
+            let rect = self.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+
+            let hPad = Theme.Markdown.inlineCodePaddingHorizontal
+            let vPad = Theme.Markdown.inlineCodePaddingVertical
+            let bgRect = CGRect(
+                x: rect.minX + origin.x - hPad,
+                y: rect.minY + origin.y - vPad,
+                width: rect.width + hPad * 2,
+                height: rect.height + vPad * 2
+            )
+            context.saveGState()
+            context.setFillColor(PlatformColor.separatorColor.withAlphaComponent(Theme.Markdown.inlineCodeBackgroundOpacity).cgColor)
+            self.fillRoundedRect(bgRect, cornerRadius: Theme.Markdown.inlineCodeCornerRadius, in: context)
+            context.restoreGState()
+        }
     }
 
     private func fillRoundedRect(_ rect: CGRect, cornerRadius: CGFloat, in context: CGContext) {

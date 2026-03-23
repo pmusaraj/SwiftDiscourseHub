@@ -146,6 +146,10 @@ enum Theme {
 
         // Code (inline)
         static let codeFontScale: CGFloat = 0.9
+        static let inlineCodePaddingHorizontal: CGFloat = 2
+        static let inlineCodePaddingVertical: CGFloat = 0.5
+        static let inlineCodeBackgroundOpacity: CGFloat = 0.06
+        static let inlineCodeCornerRadius: CGFloat = 2
 
         // Code block
         static let codeBlockLineHeightMultiple: CGFloat = 0.8
