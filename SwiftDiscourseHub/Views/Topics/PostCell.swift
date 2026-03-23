@@ -220,7 +220,8 @@ final class PostCell: UICollectionViewCell {
         isLiked: Bool,
         availableWidth: CGFloat
     ) {
-        nameLabel.text = post.name ?? post.username ?? "Unknown"
+        let displayName = post.name?.isEmpty == false ? post.name : post.username
+        nameLabel.text = displayName ?? "Unknown"
         usernameLabel.text = post.username.map { "@\($0)" }
         dateLabel.text = Self.formatDate(post.createdAt, postNumber: post.postNumber)
 

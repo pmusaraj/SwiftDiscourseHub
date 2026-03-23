@@ -38,7 +38,7 @@ struct PostView: View {
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.postAuthorVertical) {
                     HStack(spacing: Theme.Spacing.postNameItems) {
-                        Text(post.name ?? post.username ?? "Unknown")
+                        Text(post.name?.isEmpty == false ? post.name! : post.username ?? "Unknown")
                             .font(Theme.Fonts.postAuthorName)
                         if post.staff == true {
                             Image(systemName: "shield.fill")
