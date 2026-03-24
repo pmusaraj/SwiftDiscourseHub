@@ -23,19 +23,29 @@ struct ComposerView: View {
     @State private var mentionSearchTask: Task<Void, Never>?
     @FocusState private var isEditorFocused: Bool
     @Environment(\.apiClient) private var apiClient
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    private let lineHeight: CGFloat = 20
-    private let maxAutoLines = 18
-    private let minHeight: CGFloat = 32
-
-    private var autoHeight: CGFloat {
-        let lineCount = max(1, composerText.components(separatedBy: .newlines).count)
-        let clampedLines = min(lineCount, maxAutoLines)
-        return CGFloat(clampedLines) * lineHeight + 12 // 12 for vertical padding
+    private var isCompact: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .compact
+        #else
+        false
+        #endif
     }
 
     private var effectiveHeight: CGFloat {
-        max(minHeight, autoHeight + manualHeightOffset)
+        let lineCount = max(1, composerText.components(separatedBy: .newlines).count)
+        let clampedLines = min(lineCount, Theme.Composer.maxAutoLines)
+        let height = CGFloat(clampedLines) * Theme.Composer.lineHeight + 8
+        return max(Theme.Composer.lineHeight + 8, height + manualHeightOffset)
+    }
+
+    private var composerBackground: Color {
+        #if os(iOS)
+        Color(.systemBackground)
+        #else
+        Color(.windowBackgroundColor)
+        #endif
     }
 
     private var canSubmit: Bool {
@@ -44,84 +54,38 @@ struct ComposerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Resize handle at top
-            HStack {
-                Spacer()
-                Image(systemName: "line.3.horizontal")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                Spacer()
-            }
-            .frame(height: 10)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 1)
-                    .onChanged { value in
-                        manualHeightOffset = max(minHeight - autoHeight, manualHeightOffset - value.translation.height)
-                    }
-                    .onEnded { value in
-                        if value.translation.height > 60 {
-                            onCancel?()
+            // Resize handle (non-compact only)
+            if !isCompact {
+                HStack {
+                    Spacer()
+                    Image(systemName: "line.3.horizontal")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                }
+                .frame(height: Theme.Composer.resizeHandleHeight)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 1)
+                        .onChanged { value in
+                            manualHeightOffset = max(-(effectiveHeight - Theme.Composer.lineHeight - 8), manualHeightOffset - value.translation.height)
                         }
+                        .onEnded { value in
+                            if value.translation.height > 60 {
+                                onCancel?()
+                            }
+                        }
+                )
+                #if os(macOS)
+                .onHover { hovering in
+                    if hovering {
+                        NSCursor.resizeUpDown.push()
+                    } else {
+                        NSCursor.pop()
                     }
-            )
-            #if os(macOS)
-            .onHover { hovering in
-                if hovering {
-                    NSCursor.resizeUpDown.push()
-                } else {
-                    NSCursor.pop()
                 }
+                #endif
             }
-            #endif
-
-            TextEditor(text: $composerText)
-                .focused($isEditorFocused)
-                .frame(height: effectiveHeight)
-                .font(.body)
-                .padding(.horizontal, 8)
-                .scrollContentBackground(.hidden)
-                .onAppear { isEditorFocused = true }
-                .overlay(alignment: .topLeading) {
-                    if !mentionSuggestions.isEmpty {
-                        mentionSuggestionsView
-                            .offset(y: -CGFloat(min(mentionSuggestions.count, 6) * 36) - 8)
-                    }
-                }
-                .onKeyPress(.upArrow) {
-                    guard !mentionSuggestions.isEmpty else { return .ignored }
-                    mentionSelectedIndex = max(0, mentionSelectedIndex - 1)
-                    return .handled
-                }
-                .onKeyPress(.downArrow) {
-                    guard !mentionSuggestions.isEmpty else { return .ignored }
-                    mentionSelectedIndex = min(min(mentionSuggestions.count, 6) - 1, mentionSelectedIndex + 1)
-                    return .handled
-                }
-                .onKeyPress(.return) {
-                    guard !mentionSuggestions.isEmpty else { return .ignored }
-                    let index = mentionSelectedIndex
-                    let suggestions = Array(mentionSuggestions.prefix(6))
-                    guard index < suggestions.count else { return .ignored }
-                    insertMention(username: suggestions[index].username ?? "")
-                    return .handled
-                }
-                .onKeyPress(.tab) {
-                    guard !mentionSuggestions.isEmpty else { return .ignored }
-                    let index = mentionSelectedIndex
-                    let suggestions = Array(mentionSuggestions.prefix(6))
-                    guard index < suggestions.count else { return .ignored }
-                    insertMention(username: suggestions[index].username ?? "")
-                    return .handled
-                }
-                .onKeyPress(.escape) {
-                    guard !mentionSuggestions.isEmpty else { return .ignored }
-                    mentionSuggestions = []
-                    return .handled
-                }
-                .onChange(of: composerText) { _, _ in
-                    updateMentionSearch()
-                }
 
             // Thumbnail strip
             if !uploads.isEmpty || isUploading {
@@ -133,7 +97,7 @@ struct ComposerView: View {
                         if isUploading {
                             VStack(spacing: 4) {
                                 ProgressView()
-                                    .frame(width: 60, height: 60)
+                                    .frame(width: Theme.Composer.thumbnailSize, height: Theme.Composer.thumbnailSize)
                                 Text("Uploading...")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
@@ -151,11 +115,12 @@ struct ComposerView: View {
                     .foregroundStyle(.red)
                     .font(.caption)
                     .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
             }
 
-            HStack {
-                Spacer()
-
+            // Main input row: + button | text editor | reply button
+            HStack(alignment: .bottom, spacing: Theme.Composer.rowSpacing) {
+                // Attach menu (+ button)
                 Menu {
                     #if os(iOS)
                     PhotosPicker(selection: $selectedPhotoItem, matching: .any(of: [.images, .screenshots])) {
@@ -168,20 +133,80 @@ struct ComposerView: View {
                         Label("Choose File", systemImage: "doc")
                     }
                 } label: {
-                    Label("Attach", systemImage: "paperclip")
-                        .labelStyle(.iconOnly)
-                        .font(.body)
+                    Image(systemName: "plus")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.tint)
+                        .frame(width: Theme.Composer.plusButtonSize, height: Theme.Composer.plusButtonSize)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
                 .disabled(isUploading)
 
+                // Text input
+                TextEditor(text: $composerText)
+                    .focused($isEditorFocused)
+                    .frame(height: effectiveHeight)
+                    .font(.body)
+                    .scrollContentBackground(.hidden)
+                    .padding(.horizontal, Theme.Composer.inputPaddingH)
+                    .padding(.vertical, Theme.Composer.inputPaddingV)
+                    #if os(iOS)
+                    .background(Color(.secondarySystemBackground))
+                    #else
+                    .background(Color(.controlBackgroundColor))
+                    #endif
+                    .clipShape(.rect(cornerRadius: Theme.Composer.inputCornerRadius))
+                    .onAppear { isEditorFocused = true }
+                    .overlay(alignment: .topLeading) {
+                        if !mentionSuggestions.isEmpty {
+                            mentionSuggestionsView
+                                .offset(y: -CGFloat(min(mentionSuggestions.count, 6) * 36) - 8)
+                        }
+                    }
+                    .onKeyPress(.upArrow) {
+                        guard !mentionSuggestions.isEmpty else { return .ignored }
+                        mentionSelectedIndex = max(0, mentionSelectedIndex - 1)
+                        return .handled
+                    }
+                    .onKeyPress(.downArrow) {
+                        guard !mentionSuggestions.isEmpty else { return .ignored }
+                        mentionSelectedIndex = min(min(mentionSuggestions.count, 6) - 1, mentionSelectedIndex + 1)
+                        return .handled
+                    }
+                    .onKeyPress(.return) {
+                        guard !mentionSuggestions.isEmpty else { return .ignored }
+                        let index = mentionSelectedIndex
+                        let suggestions = Array(mentionSuggestions.prefix(6))
+                        guard index < suggestions.count else { return .ignored }
+                        insertMention(username: suggestions[index].username ?? "")
+                        return .handled
+                    }
+                    .onKeyPress(.tab) {
+                        guard !mentionSuggestions.isEmpty else { return .ignored }
+                        let index = mentionSelectedIndex
+                        let suggestions = Array(mentionSuggestions.prefix(6))
+                        guard index < suggestions.count else { return .ignored }
+                        insertMention(username: suggestions[index].username ?? "")
+                        return .handled
+                    }
+                    .onKeyPress(.escape) {
+                        guard !mentionSuggestions.isEmpty else { return .ignored }
+                        mentionSuggestions = []
+                        return .handled
+                    }
+                    .onChange(of: composerText) { _, _ in
+                        updateMentionSearch()
+                    }
+
+                // Reply button
                 Button {
                     Task { await submit() }
                 } label: {
                     if isSubmitting {
                         ProgressView()
                             .controlSize(.small)
+                    } else if isCompact {
+                        Image(systemName: "paperplane.fill")
                     } else {
                         Label("Reply", systemImage: "paperplane.fill")
                     }
@@ -191,13 +216,16 @@ struct ComposerView: View {
                 .disabled(!canSubmit)
                 .keyboardShortcut(.return, modifiers: .command)
             }
-            .padding(8)
+            .padding(.horizontal, Theme.Composer.containerPaddingH)
+            .padding(.vertical, Theme.Composer.containerPaddingV)
         }
-        .background(.background)
-        .clipShape(.rect(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.15), radius: 8, y: -2)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 4)
+        .background(composerBackground)
+        .padding(.bottom, 0)
+        .background(composerBackground)
+        .clipShape(.rect(cornerRadius: isCompact ? Theme.Composer.containerCornerRadiusCompact : Theme.Composer.containerCornerRadiusRegular))
+        .shadow(color: .black.opacity(Theme.Composer.shadowOpacity), radius: Theme.Composer.shadowRadius, y: -2)
+        .padding(.horizontal, isCompact ? 0 : 8)
+        .padding(.bottom, isCompact ? 0 : 4)
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
             Task { await handlePhotoSelection(newItem) }
@@ -223,12 +251,12 @@ struct ComposerView: View {
                     thumbnail
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 60, height: 60)
-                        .clipShape(.rect(cornerRadius: 6))
+                        .frame(width: Theme.Composer.thumbnailSize, height: Theme.Composer.thumbnailSize)
+                        .clipShape(.rect(cornerRadius: Theme.Composer.thumbnailCornerRadius))
                 } else {
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: Theme.Composer.thumbnailCornerRadius)
                         .fill(.quaternary)
-                        .frame(width: 60, height: 60)
+                        .frame(width: Theme.Composer.thumbnailSize, height: Theme.Composer.thumbnailSize)
                         .overlay {
                             Image(systemName: "doc")
                                 .foregroundStyle(.secondary)
@@ -248,7 +276,7 @@ struct ComposerView: View {
             Text(upload.originalFilename)
                 .font(.caption2)
                 .lineLimit(1)
-                .frame(width: 60)
+                .frame(width: Theme.Composer.thumbnailSize)
         }
     }
 
@@ -370,20 +398,16 @@ struct ComposerView: View {
     }
 
     private func extractMentionFragment() -> String? {
-        // Look for @fragment at the end of the text (simple heuristic when selection isn't easily usable)
         let text = composerText
         guard !text.isEmpty else { return nil }
 
-        // Find the last @ that starts a mention
         var i = text.endIndex
         while i > text.startIndex {
             let prev = text.index(before: i)
             let ch = text[prev]
             if ch == "@" {
-                // Check that @ is at start of text or preceded by whitespace/newline
                 if prev == text.startIndex || text[text.index(before: prev)].isWhitespace || text[text.index(before: prev)].isNewline {
                     let fragment = String(text[i...].prefix(while: { !$0.isWhitespace && !$0.isNewline }))
-                    // Only trigger if the fragment runs to the end (cursor is at end of mention)
                     let endOfFragment = text.index(i, offsetBy: fragment.count)
                     if endOfFragment == text.endIndex {
                         return fragment.isEmpty ? nil : fragment
@@ -428,7 +452,6 @@ struct ComposerView: View {
 
     private func insertMention(username: String) {
         guard !username.isEmpty else { return }
-        // Find the @fragment at the end and replace it
         if let fragment = extractMentionFragment() {
             let searchSuffix = "@" + fragment
             if composerText.hasSuffix(searchSuffix) {
@@ -468,3 +491,45 @@ struct ComposerView: View {
         isSubmitting = false
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+#Preview("Empty") {
+    ComposerPreviewWrapper(text: "")
+}
+
+#Preview("Single line") {
+    ComposerPreviewWrapper(text: "I agree with this proposal!")
+}
+
+#Preview("Multi-line") {
+    ComposerPreviewWrapper(text: "Here are my thoughts:\n\n1. The API looks good\n2. We should add tests")
+}
+
+#Preview("With error") {
+    ComposerPreviewWrapper(text: "Test reply", error: "Network connection lost")
+}
+
+private struct ComposerPreviewWrapper: View {
+    @State var text: String
+    var error: String?
+
+    var body: some View {
+        VStack {
+            Spacer()
+            ComposerView(
+                site: DiscourseSite(baseURL: "https://meta.discourse.org", title: "Discourse Meta"),
+                topicId: 1,
+                composerText: $text
+            )
+        }
+        .frame(maxWidth: .infinity)
+        #if os(iOS)
+        .background(Color(.secondarySystemBackground))
+        #else
+        .background(Color(.windowBackgroundColor))
+        #endif
+    }
+}
+#endif

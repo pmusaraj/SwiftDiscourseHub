@@ -257,4 +257,25 @@ enum Theme {
         static let bottomShadowHeight: CGFloat = PanelShadow.width
         static let bottomShadowOpacity: Double = PanelShadow.shadowOpacity
     }
+
+    // MARK: - Composer
+
+    enum Composer {
+        static let lineHeight: CGFloat = 20
+        static let maxAutoLines = 4
+        static let inputPaddingH: CGFloat = 6
+        static let inputPaddingV: CGFloat = 2
+        static let inputCornerRadius: CGFloat = 10
+        static let rowSpacing: CGFloat = 6
+        static let containerPaddingH: CGFloat = 10
+        static let containerPaddingV: CGFloat = 8
+        static let containerCornerRadiusCompact: CGFloat = 6
+        static let containerCornerRadiusRegular: CGFloat = 12
+        static let shadowOpacity: Double = 0.1
+        static let shadowRadius: CGFloat = 6
+        static let plusButtonSize: CGFloat = 28
+        static let thumbnailSize: CGFloat = 60
+        static let thumbnailCornerRadius: CGFloat = 6
+        static let resizeHandleHeight: CGFloat = 10
+    }
 }
