@@ -147,8 +147,8 @@ struct PostView: View {
                         }
                     }
                     #endif
-                } else if post.likeCount > 0 {
-                    Label("\(post.likeCount)", systemImage: "heart")
+                } else {
+                    Label(post.likeCount > 0 ? "\(post.likeCount)" : "", systemImage: "heart")
                         .foregroundStyle(.secondary)
                 }
 
@@ -285,7 +285,7 @@ private struct MarkdownNSTextView: NSViewRepresentable {
         }
     }
 
-    final class Coordinator: NSObject, NSTextViewDelegate {
+    final class Coordinator: NSObject, NSTextViewDelegate, @unchecked Sendable {
         var lastMarkdown: String?
         var imageTasks: [ImageTask] = []
         weak var textView: NSTextView?
@@ -332,13 +332,19 @@ private struct MarkdownNSTextView: NSViewRepresentable {
             container.wantsLayer = true
             container.layer?.cornerRadius = Theme.Video.placeholderCornerRadius
             container.layer?.masksToBounds = true
+            container.layer?.backgroundColor = NSColor.black.cgColor
 
-            let playerView = AVPlayerView(frame: container.bounds)
-            playerView.player = AVPlayer(url: url)
-            playerView.autoresizingMask = [.width, .height]
-            container.addSubview(playerView)
+            // Show spinner while resolving redirect
+            let spinner = NSProgressIndicator(frame: CGRect(
+                x: (adjustedRect.width - 32) / 2,
+                y: (adjustedRect.height - 32) / 2,
+                width: 32, height: 32
+            ))
+            spinner.style = .spinning
+            spinner.startAnimation(nil)
+            container.addSubview(spinner)
 
-            // Close button
+            // Close button (show immediately)
             let closeSize = Theme.Video.closeButtonSize
             let closeButton = NSButton(frame: CGRect(
                 x: container.bounds.width - closeSize - 8,
@@ -355,7 +361,42 @@ private struct MarkdownNSTextView: NSViewRepresentable {
 
             textView.addSubview(container)
             videoPlayerView = container
-            playerView.player?.play()
+
+            // Download video to temp file to avoid byte-range/Content-Length issues
+            let capturedContainer = container
+            let capturedCloseButton = closeButton
+            let capturedSpinner = spinner
+            Task {
+                let localURL = await Self.downloadToTempFile(url: url)
+                await MainActor.run { [weak self] in
+                    guard let self, self.videoPlayerView === capturedContainer else { return }
+                    capturedSpinner.removeFromSuperview()
+
+                    guard let localURL else {
+                        self.videoPlayerView?.removeFromSuperview()
+                        self.videoPlayerView = nil
+                        return
+                    }
+
+                    let playerView = AVPlayerView(frame: capturedContainer.bounds)
+                    playerView.player = AVPlayer(url: localURL)
+                    playerView.autoresizingMask = [.width, .height]
+                    capturedContainer.addSubview(playerView, positioned: .below, relativeTo: capturedCloseButton)
+                    playerView.player?.play()
+                }
+            }
+        }
+
+        private static func downloadToTempFile(url: URL) async -> URL? {
+            do {
+                let (tempURL, _) = try await URLSession.shared.download(from: url)
+                let ext = url.pathExtension.isEmpty ? "mp4" : url.pathExtension.lowercased()
+                let dest = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + ext)
+                try FileManager.default.moveItem(at: tempURL, to: dest)
+                return dest
+            } catch {
+                return nil
+            }
         }
 
         @objc private func closeVideoTapped() {

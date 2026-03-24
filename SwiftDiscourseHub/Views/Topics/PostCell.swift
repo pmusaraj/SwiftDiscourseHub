@@ -89,6 +89,7 @@ final class PostCell: UICollectionViewCell {
     private var imageTasks: [ImageTask] = []
     private var exactSize: CGSize?
     private var videoPlayerView: UIView?
+    private var videoPlayerVC: AVPlayerViewController?
 
     // MARK: - Init
 
@@ -274,7 +275,8 @@ final class PostCell: UICollectionViewCell {
             likeButton.setTitle(nil, for: .normal)
         }
 
-        likeButton.isHidden = !post.canLike && post.likeCount == 0
+        likeButton.isHidden = false
+        likeButton.isEnabled = post.canLike
     }
 
     private func loadInlineImages() {
@@ -367,8 +369,10 @@ final class PostCell: UICollectionViewCell {
     // MARK: - Video Player
 
     private func removeVideoPlayer() {
+        videoPlayerVC?.player?.pause()
         videoPlayerView?.removeFromSuperview()
         videoPlayerView = nil
+        videoPlayerVC = nil
     }
 
     fileprivate func showVideoPlayer(url: URL, in textView: UITextView, characterRange: NSRange) {
@@ -382,23 +386,72 @@ final class PostCell: UICollectionViewCell {
         container.clipsToBounds = true
         container.layer.cornerRadius = Theme.Video.placeholderCornerRadius
 
-        let playerVC = AVPlayerViewController()
-        playerVC.player = AVPlayer(url: url)
-        playerVC.view.frame = container.bounds
-        playerVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        container.addSubview(playerVC.view)
+        // Show a loading spinner while resolving the redirect
+        let spinner = UIActivityIndicatorView(style: .large)
+        spinner.center = CGPoint(x: container.bounds.midX, y: container.bounds.midY)
+        spinner.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
+        spinner.startAnimating()
+        container.addSubview(spinner)
+        container.backgroundColor = .black
 
-        // Close button
+        textView.addSubview(container)
+        videoPlayerView = container
+
+        // Resolve the short-url redirect to get the direct URL,
+        // since AVPlayer can't handle redirects that lack Content-Length.
+        print("[VideoPlayer] downloading: \(url.absoluteString)")
+        Self.downloadToTempFile(url: url) { [weak self] localURL in
+            DispatchQueue.main.async {
+                guard let self, self.videoPlayerView === container else { return }
+                spinner.removeFromSuperview()
+
+                guard let localURL else {
+                    print("[VideoPlayer] download failed")
+                    self.removeVideoPlayer()
+                    return
+                }
+                print("[VideoPlayer] playing from: \(localURL.path)")
+
+                let playerVC = AVPlayerViewController()
+                playerVC.player = AVPlayer(url: localURL)
+                playerVC.view.frame = container.bounds
+                playerVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                container.addSubview(playerVC.view)
+
+                self.videoPlayerVC = playerVC
+                playerVC.player?.play()
+            }
+        }
+
+        // Close button (show immediately)
         let closeSize = Theme.Video.closeButtonSize
         let closeButton = UIButton(type: .close)
         closeButton.frame = CGRect(x: container.bounds.width - closeSize - 8, y: 8, width: closeSize, height: closeSize)
         closeButton.autoresizingMask = [.flexibleLeftMargin, .flexibleBottomMargin]
         closeButton.addTarget(self, action: #selector(closeVideoTapped), for: .touchUpInside)
         container.addSubview(closeButton)
+    }
 
-        textView.addSubview(container)
-        videoPlayerView = container
-        playerVC.player?.play()
+    /// Downloads a video URL to a temp file, following redirects.
+    private static func downloadToTempFile(url: URL, completion: @escaping (URL?) -> Void) {
+        let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
+            guard let tempURL, error == nil else {
+                print("[VideoPlayer] download error: \(error?.localizedDescription ?? "unknown")")
+                completion(nil)
+                return
+            }
+            // Move to a named temp file so AVPlayer can infer the type
+            let ext = url.pathExtension.isEmpty ? "mp4" : url.pathExtension.lowercased()
+            let dest = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + ext)
+            do {
+                try FileManager.default.moveItem(at: tempURL, to: dest)
+                completion(dest)
+            } catch {
+                print("[VideoPlayer] move error: \(error)")
+                completion(nil)
+            }
+        }
+        task.resume()
     }
 
     @objc private func closeVideoTapped() {

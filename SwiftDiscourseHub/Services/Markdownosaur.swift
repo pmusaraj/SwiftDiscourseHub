@@ -760,9 +760,11 @@ struct Markdownosaur: MarkupVisitor {
             result.append(quoteAttributedString)
         }
 
-        // Single trailing newline gives the background room to render.
-        // The quote's last paragraph already has paragraphSpacing = vPad.
-        result.append(.singleNewline(withFontSize: baseFontSize))
+        if blockQuote.hasSuccessor {
+            result.append(.doubleNewline(withFontSize: baseFontSize))
+        } else {
+            result.append(.singleNewline(withFontSize: baseFontSize))
+        }
 
         return result
     }
