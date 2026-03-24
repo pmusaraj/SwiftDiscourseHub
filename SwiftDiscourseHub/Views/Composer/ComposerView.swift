@@ -36,8 +36,13 @@ struct ComposerView: View {
     private var effectiveHeight: CGFloat {
         let lineCount = max(1, composerText.components(separatedBy: .newlines).count)
         let clampedLines = min(lineCount, Theme.Composer.maxAutoLines)
-        let height = CGFloat(clampedLines) * Theme.Composer.lineHeight + 8
-        return max(Theme.Composer.lineHeight + 8, height + manualHeightOffset)
+        #if os(macOS)
+        let vPad: CGFloat = 2
+        #else
+        let vPad: CGFloat = 8
+        #endif
+        let height = CGFloat(clampedLines) * Theme.Composer.lineHeight + vPad
+        return max(Theme.Composer.lineHeight + vPad, height + manualHeightOffset)
     }
 
     private var composerBackground: Color {
@@ -136,10 +141,11 @@ struct ComposerView: View {
                     Image(systemName: "plus")
                         .font(.body.weight(.medium))
                         .foregroundStyle(.tint)
-                        .frame(width: Theme.Composer.plusButtonSize, height: Theme.Composer.plusButtonSize)
+                        .contentShape(Rectangle())
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
+                .frame(height: Theme.Composer.plusButtonSize)
                 .disabled(isUploading)
 
                 // Text input
@@ -148,6 +154,9 @@ struct ComposerView: View {
                     .frame(height: effectiveHeight)
                     .font(.body)
                     .scrollContentBackground(.hidden)
+                    #if os(macOS)
+                    .contentMargins(.all, 0)
+                    #endif
                     .padding(.horizontal, Theme.Composer.inputPaddingH)
                     .padding(.vertical, Theme.Composer.inputPaddingV)
                     #if os(iOS)
@@ -213,6 +222,8 @@ struct ComposerView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(height: Theme.Composer.plusButtonSize)
                 .disabled(!canSubmit)
                 .keyboardShortcut(.return, modifiers: .command)
             }

@@ -264,7 +264,11 @@ enum Theme {
         static let lineHeight: CGFloat = 20
         static let maxAutoLines = 4
         static let inputPaddingH: CGFloat = 6
+        #if os(macOS)
+        static let inputPaddingV: CGFloat = 0
+        #else
         static let inputPaddingV: CGFloat = 2
+        #endif
         static let inputCornerRadius: CGFloat = 10
         static let rowSpacing: CGFloat = 6
         static let containerPaddingH: CGFloat = 10
