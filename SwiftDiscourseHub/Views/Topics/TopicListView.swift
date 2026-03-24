@@ -160,6 +160,10 @@ struct TopicListView: View {
         .navigationSplitViewColumnWidth(min: 320, ideal: 420, max: 600)
         #endif
         .task(id: site.baseURL) {
+            // Skip reload if topics are already loaded for this site
+            if initialLoadComplete, !topicVM.topics.isEmpty {
+                return
+            }
             initialLoadComplete = false
             topicVM.apiClient = apiClient
             topicVM.switchSite(to: site.baseURL)
