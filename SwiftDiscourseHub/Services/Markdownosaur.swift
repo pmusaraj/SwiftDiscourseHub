@@ -220,13 +220,8 @@ struct Markdownosaur: MarkupVisitor {
             attachment.image = VideoPlaceholderAttachment.placeholderImage(width: width, height: height)
             attachment.bounds = CGRect(x: 0, y: 0, width: width, height: height)
 
-            let attachmentString = NSMutableAttributedString(attachment: attachment)
-            if let url = URL(string: urlString) {
-                attachmentString.addAttributes([
-                    .videoURL: urlString,
-                    .link: url,
-                ], range: NSRange(location: 0, length: attachmentString.length))
-            }
+            let result = NSMutableAttributedString()
+            let font = PlatformFont.systemFont(ofSize: Theme.Markdown.bodyFontSize)
 
             // Expand to consume surrounding newlines
             var replaceRange = match.range
@@ -240,7 +235,30 @@ struct Markdownosaur: MarkupVisitor {
                 replaceRange.length += 1
             }
 
-            attrString.replaceCharacters(in: replaceRange, with: attachmentString)
+            // Add leading spacing if there's content before
+            let hasPredecessor = replaceRange.location > 0
+            if hasPredecessor {
+                result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+            }
+
+            let attachmentString = NSMutableAttributedString(attachment: attachment)
+            if let url = URL(string: urlString) {
+                attachmentString.addAttributes([
+                    .videoURL: urlString,
+                    .link: url,
+                ], range: NSRange(location: 0, length: attachmentString.length))
+            }
+            result.append(attachmentString)
+
+            // Add trailing spacing if there's content after
+            let hasSuccessor = (replaceRange.location + replaceRange.length) < nsText.length
+            if hasSuccessor {
+                result.append(NSAttributedString(string: "\n\n", attributes: [.font: font]))
+            } else {
+                result.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+            }
+
+            attrString.replaceCharacters(in: replaceRange, with: result)
         }
     }
 

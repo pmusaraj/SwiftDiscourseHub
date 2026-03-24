@@ -21,6 +21,7 @@ struct ComposerView: View {
     @State private var mentionSuggestions: [DiscourseUser] = []
     @State private var mentionSelectedIndex: Int = 0
     @State private var mentionSearchTask: Task<Void, Never>?
+    @State private var editorWidth: CGFloat = 0
     @FocusState private var isEditorFocused: Bool
     @Environment(\.apiClient) private var apiClient
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -34,15 +35,28 @@ struct ComposerView: View {
     }
 
     private var effectiveHeight: CGFloat {
-        let lineCount = max(1, composerText.components(separatedBy: .newlines).count)
-        let clampedLines = min(lineCount, Theme.Composer.maxAutoLines)
+        let lineHeight = Theme.Composer.lineHeight
+        let maxLines = Theme.Composer.maxAutoLines
+
+        // Estimate visual line count including wrapping
+        let availableWidth = max(1, editorWidth - Theme.Composer.inputPaddingH * 2 - 12)
+        let charWidth: CGFloat = 8.5 // approximate average character width for body font
+        let charsPerLine = max(1, Int(availableWidth / charWidth))
+
+        var visualLines = 0
+        for line in composerText.components(separatedBy: .newlines) {
+            let wrappedLines = line.isEmpty ? 1 : max(1, Int(ceil(Double(line.count) / Double(charsPerLine))))
+            visualLines += wrappedLines
+        }
+
+        let clampedLines = min(max(1, visualLines), maxLines)
         #if os(macOS)
         let vPad: CGFloat = 2
         #else
         let vPad: CGFloat = 8
         #endif
-        let height = CGFloat(clampedLines) * Theme.Composer.lineHeight + vPad
-        return max(Theme.Composer.lineHeight + vPad, height + manualHeightOffset)
+        let height = CGFloat(clampedLines) * lineHeight + vPad
+        return max(lineHeight + vPad, height + manualHeightOffset)
     }
 
     private var composerBackground: Color {
@@ -165,6 +179,7 @@ struct ComposerView: View {
                     .background(Color(.controlBackgroundColor))
                     #endif
                     .clipShape(.rect(cornerRadius: Theme.Composer.inputCornerRadius))
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { editorWidth = $0 }
                     .onAppear { isEditorFocused = true }
                     .overlay(alignment: .topLeading) {
                         if !mentionSuggestions.isEmpty {

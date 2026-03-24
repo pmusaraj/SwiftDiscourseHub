@@ -22,7 +22,7 @@ enum Theme {
     // MARK: - Fonts
 
     enum Fonts {
-        static let topicTitle: Font = isTablet ? .headline.bold() : .title3.bold()
+        static let topicTitle: Font = isTablet ? .headline.bold() : .headline.bold()
         static let topicExcerpt: Font = isTablet ? .subheadline : .body
         static let postAuthorName: Font = isTablet ? .subheadline.bold() : .body.bold()
         static let postBody: Font = isTablet ? .subheadline : .body
