@@ -85,7 +85,7 @@ struct AuthFooterBar: View {
                 .clipShape(.rect(cornerRadius: 4))
             }
 
-            Text("Sign up or log in to interact on **\(site.title)**")
+            Text("Join this community")
                 .font(.subheadline)
                 .lineLimit(1)
 

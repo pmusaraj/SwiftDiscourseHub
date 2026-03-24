@@ -69,6 +69,7 @@ enum Theme {
         static let categoryFilterBottom: CGFloat = 4
         static let categoryBadgeHorizontal: CGFloat = 6
         static let categoryBadgeVertical: CGFloat = 2
+        static let topicHeaderBottom: CGFloat = 16
         static let postVertical: CGFloat = 18
         static let postHorizontalCompact: CGFloat = 24
         static let postHorizontalRegular: CGFloat = 48

@@ -52,6 +52,7 @@ struct TopicDetailView: View {
 
     @Environment(\.apiClient) private var apiClient
     @Environment(ToastManager.self) private var toastManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var topicURL: URL? {
         URLHelpers.resolveURL("/t/\(topicId)", baseURL: baseURL)
@@ -151,6 +152,13 @@ struct TopicDetailView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarVisibility(.visible, for: .navigationBar)
+        .toolbar {
+            if horizontalSizeClass == .compact {
+                ToolbarItem(placement: .primaryAction) {
+                    moreActionsMenu
+                }
+            }
+        }
         #endif
         .onReceive(NotificationCenter.default.publisher(for: .showReplyComposer)) { _ in
             guard site.hasApiKey, !showComposer else { return }
@@ -395,44 +403,19 @@ struct TopicDetailView: View {
 
                 Spacer()
 
-                if let url = topicURL {
-                    Menu {
-                        if let lastPostNum = dataSource.topicDetail?.highestPostNumber, lastPostNum > 1 {
-                            Button {
-                                Task { await jumpToPost(number: lastPostNum) }
-                            } label: {
-                                Label("Jump to Last Post", systemImage: "arrow.down.to.line")
-                            }
-                        }
-                        Button {
-                            Task { await jumpToPost(number: 25) }
-                        } label: {
-                            Label("Jump to Post #25", systemImage: "arrow.right.to.line")
-                        }
-                        Divider()
-                        Button {
-                            #if os(macOS)
-                            NSWorkspace.shared.open(url)
-                            #else
-                            UIApplication.shared.open(url)
-                            #endif
-                        } label: {
-                            Label("Open in Safari", systemImage: "safari")
-                        }
-                        ShareLink(item: url)
-                    } label: {
-                        Image(systemName: "line.3.horizontal.circle")
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                #if os(macOS)
+                moreActionsMenu
+                #else
+                if horizontalSizeClass != .compact {
+                    moreActionsMenu
                 }
+                #endif
             }
             .font(Theme.Fonts.metadata)
             .foregroundStyle(.secondary)
         }
         .padding(.top, 0)
-        .padding(.bottom, 0)
+        .padding(.bottom, Theme.Padding.topicHeaderBottom)
         .padding(.horizontal, Theme.Padding.postHorizontal(for: contentWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.ultraThinMaterial)
@@ -440,6 +423,40 @@ struct TopicDetailView: View {
             proxy.size.height
         } action: { newHeight in
             headerHeight = newHeight
+        }
+    }
+
+    @ViewBuilder
+    private var moreActionsMenu: some View {
+        if let url = topicURL {
+            Menu {
+                if let lastPostNum = dataSource.topicDetail?.highestPostNumber, lastPostNum > 1 {
+                    Button {
+                        Task { await jumpToPost(number: lastPostNum) }
+                    } label: {
+                        Label("Jump to Last Post", systemImage: "arrow.down.to.line")
+                    }
+                }
+                Button {
+                    Task { await jumpToPost(number: 25) }
+                } label: {
+                    Label("Jump to Post #25", systemImage: "arrow.right.to.line")
+                }
+                Divider()
+                Button {
+                    #if os(macOS)
+                    NSWorkspace.shared.open(url)
+                    #else
+                    UIApplication.shared.open(url)
+                    #endif
+                } label: {
+                    Label("Open in Safari", systemImage: "safari")
+                }
+                ShareLink(item: url)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+            .buttonStyle(.plain)
         }
     }
 
