@@ -28,12 +28,15 @@ struct ContentView: View {
 
     private var hasSites: Bool { !sites.isEmpty }
 
-    private var nextUnreadPostNumber: Int? {
+    private var resumePostNumber: Int? {
         guard let site = selectedSite, site.isAuthenticated,
               let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0,
-              let highest = selectedTopic?.highestPostNumber,
-              lastRead < highest else { return nil }
-        return lastRead + 1
+              let highest = selectedTopic?.highestPostNumber else { return nil }
+        if lastRead < highest {
+            return lastRead + 1  // Next unread post
+        } else {
+            return highest       // Fully read — scroll to last post
+        }
     }
 
     var body: some View {
@@ -192,7 +195,7 @@ struct ContentView: View {
                 } detail: {
                     NavigationStack {
                         if let topicId = selectedTopicId, let site = selectedSite {
-                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: nextUnreadPostNumber)
+                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: resumePostNumber)
                         } else {
                             Color.clear
                         }
@@ -230,7 +233,7 @@ struct ContentView: View {
                 } detail: {
                     NavigationStack {
                         if let topicId = selectedTopicId, let site = selectedSite {
-                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: nextUnreadPostNumber)
+                            TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: resumePostNumber)
                         } else {
                             Color.clear
                         }

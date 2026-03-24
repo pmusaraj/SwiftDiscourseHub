@@ -437,11 +437,6 @@ struct TopicDetailView: View {
                         Label("Jump to Last Post", systemImage: "arrow.down.to.line")
                     }
                 }
-                Button {
-                    Task { await jumpToPost(number: 25) }
-                } label: {
-                    Label("Jump to Post #25", systemImage: "arrow.right.to.line")
-                }
                 Divider()
                 Button {
                     #if os(macOS)

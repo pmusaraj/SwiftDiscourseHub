@@ -7,18 +7,21 @@ struct CompactTopicListView: View {
     @State private var topicCategories: [DiscourseCategory] = []
     @State private var topicVM = TopicListViewModel()
 
-    private var nextUnreadPostNumber: Int? {
+    private var resumePostNumber: Int? {
         guard site.isAuthenticated,
               let lastRead = selectedTopic?.lastReadPostNumber, lastRead > 0,
-              let highest = selectedTopic?.highestPostNumber,
-              lastRead < highest else { return nil }
-        return lastRead + 1
+              let highest = selectedTopic?.highestPostNumber else { return nil }
+        if lastRead < highest {
+            return lastRead + 1  // Next unread post
+        } else {
+            return highest       // Fully read — scroll to last post
+        }
     }
 
     var body: some View {
         TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
             .navigationDestination(item: $selectedTopicId) { topicId in
-                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: nextUnreadPostNumber)
+                TopicDetailView(topicId: topicId, site: site, topic: selectedTopic, categories: topicCategories, startPostNumber: resumePostNumber)
             }
     }
 }
