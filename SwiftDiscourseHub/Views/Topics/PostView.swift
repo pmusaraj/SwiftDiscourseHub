@@ -63,10 +63,6 @@ struct PostView: View {
 
                 HStack(spacing: 4) {
                     RelativeTimeText(dateString: post.createdAt)
-                    if let pn = post.postNumber {
-                        Text("·")
-                        Text("#\(pn)")
-                    }
                 }
                 .font(Theme.Fonts.metadata)
                 .foregroundStyle(.secondary)

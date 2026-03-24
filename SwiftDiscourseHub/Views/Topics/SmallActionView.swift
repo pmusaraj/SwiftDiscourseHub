@@ -33,6 +33,10 @@ struct SmallActionView: View {
             "folder.fill"
         case "autobumped":
             "hand.point.right.fill"
+        case "assigned", "reassigned":
+            "person.badge.plus"
+        case "unassigned":
+            "person.badge.minus"
         default:
             "info.circle.fill"
         }
@@ -74,6 +78,12 @@ struct SmallActionView: View {
             return "\(who) changed the category"
         case "autobumped":
             return "This topic was automatically bumped"
+        case "assigned":
+            return "\(who) assigned this topic"
+        case "reassigned":
+            return "\(who) reassigned this topic"
+        case "unassigned":
+            return "\(who) unassigned this topic"
         default:
             return "\(who) performed an action"
         }

@@ -353,10 +353,6 @@ final class PostCell: UICollectionViewCell {
             }
         }
 
-        if let pn = postNumber {
-            parts.append("#\(pn)")
-        }
-
         return parts.joined(separator: " · ")
     }
 
