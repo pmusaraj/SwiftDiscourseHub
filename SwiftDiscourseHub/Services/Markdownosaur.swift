@@ -721,6 +721,12 @@ struct Markdownosaur: MarkupVisitor {
     mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> NSAttributedString {
         let result = NSMutableAttributedString()
         let children = Array(blockQuote.children)
+        let vPad = Theme.Quote.backgroundVerticalPad
+
+        // Always insert a spacing newline before the quote so the background
+        // has room to render. paragraphSpacingBefore is ignored on the very
+        // first paragraph in a text view, so even the first element needs this.
+        result.append(.singleNewline(withFontSize: baseFontSize))
 
         for (index, child) in children.enumerated() {
             var quoteAttributes: [NSAttributedString.Key: Any] = [:]
@@ -734,7 +740,6 @@ struct Markdownosaur: MarkupVisitor {
             quoteParagraphStyle.headIndent = leftMarginOffset
 
             // First child: top padding to match background
-            let vPad = Theme.Quote.backgroundVerticalPad
             quoteParagraphStyle.paragraphSpacingBefore = index == 0 ? vPad : Theme.Quote.paragraphSpacingBefore
             // Last child: bottom padding to match background
             if index == children.count - 1 {
@@ -755,9 +760,9 @@ struct Markdownosaur: MarkupVisitor {
             result.append(quoteAttributedString)
         }
 
-        if blockQuote.hasSuccessor {
-            result.append(.doubleNewline(withFontSize: baseFontSize))
-        }
+        // Single trailing newline gives the background room to render.
+        // The quote's last paragraph already has paragraphSpacing = vPad.
+        result.append(.singleNewline(withFontSize: baseFontSize))
 
         return result
     }
