@@ -184,12 +184,8 @@ struct ContentView: View {
                     SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } content: {
                     if let site = selectedSite {
-                        if site.loginRequired && !site.isAuthenticated {
-                            LoginRequiredView(site: site)
-                        } else {
-                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
-                                .id(site.baseURL)
-                        }
+                        TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
+                            .id(site.baseURL)
                     } else {
                         ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
                     }
@@ -227,11 +223,7 @@ struct ContentView: View {
                     SiteSidebarView(selectedSite: $selectedSite, selectedTopicId: $selectedTopicId, showingDiscover: $showingDiscover)
                 } content: {
                     if let site = selectedSite {
-                        if site.loginRequired && !site.isAuthenticated {
-                            LoginRequiredView(site: site)
-                        } else {
-                            TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
-                        }
+                        TopicListView(site: site, selectedTopicId: $selectedTopicId, selectedTopic: $selectedTopic, topicCategories: $topicCategories, topicVM: topicVM)
                     } else {
                         ContentUnavailableView("Select a Site", systemImage: "globe", description: Text("Choose a community from the sidebar"))
                     }

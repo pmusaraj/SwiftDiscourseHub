@@ -29,7 +29,7 @@ enum Theme {
         static let metadata: Font = isTablet ? .subheadline : .body
         static let metadataSmall: Font = .caption
         static let statCount: Font = isTablet ? .caption : .subheadline
-        static let topicHeaderTitle: Font = isTablet ? .title3.bold() : .title2.bold()
+        static let topicHeaderTitle: Font = isTablet ? .title3.bold() : .headline
         static let sidebarIcon: Font = .title3
         static let siteIconFallback: Font = .title2.bold()
         static let discoverSiteTitle: Font = isTablet ? .headline.bold() : .title3.bold()
@@ -195,11 +195,21 @@ enum Theme {
         static let attribute = "BBB529"    // olive
     }
 
+    // MARK: - Video
+
+    enum Video {
+        static let placeholderAspect: CGFloat = 9.0 / 16.0
+        static let placeholderCornerRadius: CGFloat = 8
+        static let playIconSize: CGFloat = 48
+        static let closeButtonSize: CGFloat = 30
+    }
+
     // MARK: - Table
 
     enum Table {
         static let headerWeight: PlatformFont.Weight = .semibold
         static let columnGap: CGFloat = 16
+        static let maxColumnWidth: CGFloat = 260
     }
 
     // MARK: - Rich Link

@@ -61,13 +61,45 @@ struct TopicDetailView: View {
         dataSource.topicDetail?.currentPostNumber
     }
 
+    /// Use the passed-in topic, or build one from the loaded detail response.
+    private var effectiveTopic: Topic? {
+        if let topic { return topic }
+        guard let detail = dataSource.topicDetail else { return nil }
+        return Topic(
+            id: detail.id,
+            title: detail.title,
+            fancyTitle: detail.fancyTitle,
+            slug: detail.slug,
+            postsCount: detail.postsCount,
+            replyCount: nil,
+            highestPostNumber: detail.highestPostNumber,
+            createdAt: detail.createdAt,
+            lastPostedAt: nil,
+            bumped: nil,
+            bumpedAt: nil,
+            archetype: nil,
+            unseen: nil,
+            pinned: nil,
+            excerpt: nil,
+            visible: nil,
+            closed: nil,
+            archived: nil,
+            views: detail.views,
+            likeCount: detail.likeCount,
+            categoryId: detail.categoryId,
+            posters: nil,
+            imageUrl: nil,
+            lastReadPostNumber: nil
+        )
+    }
+
     private var category: DiscourseCategory? {
-        guard let id = topic?.categoryId else { return nil }
+        guard let id = effectiveTopic?.categoryId else { return nil }
         return categories.first { $0.id == id }
     }
 
     private var replyCount: Int {
-        max((topic?.postsCount ?? 1) - 1, 0)
+        max((effectiveTopic?.postsCount ?? 1) - 1, 0)
     }
 
     var body: some View {
@@ -82,12 +114,10 @@ struct TopicDetailView: View {
             } else if !dataSource.items.isEmpty {
                 VStack(spacing: 0) {
                     ZStack(alignment: .top) {
-                        if headerHeight > 0 {
-                            postStreamContent
-                        }
+                        postStreamContent
 
-                        if let topic {
-                            topicHeader(topic)
+                        if let t = effectiveTopic {
+                            topicHeader(t)
                         }
                     }
                     .overlay(alignment: .bottom) {
@@ -119,7 +149,8 @@ struct TopicDetailView: View {
         .toolbar(removing: .title)
         #endif
         #if os(iOS)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarVisibility(.visible, for: .navigationBar)
         #endif
         .onReceive(NotificationCenter.default.publisher(for: .showReplyComposer)) { _ in
             guard site.hasApiKey, !showComposer else { return }

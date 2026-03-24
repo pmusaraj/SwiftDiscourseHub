@@ -99,6 +99,55 @@ final class ScalableImageAttachment: NSTextAttachment {
     }()
 }
 
+final class VideoPlaceholderAttachment: NSTextAttachment {
+    var videoURLString: String?
+
+    static func placeholderImage(width: CGFloat, height: CGFloat) -> PlatformImage {
+        let size = CGSize(width: width, height: height)
+        let iconSize = Theme.Video.playIconSize
+        let cornerRadius = Theme.Video.placeholderCornerRadius
+
+        #if os(iOS)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            UIColor.secondarySystemFill.setFill()
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: cornerRadius).fill()
+
+            let config = UIImage.SymbolConfiguration(pointSize: iconSize, weight: .regular)
+            if let icon = UIImage(systemName: "play.circle.fill", withConfiguration: config)?
+                .withTintColor(.white.withAlphaComponent(0.8), renderingMode: .alwaysOriginal) {
+                let iconRect = CGRect(
+                    x: (width - icon.size.width) / 2,
+                    y: (height - icon.size.height) / 2,
+                    width: icon.size.width,
+                    height: icon.size.height
+                )
+                icon.draw(in: iconRect)
+            }
+        }
+        #else
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.separatorColor.withAlphaComponent(0.15).setFill()
+        NSBezierPath(roundedRect: CGRect(origin: .zero, size: size), xRadius: cornerRadius, yRadius: cornerRadius).fill()
+
+        let config = NSImage.SymbolConfiguration(pointSize: iconSize, weight: .regular)
+        if let icon = NSImage(systemSymbolName: "play.circle.fill", accessibilityDescription: "Play video")?
+            .withSymbolConfiguration(config) {
+            let iconRect = CGRect(
+                x: (width - icon.size.width) / 2,
+                y: (height - icon.size.height) / 2,
+                width: icon.size.width,
+                height: icon.size.height
+            )
+            icon.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 0.8)
+        }
+        image.unlockFocus()
+        return image
+        #endif
+    }
+}
+
 struct Markdownosaur: MarkupVisitor {
     let baseFont: PlatformFont
     let bodyColor: PlatformColor
@@ -136,15 +185,81 @@ struct Markdownosaur: MarkupVisitor {
     }
 
     mutating func attributedString(from document: Document) -> NSAttributedString {
-        return visit(document)
+        let result = visit(document).mutableCopy() as! NSMutableAttributedString
+        Self.spliceVideoPlaceholders(into: result, maxWidth: maxImageWidth)
+        return result
     }
 
     /// Render markdown and splice in onebox blocks for any %%ONEBOX:N%% placeholders.
     mutating func attributedString(from document: Document, oneboxes: [DiscourseMarkdownPreprocessor.OneboxInfo]) -> NSAttributedString {
         let result = visit(document).mutableCopy() as! NSMutableAttributedString
-        if oneboxes.isEmpty { return result }
-        Self.spliceOneboxes(into: result, oneboxes: oneboxes, baseFont: baseFont, linkColor: linkColor)
+        if !oneboxes.isEmpty {
+            Self.spliceOneboxes(into: result, oneboxes: oneboxes, baseFont: baseFont, linkColor: linkColor)
+        }
+        Self.spliceVideoPlaceholders(into: result, maxWidth: maxImageWidth)
         return result
+    }
+
+    /// Replace %%DISCOURSE_VIDEO:url%% placeholders with tappable video placeholder attachments.
+    static func spliceVideoPlaceholders(into attrString: NSMutableAttributedString, maxWidth: CGFloat) {
+        guard let regex = try? NSRegularExpression(pattern: DiscourseMarkdownPreprocessor.videoPlaceholderPattern) else { return }
+
+        let text = attrString.string
+        let fullRange = NSRange(text.startIndex..., in: text)
+        let matches = regex.matches(in: text, range: fullRange)
+
+        for match in matches.reversed() {
+            guard let urlRange = Range(match.range(at: 1), in: text) else { continue }
+            let urlString = String(text[urlRange])
+
+            let width = maxWidth
+            let height = width * Theme.Video.placeholderAspect
+
+            let attachment = VideoPlaceholderAttachment()
+            attachment.videoURLString = urlString
+            attachment.image = VideoPlaceholderAttachment.placeholderImage(width: width, height: height)
+            attachment.bounds = CGRect(x: 0, y: 0, width: width, height: height)
+
+            let attachmentString = NSMutableAttributedString(attachment: attachment)
+            if let url = URL(string: urlString) {
+                attachmentString.addAttributes([
+                    .videoURL: urlString,
+                    .link: url,
+                ], range: NSRange(location: 0, length: attachmentString.length))
+            }
+
+            // Expand to consume surrounding newlines
+            var replaceRange = match.range
+            let nsText = text as NSString
+            if replaceRange.location > 0 && nsText.character(at: replaceRange.location - 1) == 0x0A {
+                replaceRange.location -= 1
+                replaceRange.length += 1
+            }
+            let afterEnd = replaceRange.location + replaceRange.length
+            if afterEnd < nsText.length && nsText.character(at: afterEnd) == 0x0A {
+                replaceRange.length += 1
+            }
+
+            attrString.replaceCharacters(in: replaceRange, with: attachmentString)
+        }
+    }
+
+    /// Truncate text to fit within a max pixel width, appending ellipsis if needed.
+    private static func truncateToFit(_ text: String, maxWidth: CGFloat, attributes: [NSAttributedString.Key: Any]) -> String {
+        let fullWidth = (text as NSString).size(withAttributes: attributes).width
+        guard fullWidth > maxWidth else { return text }
+        let ellipsis = "…"
+        let ellipsisWidth = (ellipsis as NSString).size(withAttributes: attributes).width
+        let targetWidth = maxWidth - ellipsisWidth
+        // Binary search for the longest prefix that fits
+        var lo = 0, hi = text.count
+        while lo < hi {
+            let mid = (lo + hi + 1) / 2
+            let prefix = String(text.prefix(mid))
+            let w = (prefix as NSString).size(withAttributes: attributes).width
+            if w <= targetWidth { lo = mid } else { hi = mid - 1 }
+        }
+        return String(text.prefix(lo)) + ellipsis
     }
 
     /// Replace %%ONEBOX:N%% placeholders with rich link attributed string blocks.
@@ -411,15 +526,22 @@ struct Markdownosaur: MarkupVisitor {
 
         // Measure max column widths for tab stop alignment
         let headerFont = PlatformFont.systemFont(ofSize: baseFontSize, weight: Theme.Table.headerWeight)
-        let measureAttrs: [NSAttributedString.Key: Any] = [.font: headerFont]
+        let bodyMeasureAttrs: [NSAttributedString.Key: Any] = [.font: baseFont]
+        let headerMeasureAttrs: [NSAttributedString.Key: Any] = [.font: headerFont]
         var columnWidths = [CGFloat](repeating: 0, count: columnCount)
 
-        for row in allRows {
+        for (rowIndex, row) in allRows.enumerated() {
+            let isHeader = rowIndex == 0 && !headRow.isEmpty
+            let attrs = isHeader ? headerMeasureAttrs : bodyMeasureAttrs
             for (colIndex, cell) in row.enumerated() where colIndex < columnCount {
-                let cellWidth = (cell as NSString).size(withAttributes: measureAttrs).width
+                let cellWidth = (cell as NSString).size(withAttributes: attrs).width
                 columnWidths[colIndex] = max(columnWidths[colIndex], cellWidth)
             }
         }
+
+        // Cap column widths to prevent bleeding
+        let maxWidth = Theme.Table.maxColumnWidth
+        columnWidths = columnWidths.map { min($0, maxWidth) }
 
         // Build tab stops from measured widths
         let gap = Theme.Table.columnGap
@@ -437,10 +559,11 @@ struct Markdownosaur: MarkupVisitor {
         tableParagraphStyle.lineHeightMultiple = Theme.Markdown.lineHeightMultiple
         tableParagraphStyle.tabStops = tabStops
 
-        // Build tab-separated rows
+        // Build tab-separated rows, truncating cells that exceed column width
         for (rowIndex, row) in allRows.enumerated() {
             let isHeader = rowIndex == 0 && !headRow.isEmpty
             let font = isHeader ? headerFont : baseFont
+            let measureAttrs: [NSAttributedString.Key: Any] = [.font: font]
 
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: font,
@@ -448,8 +571,9 @@ struct Markdownosaur: MarkupVisitor {
                 .paragraphStyle: tableParagraphStyle,
             ]
 
-            let cells = (0..<columnCount).map { i in
-                i < row.count ? row[i] : ""
+            let cells = (0..<columnCount).map { i -> String in
+                let text = i < row.count ? row[i] : ""
+                return Self.truncateToFit(text, maxWidth: columnWidths[i], attributes: measureAttrs)
             }
             let lineText = cells.joined(separator: "\t") + "\n"
             result.append(NSAttributedString(string: lineText, attributes: attrs))
@@ -808,6 +932,7 @@ extension NSAttributedString.Key {
     static let inlineCode = NSAttributedString.Key("InlineCode")
     static let codeBlock = NSAttributedString.Key("CodeBlock")
     static let richLink = NSAttributedString.Key("RichLink")
+    static let videoURL = NSAttributedString.Key("VideoURL")
 }
 
 private extension NSMutableAttributedString {

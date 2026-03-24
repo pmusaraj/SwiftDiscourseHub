@@ -251,6 +251,9 @@ struct DiscourseMarkdownPreprocessor {
     /// Onebox placeholder format: %%ONEBOX:N%% where N is the index into the returned array
     static let oneboxPlaceholderPattern = #"%%ONEBOX:(\d+)%%"#
 
+    /// Video placeholder format: %%DISCOURSE_VIDEO:url%%
+    static let videoPlaceholderPattern = #"%%DISCOURSE_VIDEO:([^%]+)%%"#
+
     private func convertBareURLsToLinks(_ markdown: String, cooked: String?) -> (String, [OneboxInfo]) {
         let oneboxMap = Self.parseOneboxes(from: cooked)
 

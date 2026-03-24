@@ -1,6 +1,7 @@
 #if os(iOS)
 import UIKit
 import Nuke
+import AVKit
 
 /// Pure UIKit collection view cell for rendering a forum post.
 /// Uses NSAttributedString for body text — no SwiftUI, no Auto Layout for content measurement.
@@ -87,6 +88,7 @@ final class PostCell: UICollectionViewCell {
     private var avatarTask: ImageTask?
     private var imageTasks: [ImageTask] = []
     private var exactSize: CGSize?
+    private var videoPlayerView: UIView?
 
     // MARK: - Init
 
@@ -114,6 +116,7 @@ final class PostCell: UICollectionViewCell {
         replyCountLabel.text = nil
         onLike = nil
         exactSize = nil
+        removeVideoPlayer()
     }
 
     // MARK: - Layout
@@ -128,6 +131,7 @@ final class PostCell: UICollectionViewCell {
         contentView.addSubview(replyCountLabel)
         contentView.addSubview(separator)
 
+        bodyTextView.delegate = self
         likeButton.addTarget(self, action: #selector(likeTapped), for: .touchUpInside)
     }
 
@@ -358,6 +362,61 @@ final class PostCell: UICollectionViewCell {
 
     @objc private func likeTapped() {
         onLike?()
+    }
+
+    // MARK: - Video Player
+
+    private func removeVideoPlayer() {
+        videoPlayerView?.removeFromSuperview()
+        videoPlayerView = nil
+    }
+
+    fileprivate func showVideoPlayer(url: URL, in textView: UITextView, characterRange: NSRange) {
+        removeVideoPlayer()
+
+        let glyphRange = textView.layoutManager.glyphRange(forCharacterRange: characterRange, actualCharacterRange: nil)
+        let rect = textView.layoutManager.boundingRect(forGlyphRange: glyphRange, in: textView.textContainer)
+        let adjustedRect = rect.offsetBy(dx: textView.textContainerInset.left, dy: textView.textContainerInset.top)
+
+        let container = UIView(frame: adjustedRect)
+        container.clipsToBounds = true
+        container.layer.cornerRadius = Theme.Video.placeholderCornerRadius
+
+        let playerVC = AVPlayerViewController()
+        playerVC.player = AVPlayer(url: url)
+        playerVC.view.frame = container.bounds
+        playerVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.addSubview(playerVC.view)
+
+        // Close button
+        let closeSize = Theme.Video.closeButtonSize
+        let closeButton = UIButton(type: .close)
+        closeButton.frame = CGRect(x: container.bounds.width - closeSize - 8, y: 8, width: closeSize, height: closeSize)
+        closeButton.autoresizingMask = [.flexibleLeftMargin, .flexibleBottomMargin]
+        closeButton.addTarget(self, action: #selector(closeVideoTapped), for: .touchUpInside)
+        container.addSubview(closeButton)
+
+        textView.addSubview(container)
+        videoPlayerView = container
+        playerVC.player?.play()
+    }
+
+    @objc private func closeVideoTapped() {
+        removeVideoPlayer()
+    }
+}
+
+// MARK: - UITextViewDelegate
+
+extension PostCell: UITextViewDelegate {
+    func textView(_ textView: UITextView, shouldInteractWith url: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+        guard let attrText = textView.attributedText,
+              characterRange.location < attrText.length,
+              attrText.attribute(.videoURL, at: characterRange.location, effectiveRange: nil) != nil else {
+            return true
+        }
+        showVideoPlayer(url: url, in: textView, characterRange: characterRange)
+        return false
     }
 }
 

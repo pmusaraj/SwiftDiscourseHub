@@ -145,7 +145,11 @@ struct ChatLayoutPostStreamView: UIViewRepresentable {
 
         let expectedTopInset = topInset
         if cv.contentInset.top != expectedTopInset {
+            let wasAtTop = cv.contentOffset.y <= -cv.contentInset.top + 10
             cv.contentInset.top = expectedTopInset
+            if wasAtTop {
+                cv.contentOffset.y = -expectedTopInset
+            }
         }
 
         // Pre-measure any new markdown that arrived

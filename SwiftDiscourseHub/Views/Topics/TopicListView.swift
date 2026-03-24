@@ -11,6 +11,7 @@ struct TopicListView: View {
     @State private var contentWidth: CGFloat = 0
     @State private var initialLoadComplete = false
     @State private var listScrollProxy: ScrollViewProxy?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var topCategories: [DiscourseCategory] {
         categoryVM.categories
@@ -167,7 +168,7 @@ struct TopicListView: View {
             topicCategories = categoryVM.categories
             await topicVM.loadTopics(for: site)
             initialLoadComplete = true
-            if selectedTopicId == nil, let first = topicVM.topics.first {
+            if horizontalSizeClass != .compact, selectedTopicId == nil, let first = topicVM.topics.first {
                 selectedTopicId = first.id
             }
         }

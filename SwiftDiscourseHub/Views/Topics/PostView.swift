@@ -2,6 +2,7 @@ import SwiftUI
 
 #if os(macOS)
 import Markdown
+import AVKit
 #endif
 
 struct PostView: View {
@@ -203,6 +204,8 @@ private struct MarkdownNSTextView: NSViewRepresentable {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
+        textView.delegate = context.coordinator
+        context.coordinator.textView = textView
 
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = false
@@ -282,13 +285,82 @@ private struct MarkdownNSTextView: NSViewRepresentable {
         }
     }
 
-    final class Coordinator {
+    final class Coordinator: NSObject, NSTextViewDelegate {
         var lastMarkdown: String?
         var imageTasks: [ImageTask] = []
+        weak var textView: NSTextView?
+        private var videoPlayerView: NSView?
 
         func cancelImageLoads() {
             imageTasks.forEach { $0.cancel() }
             imageTasks.removeAll()
+        }
+
+        func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) {
+            guard let attrText = textView.textStorage,
+                  charIndex < attrText.length,
+                  attrText.attribute(.videoURL, at: charIndex, effectiveRange: nil) != nil else {
+                // Regular link — open in browser
+                if let url = link as? URL {
+                    NSWorkspace.shared.open(url)
+                } else if let str = link as? String, let url = URL(string: str) {
+                    NSWorkspace.shared.open(url)
+                }
+                return
+            }
+
+            let url: URL?
+            if let linkURL = link as? URL {
+                url = linkURL
+            } else if let str = link as? String {
+                url = URL(string: str)
+            } else {
+                url = nil
+            }
+            guard let videoURL = url else { return }
+            showVideoPlayer(url: videoURL, at: charIndex, in: textView)
+        }
+
+        private func showVideoPlayer(url: URL, at charIndex: Int, in textView: NSTextView) {
+            videoPlayerView?.removeFromSuperview()
+
+            let glyphIndex = textView.layoutManager!.glyphIndexForCharacter(at: charIndex)
+            let rect = textView.layoutManager!.boundingRect(forGlyphRange: NSRange(location: glyphIndex, length: 1), in: textView.textContainer!)
+            let adjustedRect = rect.offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
+
+            let container = NSView(frame: adjustedRect)
+            container.wantsLayer = true
+            container.layer?.cornerRadius = Theme.Video.placeholderCornerRadius
+            container.layer?.masksToBounds = true
+
+            let playerView = AVPlayerView(frame: container.bounds)
+            playerView.player = AVPlayer(url: url)
+            playerView.autoresizingMask = [.width, .height]
+            container.addSubview(playerView)
+
+            // Close button
+            let closeSize = Theme.Video.closeButtonSize
+            let closeButton = NSButton(frame: CGRect(
+                x: container.bounds.width - closeSize - 8,
+                y: container.bounds.height - closeSize - 8,
+                width: closeSize,
+                height: closeSize
+            ))
+            closeButton.bezelStyle = .circular
+            closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close")
+            closeButton.target = self
+            closeButton.action = #selector(closeVideoTapped)
+            closeButton.autoresizingMask = [.minXMargin, .minYMargin]
+            container.addSubview(closeButton)
+
+            textView.addSubview(container)
+            videoPlayerView = container
+            playerView.player?.play()
+        }
+
+        @objc private func closeVideoTapped() {
+            videoPlayerView?.removeFromSuperview()
+            videoPlayerView = nil
         }
     }
 }
